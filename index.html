@@ -1723,6 +1723,9 @@ async function go(pg){
   // Hide quick-action strip on browse (filter bar replaces it) and admin
   var qs=document.getElementById('qaStrip');
   if(qs)qs.style.display=pg==='home'?'block':'none';
+  // Update URL hash (skip for home — keep URL clean)
+  if(pg!=='home'&&window.history.replaceState)window.history.replaceState(null,null,'#'+pg);
+  else if(pg==='home'&&window.location.hash&&window.history.replaceState)window.history.replaceState(null,null,window.location.pathname);
   window.scrollTo(0,0);
   if(pg==='home') await renderHome();
   else if(pg==='browse'){bldF();await renderBrowse();}
@@ -2656,7 +2659,15 @@ async function viewL(id){
   if(vTit)vTit.textContent='Loading…';
   if(vCnt)vCnt.innerHTML='<div class="mk-spinner"><span class="mk-spinner-text">Loading property details…</span></div>';
   openM('viewM');
+  // Try cache first, then direct fetch for deep links
   var l=(await gL()).find(function(x){return x.id===id;});
+  if(!l){
+    // Direct fetch by ID — handles deep links before cache is warm
+    try{
+      var {data,error}=await sb.from('listings').select('*').eq('id',id).eq('status','approved').single();
+      if(data&&!error)l=mapL(data);
+    }catch(e){}
+  }
   if(!l){
     if(vTit)vTit.textContent='Not Found';
     if(vCnt)vCnt.innerHTML='<div class="mk-error"><div class="mk-error-icon">&#128533;</div><div class="mk-error-msg">This listing may have been removed or is no longer available.</div><button class="mk-error-retry" onclick="closeM(\'viewM\')">Go Back</button></div>';
