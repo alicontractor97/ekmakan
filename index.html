@@ -850,6 +850,7 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
           <button type="button" onclick="togglePw('lPw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:16px;">&#128065;</button>
         </div>
       </div>
+      <div id="turnstileLoginWrap" style="margin-bottom:12px;display:flex;justify-content:center;"></div>
       <button class="btn btn-bl" onclick="doLogin()">Sign In</button>
       <p style="text-align:center;margin-top:12px;"><a href="#" onclick="event.preventDefault();setAT('reset')" style="font-size:12px;color:var(--t);text-decoration:none;font-weight:600;">Forgot your password?</a></p>
     </div>
@@ -861,6 +862,7 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
         <p style="font-size:13px;color:var(--mu);line-height:1.6;">Enter your email address and we'll send you a link to reset your password.</p>
       </div>
       <div class="fg"><label class="flbl">Email Address</label><input class="fi" type="email" id="resetEm" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')doResetPw()"/></div>
+      <div id="turnstileResetWrap" style="margin-bottom:12px;display:flex;justify-content:center;"></div>
       <button class="btn btn-bl" id="resetBtn" onclick="doResetPw()">Send Reset Link</button>
       <p style="text-align:center;margin-top:14px;"><a href="#" onclick="event.preventDefault();setAT('login')" style="font-size:12px;color:var(--t);text-decoration:none;font-weight:600;">&#8592; Back to Sign In</a></p>
     </div>
@@ -1450,39 +1452,38 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 
 // ══ TURNSTILE CAPTCHA ══
 // Replace with your real sitekey from Cloudflare Dashboard → Turnstile → Add Widget
-// Testing key (always passes): 0x4AAAAAAC_UAwS9hBj82k6c
+// Testing key (always passes): 1x00000000000000000000AA
 // Get your real key: https://dash.cloudflare.com → Turnstile → Add Widget → set domain to ekmakan.com
 const TURNSTILE_SITEKEY='0x4AAAAAAC_UAwS9hBj82k6c';
 var _turnstileWidgetId=null;
 var _turnstileToken=null;
+var _turnstileLoginWidgetId=null;
+var _turnstileLoginToken=null;
+var _turnstileResetToken=null;
 
-// Render the Turnstile widget when the registration form becomes visible.
-// Uses explicit rendering because the form is inside a modal (not in DOM at page load).
-function renderTurnstile(){
-  var wrap=document.getElementById('turnstileWrap');
+// Render Turnstile widget in a given container.
+// containerId: 'turnstileWrap' for registration, 'turnstileLoginWrap' for login
+function renderTurnstile(containerId,tokenSetter){
+  var wrap=document.getElementById(containerId);
   if(!wrap)return;
-  // Reset any existing widget
-  if(_turnstileWidgetId!==null&&window.turnstile){
-    try{turnstile.reset(_turnstileWidgetId);}catch(e){}
-    try{turnstile.remove(_turnstileWidgetId);}catch(e){}
-  }
-  _turnstileToken=null;
-  _turnstileWidgetId=null;
-  wrap.innerHTML='';
   // Only render if Turnstile script has loaded
   if(!window.turnstile){
-    // Script still loading — retry in 500ms
-    setTimeout(renderTurnstile,500);
+    setTimeout(function(){renderTurnstile(containerId,tokenSetter);},500);
     return;
   }
-  _turnstileWidgetId=turnstile.render(wrap,{
+  // Clear existing widget in this container
+  wrap.innerHTML='';
+  var widgetId=turnstile.render(wrap,{
     sitekey:TURNSTILE_SITEKEY,
     theme:'light',
     size:'flexible',
-    callback:function(token){_turnstileToken=token;},
-    'expired-callback':function(){_turnstileToken=null;},
-    'error-callback':function(){_turnstileToken=null;}
+    callback:function(token){tokenSetter(token);},
+    'expired-callback':function(){tokenSetter(null);},
+    'error-callback':function(){tokenSetter(null);}
   });
+  // Store widget IDs for reset
+  if(containerId==='turnstileWrap')_turnstileWidgetId=widgetId;
+  else _turnstileLoginWidgetId=widgetId;
 }
 
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
@@ -1785,8 +1786,10 @@ function setAT(t){
   if(al)al.classList.toggle('on',t==='login');
   if(ar)ar.classList.toggle('on',t==='reg');
   if(ae)ae.style.display='none';
-  // Render Turnstile when registration tab is shown
-  if(t==='reg')renderTurnstile();
+  // Render Turnstile when login or registration tab is shown
+  if(t==='login')renderTurnstile('turnstileLoginWrap',function(tk){_turnstileLoginToken=tk;});
+  if(t==='reg')renderTurnstile('turnstileWrap',function(tk){_turnstileToken=tk;});
+  if(t==='reset')renderTurnstile('turnstileResetWrap',function(tk){_turnstileResetToken=tk;});
 }
 
 function setRR(r){
@@ -1809,8 +1812,13 @@ async function doLogin(){
   var em=document.getElementById('lEm').value.trim();
   var pw=document.getElementById('lPw').value;
   if(!em||!pw){if(ae){ae.style.display='';ae.textContent='Please enter your email and password.';}return;}
+  // Turnstile token check (required when Supabase CAPTCHA is enabled)
+  if(!_turnstileLoginToken){
+    if(ae){ae.style.display='';ae.textContent='Please complete the verification challenge.';}
+    return;
+  }
   try{
-    var {data,error}=await sb.auth.signInWithPassword({email:em,password:pw});
+    var {data,error}=await sb.auth.signInWithPassword({email:em,password:pw,options:{captchaToken:_turnstileLoginToken}});
     if(error)throw error;
     var {data:profile,error:pErr}=await sb.from('users').select('*').eq('id',data.user.id).single();
     if(pErr)throw pErr;
@@ -1824,7 +1832,10 @@ async function doLogin(){
   }catch(err){
     var msg=err.message||'Sign-in failed.';
     if(msg.toLowerCase().includes('invalid login'))msg='Incorrect email or password. Please try again.';
+    if(msg.toLowerCase().includes('captcha'))msg='Verification failed. Please try again.';
     if(ae){ae.style.display='';ae.textContent=msg;}
+    // Reset Turnstile after failed attempt (tokens are single-use)
+    renderTurnstile('turnstileLoginWrap',function(tk){_turnstileLoginToken=tk;});
   }
 }
 
@@ -1871,7 +1882,7 @@ function doReg(){
   if(btn){btn.disabled=true;btn.textContent='Creating account…';}
   var doSignup=async function(){
     try{
-      var {data:authData,error:authErr}=await sb.auth.signUp({email:em,password:pw,options:{data:{name:nm,phone:ph,role:role,agency:ag,license_no:lc}}});
+      var {data:authData,error:authErr}=await sb.auth.signUp({email:em,password:pw,options:{data:{name:nm,phone:ph,role:role,agency:ag,license_no:lc},captchaToken:_turnstileToken}});
       if(authErr)throw authErr;
       if(!authData.user)throw new Error('Sign-up failed.');
       // If email confirmation is enabled, there's no active session yet.
@@ -1898,7 +1909,11 @@ function doReg(){
       if(btn){btn.disabled=false;btn.textContent=origBtnText;}
       var msg=err.message||'Sign-up failed.';
       if(msg.toLowerCase().includes('already registered'))msg='An account with this email already exists. Try signing in.';
+      if(msg.toLowerCase().includes('captcha'))msg='Verification failed. Please try again.';
       if(ae){ae.style.display='';ae.textContent=msg;}
+      // Reset Turnstile after failed attempt (tokens are single-use)
+      _turnstileToken=null;
+      renderTurnstile('turnstileWrap',function(tk){_turnstileToken=tk;});
     }
   };
   // MX check first for non-popular domains
@@ -1960,7 +1975,7 @@ async function doResetPw(){
     // redirectTo tells Supabase where to send the user after they click the email link.
     // It must be your deployed site URL. Supabase appends #access_token=...&type=recovery
     var siteUrl=window.location.origin+window.location.pathname;
-    var {error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:siteUrl});
+    var {error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:siteUrl,captchaToken:_turnstileResetToken});
     if(error)throw error;
     if(btn){btn.disabled=false;btn.textContent=origText;}
     // Show success message
