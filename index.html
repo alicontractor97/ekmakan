@@ -510,6 +510,7 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
 .mk-load-more-count{font-size:12px;color:var(--mu);margin-top:8px;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 </head>
 <body>
 <noscript>
@@ -724,9 +725,13 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
       <button class="bm-btn" id="bmb" onclick="setBMode('buy')">🔑 Buy</button>
     </div>
     <span id="bCount"></span>
-    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <div style="position:relative;">
+        <input type="text" id="bSearch" placeholder="Search listings…" oninput="dRender()" style="font-size:13px;padding:7px 12px 7px 30px;border:1px solid var(--sa);border-radius:8px;font-family:'DM Sans',sans-serif;width:180px;background:var(--wh);" autocomplete="off"/>
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--mu);pointer-events:none;">&#128269;</span>
+      </div>
       <label style="font-size:12px;color:var(--mu);">Sort:</label>
-      <select class="sort-sel" id="bSort" onchange="renderBrowse()"><option value="new">Newest</option><option value="pa">Price Low→High</option><option value="pd">Price High→Low</option></select>
+      <select class="sort-sel" id="bSort" onchange="renderBrowse()"><option value="new">Newest</option><option value="pa">Price: Low→High</option><option value="pd">Price: High→Low</option><option value="aa">Area: Largest</option><option value="ad">Area: Smallest</option></select>
       <button onclick="document.getElementById('fp').classList.toggle('mob-open')" id="mobFBtn" style="display:none;background:var(--t);color:#fff;border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;align-items:center;gap:5px;">&#9776; Filters</button>
 
     </div>
@@ -773,7 +778,10 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
 
 <!-- DASHBOARD -->
 <div id="pg-dashboard" class="page" style="padding:40px 60px;background:var(--cr);">
-  <h1 style="font-family:'Playfair Display',serif;font-size:26px;margin-bottom:4px;">My Account</h1>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
+    <h1 style="font-family:'Playfair Display',serif;font-size:26px;">My Account</h1>
+    <button class="btn btn-o btn-sm" onclick="openEditProfile()">&#9998; Edit Profile</button>
+  </div>
   <p id="dG" style="font-size:13px;color:var(--mu);margin-bottom:22px;"></p>
   <div class="g4" id="dSt" style="margin-bottom:26px;"></div>
   <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:12px;">My Inquiries</h2>
@@ -791,7 +799,10 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
       </div>
       <p id="lGrt" style="font-size:13px;color:var(--mu);"></p>
     </div>
-    <button class="btn" onclick="openM('addM')">+ New Listing</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-o btn-sm" onclick="openEditProfile()">&#9998; Edit Profile</button>
+      <button class="btn" onclick="openM('addM')">+ New Listing</button>
+    </div>
   </div>
   <div class="g4" id="lStats" style="margin-bottom:24px;"></div>
   <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:12px;">My Properties</h2>
@@ -896,6 +907,7 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
       <div style="background:var(--cr);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.5;">
         &#9989; By creating an account you agree to our <span onclick="openM('charterM')" style="color:var(--t);cursor:pointer;font-weight:700;">Inclusion Charter</span> and <span onclick="openM('termsM')" style="color:var(--t);cursor:pointer;font-weight:700;">Terms of Service</span>.
       </div>
+      <div id="turnstileWrap" style="margin-bottom:12px;display:flex;justify-content:center;"></div>
       <button class="btn btn-bl" onclick="doReg()">Create Account</button>
     </div>
   </div>
@@ -930,6 +942,48 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
   </div>
 </div>
 
+<!-- EDIT PROFILE -->
+<div id="profileM" class="mo" onclick="ovcM(event,'profileM')">
+  <div class="mb" style="max-width:480px;">
+    <div class="mh">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;">Edit Profile</h2>
+        <p style="font-size:12px;color:var(--mu);margin-top:2px;">Update your account details</p>
+      </div>
+      <button class="mc" onclick="closeM('profileM')" aria-label="Close dialog">&#10005;</button>
+    </div>
+    <div id="profErr" class="al ale" style="display:none;margin-bottom:12px;"></div>
+    <div id="profOk" class="al ali" style="display:none;margin-bottom:12px;"></div>
+
+    <!-- Profile Fields -->
+    <div class="fg"><label class="flbl">Full Name</label><input class="fi" type="text" id="profName" placeholder="Your name"/></div>
+    <div class="fg"><label class="flbl">Phone Number</label><input class="fi" type="tel" id="profPhone" placeholder="10-digit mobile number"/></div>
+    <div class="fg" id="profAgencyWrap" style="display:none;"><label class="flbl">Agency / Company</label><input class="fi" type="text" id="profAgency" placeholder="e.g. Khan Properties"/></div>
+    <div class="fg" id="profLicWrap" style="display:none;"><label class="flbl">RERA / License No.</label><input class="fi" type="text" id="profLic" placeholder="RERA/MH/2024/001"/></div>
+    <button class="btn btn-bl" id="profSaveBtn" onclick="doUpdateProfile()" style="margin-bottom:24px;">Save Changes</button>
+
+    <!-- Change Password Section -->
+    <div style="border-top:1px solid var(--sa);padding-top:20px;margin-top:8px;">
+      <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin-bottom:12px;">Change Password</h3>
+      <div class="fg">
+        <label class="flbl">New Password</label>
+        <div style="position:relative;">
+          <input class="fi" type="password" id="profNewPw" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password" style="padding-right:44px;"/>
+          <button type="button" onclick="togglePw('profNewPw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:16px;">&#128065;</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="flbl">Confirm New Password</label>
+        <div style="position:relative;">
+          <input class="fi" type="password" id="profConfPw" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password" style="padding-right:44px;"/>
+          <button type="button" onclick="togglePw('profConfPw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:16px;">&#128065;</button>
+        </div>
+      </div>
+      <button class="btn btn-o" id="profPwBtn" onclick="doChangePw()">Update Password</button>
+    </div>
+  </div>
+</div>
+
 <div id="cntM" class="mo" onclick="ovcM(event,'cntM')">
   <div class="mb">
     <div class="mh"><h2>Send Inquiry</h2><button class="mc" onclick="closeM('cntM')" aria-label="Close dialog">✕</button></div>
@@ -945,7 +999,7 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
 
 <div id="addM" class="mo" onclick="ovcM(event,'addM')">
   <div class="mb mb-lg">
-    <div class="mh"><h2>New Property Listing</h2><button class="mc" onclick="closeM('addM')" aria-label="Close dialog">✕</button></div>
+    <div class="mh"><h2 id="addMTitle">New Property Listing</h2><button class="mc" onclick="closeM('addM')" aria-label="Close dialog">✕</button></div>
     <div id="lErr" class="al ale" style="display:none;"></div>
     <div style="margin-bottom:14px;">
       <label class="flbl" style="margin-bottom:6px;">Listing For *</label>
@@ -979,14 +1033,14 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
         <div class="dz" id="dz" onclick="document.getElementById('imgIn').click()" ondragover="dzOv(event)" ondragleave="dzLv()" ondrop="dzDp(event)">
           <div style="font-size:28px;margin-bottom:6px;">📷</div>
           <p style="font-size:13px;color:var(--mu);">Click or drag & drop photos here</p>
-          <p style="font-size:11px;color:var(--mu);margin-top:2px;">JPG, PNG · Max 5MB each</p>
+          <p style="font-size:11px;color:var(--mu);margin-top:2px;">JPG, PNG, WebP · Auto-compressed for fast loading</p>
         </div>
         <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="hImgs(event)"/>
         <div class="img-pv" id="iPv"></div>
       </div>
     </div>
     <div class="al alw" style="margin-top:10px;font-size:12px;">Listing reviewed by admin before going live — usually within 24 hrs.</div>
-    <button class="btn btn-bl" style="margin-top:12px;" onclick="doSub()">Submit for Review</button>
+    <button class="btn btn-bl" style="margin-top:12px;" id="addMBtn" onclick="doSub()">Submit for Review</button>
   </div>
 </div>
 
@@ -1394,6 +1448,43 @@ const SUPABASE_URL='https://nzpuhmktxtexbicrszlr.supabase.co';
 const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56cHVobWt0eHRleGJpY3JzemxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMzgwMDUsImV4cCI6MjA5MTkxNDAwNX0.ij9vgnFl4DEBsr85b500YIBcEQ0JZQD4zd6ZZ2g-eEA';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 
+// ══ TURNSTILE CAPTCHA ══
+// Replace with your real sitekey from Cloudflare Dashboard → Turnstile → Add Widget
+// Testing key (always passes): 1x00000000000000000000AA
+// Get your real key: https://dash.cloudflare.com → Turnstile → Add Widget → set domain to ekmakan.com
+const TURNSTILE_SITEKEY='1x00000000000000000000AA';
+var _turnstileWidgetId=null;
+var _turnstileToken=null;
+
+// Render the Turnstile widget when the registration form becomes visible.
+// Uses explicit rendering because the form is inside a modal (not in DOM at page load).
+function renderTurnstile(){
+  var wrap=document.getElementById('turnstileWrap');
+  if(!wrap)return;
+  // Reset any existing widget
+  if(_turnstileWidgetId!==null&&window.turnstile){
+    try{turnstile.reset(_turnstileWidgetId);}catch(e){}
+    try{turnstile.remove(_turnstileWidgetId);}catch(e){}
+  }
+  _turnstileToken=null;
+  _turnstileWidgetId=null;
+  wrap.innerHTML='';
+  // Only render if Turnstile script has loaded
+  if(!window.turnstile){
+    // Script still loading — retry in 500ms
+    setTimeout(renderTurnstile,500);
+    return;
+  }
+  _turnstileWidgetId=turnstile.render(wrap,{
+    sitekey:TURNSTILE_SITEKEY,
+    theme:'light',
+    size:'flexible',
+    callback:function(token){_turnstileToken=token;},
+    'expired-callback':function(){_turnstileToken=null;},
+    'error-callback':function(){_turnstileToken=null;}
+  });
+}
+
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
 function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',facing:r.facing||'',avail:r.availability||''};}
 // Map JS listing → Supabase row
@@ -1419,6 +1510,7 @@ const PAGE_SIZE=30;
 let _browseShown=0;       // How many listings currently rendered in browse grid
 let _browseFiltered=[];   // Full filtered+sorted array for current browse view
 let _adminPage={al:0,pd:0,ls:0,tn:0,ld:0}; // Per-tab page counters for admin
+let _editingListingId=null; // When set, doSub updates instead of creates
 
 // ══ UTILITIES ══
 // HTML-escape any user-controlled string before it goes into innerHTML.
@@ -1693,6 +1785,8 @@ function setAT(t){
   if(al)al.classList.toggle('on',t==='login');
   if(ar)ar.classList.toggle('on',t==='reg');
   if(ae)ae.style.display='none';
+  // Render Turnstile when registration tab is shown
+  if(t==='reg')renderTurnstile();
 }
 
 function setRR(r){
@@ -1746,6 +1840,11 @@ function doReg(){
   var ae=document.getElementById('aErr');
   if(ae)ae.style.display='none';
   if(!nm||!em||!ph||!pw){if(ae){ae.style.display='';ae.textContent='Please fill in all required fields.';}return;}
+  // Turnstile CAPTCHA check
+  if(!_turnstileToken){
+    if(ae){ae.style.display='';ae.textContent='Please complete the verification challenge above.';}
+    return;
+  }
   // Tier 1: Stricter email format check
   if(!isEmailFormatValid(em)){if(ae){ae.style.display='';ae.textContent='Please enter a valid email address.';}return;}
   // Tier 2: Disposable / throwaway email rejection
@@ -1911,11 +2010,97 @@ async function doUpdatePw(){
 function _checkRecoveryToken(){
   var hash=window.location.hash;
   if(!hash)return false;
-  // Supabase v2 uses hash fragment with type=recovery
   if(hash.indexOf('type=recovery')>=0||hash.indexOf('type=magiclink')>=0){
     return true;
   }
   return false;
+}
+
+// ══ PROFILE EDIT ══
+function openEditProfile(){
+  if(!cu)return;
+  // Pre-fill fields with current values
+  var nm=document.getElementById('profName');if(nm)nm.value=cu.name||'';
+  var ph=document.getElementById('profPhone');if(ph)ph.value=cu.phone||'';
+  var ag=document.getElementById('profAgency');if(ag)ag.value=cu.agency||'';
+  var lc=document.getElementById('profLic');if(lc)lc.value=cu.lic||'';
+  // Show agency/license fields only for brokers
+  var agW=document.getElementById('profAgencyWrap');if(agW)agW.style.display=cu.role==='broker'?'':'none';
+  var lcW=document.getElementById('profLicWrap');if(lcW)lcW.style.display=cu.role==='broker'?'':'none';
+  // Clear password fields and messages
+  var pw1=document.getElementById('profNewPw');if(pw1)pw1.value='';
+  var pw2=document.getElementById('profConfPw');if(pw2)pw2.value='';
+  var err=document.getElementById('profErr');if(err)err.style.display='none';
+  var ok=document.getElementById('profOk');if(ok)ok.style.display='none';
+  openM('profileM');
+}
+
+async function doUpdateProfile(){
+  var err=document.getElementById('profErr');
+  var ok=document.getElementById('profOk');
+  var btn=document.getElementById('profSaveBtn');
+  if(err)err.style.display='none';
+  if(ok)ok.style.display='none';
+  var nm=(document.getElementById('profName').value||'').trim();
+  var ph=(document.getElementById('profPhone').value||'').trim();
+  var ag=(document.getElementById('profAgency').value||'').trim();
+  var lc=(document.getElementById('profLic').value||'').trim();
+  if(!nm){if(err){err.style.display='';err.textContent='Name is required.';}return;}
+  if(ph&&ph.replace(/\D/g,'').length<10){if(err){err.style.display='';err.textContent='Please enter a valid 10-digit phone number.';}return;}
+  var origText=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    // Update public.users table
+    var updates={name:nm,phone:ph};
+    if(cu.role==='broker'){updates.agency=ag;updates.license_no=lc;}
+    var {error}=await sb.from('users').update(updates).eq('id',cu.id);
+    if(error)throw error;
+    // Also update auth metadata so it stays in sync
+    await sb.auth.updateUser({data:{name:nm,phone:ph,role:cu.role,agency:ag,license_no:lc}});
+    // Update local state
+    cu.name=nm;cu.phone=ph;
+    if(cu.role==='broker'){cu.agency=ag;cu.lic=lc;}
+    _clr('u');
+    if(btn){btn.disabled=false;btn.textContent=origText;}
+    if(ok){ok.style.display='';ok.textContent='Profile updated successfully.';}
+    // Refresh the nav and current page
+    upNav();
+    var activePage=document.querySelector('.page.active');
+    if(activePage){
+      if(activePage.id==='pg-dashboard')await renderDash();
+      else if(activePage.id==='pg-lister')await renderLister();
+    }
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent=origText;}
+    if(err){err.style.display='';err.textContent=e.message||'Failed to update profile. Please try again.';}
+  }
+}
+
+async function doChangePw(){
+  var err=document.getElementById('profErr');
+  var ok=document.getElementById('profOk');
+  var btn=document.getElementById('profPwBtn');
+  if(err)err.style.display='none';
+  if(ok)ok.style.display='none';
+  var pw1=(document.getElementById('profNewPw').value||'');
+  var pw2=(document.getElementById('profConfPw').value||'');
+  if(!pw1||!pw2){if(err){err.style.display='';err.textContent='Please fill in both password fields.';}return;}
+  if(pw1!==pw2){if(err){err.style.display='';err.textContent='Passwords do not match.';}return;}
+  if(pw1.length<8){if(err){err.style.display='';err.textContent='Password must be at least 8 characters.';}return;}
+  var origText=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='Updating…';}
+  try{
+    var {error}=await sb.auth.updateUser({password:pw1});
+    if(error)throw error;
+    if(btn){btn.disabled=false;btn.textContent=origText;}
+    // Clear password fields
+    document.getElementById('profNewPw').value='';
+    document.getElementById('profConfPw').value='';
+    if(ok){ok.style.display='';ok.textContent='Password updated successfully.';}
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent=origText;}
+    if(err){err.style.display='';err.textContent=e.message||'Failed to update password. Please try again.';}
+  }
 }
 
 
@@ -1937,6 +2122,9 @@ function resetSessionState(){
   // Pagination
   _browseShown=0;_browseFiltered=[];
   _adminPage={al:0,pd:0,ls:0,tn:0,ld:0};
+  _editingListingId=null;
+  // Reset Turnstile CAPTCHA
+  _turnstileToken=null;
   // Favorites: clear in-memory and remove any persisted favorites tied to previous user
   favs=[];
   // Favorites cleared in memory (loaded from Supabase on next login)
@@ -1944,6 +2132,8 @@ function resetSessionState(){
   var idsToClear=[
     // Browse filter sidebar
     'fCity','fRmn','fRmx','fAv','fBCity','fBmn','fBmx','fAmn','fAmx',
+    // Search
+    'bSearch',
     // Browse sort
     'bSort',
     // Hero rent search
@@ -1956,6 +2146,8 @@ function resetSessionState(){
     'lEm','lPw','rNm','rEm','rPh','rPw','rAn','rLn',
     // Password reset/update
     'resetEm','newPw1','newPw2',
+    // Profile edit
+    'profName','profPhone','profAgency','profLic','profNewPw','profConfPw',
     // Inquiry modal
     'cNm','cPh','cEm','cMsg',
     // Report modal
@@ -2303,7 +2495,7 @@ function togBool(k,el){
 }
 function clearAllF(){
   fRT=[];fRB=[];fRF=[];fRA=[];fBT=[];fBB=[];fBF=[];fBA=[];fBPo=[];fBST=[];fBFc=[];fBFl=[];fVer=false;fRer=false;
-  ['fCity','fRmn','fRmx','fBCity','fBmn','fBmx','fAmn','fAmx'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  ['fCity','fRmn','fRmx','fBCity','fBmn','fBmx','fAmn','fAmx','bSearch'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
   var av=document.getElementById('fAv');if(av)av.value='';
   bldF();renderBrowse();
 }
@@ -2319,6 +2511,20 @@ async function renderBrowse(){
   var allApproved=(await gL()).filter(function(l){return l.status==='approved';});
   var ls=allApproved.filter(function(l){return l.lf===bMode;});
   var hasAnyFilters=false;
+  // Keyword search — matches across title, city, locality, description, owner, type
+  var sq=gv('bSearch').toLowerCase();
+  if(sq){
+    ls=ls.filter(function(l){
+      return (l.title||'').toLowerCase().indexOf(sq)>=0
+        ||(l.city||'').toLowerCase().indexOf(sq)>=0
+        ||(l.loc||'').toLowerCase().indexOf(sq)>=0
+        ||(l.desc||'').toLowerCase().indexOf(sq)>=0
+        ||(l.owner||'').toLowerCase().indexOf(sq)>=0
+        ||(l.type||'').toLowerCase().indexOf(sq)>=0
+        ||(l.tags||[]).join(' ').toLowerCase().indexOf(sq)>=0;
+    });
+    hasAnyFilters=true;
+  }
   if(bMode==='rent'){
     var c=gv('fCity'),mn=Number(gv('fRmn'))||0,mx=Number(gv('fRmx'))||Infinity;
     var av=gv('fAv');
@@ -2352,6 +2558,8 @@ async function renderBrowse(){
   var srt=gv('bSort')||'new';
   if(srt==='pa')ls.sort(function(a,b){return bMode==='rent'?a.rent-b.rent:a.price-b.price;});
   else if(srt==='pd')ls.sort(function(a,b){return bMode==='rent'?b.rent-a.rent:b.price-a.price;});
+  else if(srt==='aa')ls.sort(function(a,b){return (b.area||0)-(a.area||0);});
+  else if(srt==='ad')ls.sort(function(a,b){return (a.area||0)-(b.area||0);});
   else ls.sort(function(a,b){return b.id-a.id;});
   var bc=document.getElementById('bCount');
   if(bc)bc.textContent=ls.length+' listing'+(ls.length!==1?'s':'')+' found';
@@ -2371,6 +2579,8 @@ async function renderBrowse(){
   }
   // Active chips
   var chips=[];
+  // Search chip
+  if(sq)chips.push({l:'&#128269; "'+esc(sq)+'"',x:function(){var e=document.getElementById('bSearch');if(e)e.value='';renderBrowse();}});
   if(bMode==='rent'){
     if(gv('fCity'))chips.push({l:'&#128205; '+gv('fCity'),x:function(){var e=document.getElementById('fCity');if(e)e.value='';renderBrowse();}});
     if(gv('fRmn'))chips.push({l:'&#8377;'+Number(gv('fRmn')).toLocaleString('en-IN')+'+ min',x:function(){var e=document.getElementById('fRmn');if(e)e.value='';renderBrowse();}});
@@ -2528,14 +2738,137 @@ function dzLv(){var d=document.getElementById('dz');if(d)d.classList.remove('dra
 function dzDp(e){e.preventDefault();dzLv();hImgsArr(Array.from(e.dataTransfer.files));}
 function hImgs(e){hImgsArr(Array.from(e.target.files));e.target.value='';}
 function hImgsArr(files){
-  files.slice(0,6-upImgs.length).forEach(function(f){
+  var toProcess=files.slice(0,6-upImgs.length);
+  if(!toProcess.length)return;
+  toProcess.forEach(function(f){
     if(!f.type.startsWith('image/')){toast('Images only.','e');return;}
-    if(f.size>5*1024*1024){toast('Max 5MB each.','e');return;}
-    var r=new FileReader();
-    r.onload=function(ev){upImgs.push(ev.target.result);rPv();};
-    r.readAsDataURL(f);
+    if(f.size>10*1024*1024){toast('Max 10MB per image.','e');return;}
+    compressImage(f).then(function(dataUrl){
+      upImgs.push(dataUrl);
+      rPv();
+    }).catch(function(err){
+      toast('Failed to process image: '+(err.message||'unknown error'),'e');
+    });
   });
 }
+
+// ══ IMAGE COMPRESSION ══
+// Resizes to max 1200px on longest side, converts to WebP (JPEG fallback),
+// targets ~200KB. Uses Canvas API — no external libraries needed.
+var IMG_MAX_DIM=1200;
+var IMG_QUALITY=0.82;
+var IMG_THUMB_DIM=400;
+
+function compressImage(file){
+  return new Promise(function(resolve,reject){
+    var img=new Image();
+    img.onload=function(){
+      try{
+        // Calculate new dimensions (maintain aspect ratio)
+        var w=img.width,h=img.height;
+        if(w>IMG_MAX_DIM||h>IMG_MAX_DIM){
+          if(w>h){h=Math.round(h*(IMG_MAX_DIM/w));w=IMG_MAX_DIM;}
+          else{w=Math.round(w*(IMG_MAX_DIM/h));h=IMG_MAX_DIM;}
+        }
+        // Draw to canvas
+        var canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        var ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        // Try WebP first, fallback to JPEG
+        var format='image/webp';
+        var testUrl=canvas.toDataURL('image/webp',0.5);
+        if(!testUrl||testUrl.indexOf('data:image/webp')<0)format='image/jpeg';
+        // Convert to data URL at target quality
+        var result=canvas.toDataURL(format,IMG_QUALITY);
+        // If still too large (>500KB), reduce quality iteratively
+        var q=IMG_QUALITY;
+        while(result.length>700000&&q>0.3){
+          q-=0.1;
+          result=canvas.toDataURL(format,q);
+        }
+        URL.revokeObjectURL(img.src);
+        resolve(result);
+      }catch(e){reject(e);}
+    };
+    img.onerror=function(){reject(new Error('Could not load image'));};
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+// Generate a smaller thumbnail (used for card views if needed in future)
+function compressThumb(file){
+  return new Promise(function(resolve,reject){
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var w=img.width,h=img.height;
+        if(w>IMG_THUMB_DIM||h>IMG_THUMB_DIM){
+          if(w>h){h=Math.round(h*(IMG_THUMB_DIM/w));w=IMG_THUMB_DIM;}
+          else{w=Math.round(w*(IMG_THUMB_DIM/h));h=IMG_THUMB_DIM;}
+        }
+        var canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        var ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        var format='image/webp';
+        var testUrl=canvas.toDataURL('image/webp',0.5);
+        if(!testUrl||testUrl.indexOf('data:image/webp')<0)format='image/jpeg';
+        var result=canvas.toDataURL(format,0.65);
+        URL.revokeObjectURL(img.src);
+        resolve(result);
+      }catch(e){reject(e);}
+    };
+    img.onerror=function(){reject(new Error('Could not load image'));};
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+// ══ SUPABASE STORAGE UPLOAD ══
+// Converts a base64 data URL to a Blob, uploads to Supabase Storage,
+// and returns the public URL. Used in doSub() before saving the listing.
+function dataUrlToBlob(dataUrl){
+  var parts=dataUrl.split(',');
+  var mime=parts[0].match(/:(.*?);/)[1];
+  var raw=atob(parts[1]);
+  var arr=new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+
+async function uploadListingImages(images){
+  if(!images||!images.length||!cu)return images;
+  var uploaded=[];
+  for(var i=0;i<images.length;i++){
+    var img=images[i];
+    // If it's already a URL (from edit mode), keep it as-is
+    if(img.indexOf('data:')!==0){uploaded.push(img);continue;}
+    try{
+      var blob=dataUrlToBlob(img);
+      var ext=blob.type==='image/webp'?'webp':blob.type==='image/png'?'png':'jpg';
+      var path=cu.id+'/'+Date.now()+'_'+i+'.'+ext;
+      var {data,error}=await sb.storage.from('listing-images').upload(path,blob,{
+        cacheControl:'3600',
+        contentType:blob.type,
+        upsert:false
+      });
+      if(error){
+        toast('Image '+(i+1)+' upload failed: '+error.message,'e');
+        // Fall back to keeping the base64 (works but not ideal)
+        uploaded.push(img);
+        continue;
+      }
+      // Get public URL
+      var {data:urlData}=sb.storage.from('listing-images').getPublicUrl(path);
+      uploaded.push(urlData.publicUrl);
+    }catch(e){
+      toast('Image '+(i+1)+' upload failed.','e');
+      uploaded.push(img);
+    }
+  }
+  return uploaded;
+}
+
 function rPv(){
   var pv=document.getElementById('iPv');if(!pv)return;
   pv.innerHTML=upImgs.map(function(s,i){
@@ -2564,6 +2897,60 @@ function bldLT(){
 }
 function togLT(t){var i=selTags.indexOf(t);if(i>=0)selTags.splice(i,1);else selTags.push(t);bldLT();}
 
+// ══ LISTING EDIT ══
+// Opens the addM modal pre-filled with existing listing data for editing.
+async function editListing(id){
+  var l=(await gL()).find(function(x){return x.id===id;});
+  if(!l){toast('Listing not found.','e');return;}
+  _editingListingId=id;
+  // Set modal title and button text for edit mode
+  var mt=document.getElementById('addMTitle');if(mt)mt.textContent='Edit Listing';
+  var mb=document.getElementById('addMBtn');if(mb)mb.textContent='Save Changes';
+  // Set listing mode (rent/buy)
+  setLM(l.lf);
+  // Pre-fill all fields
+  var setVal=function(fid,v){var e=document.getElementById(fid);if(e)e.value=v||'';};
+  setVal('lTl',l.title);
+  setVal('lCy',l.city);
+  setVal('lLo',l.loc);
+  setVal('lAr',l.area||'');
+  setVal('lRt',l.rent||'');
+  setVal('lDp',l.dep||'');
+  setVal('lPr',l.price||'');
+  setVal('lRe',l.rera);
+  setVal('lOw',l.owner);
+  setVal('lCt',l.contact);
+  setVal('lDs',l.desc);
+  setVal('lFl',l.floor);
+  setVal('lFc',l.facing);
+  setVal('lFn',l.furnish);
+  setVal('lAv',l.avail);
+  // Set dropdowns
+  var tp=document.getElementById('lTp');if(tp)tp.value=l.type||'Apartment';
+  var bd=document.getElementById('lBd');if(bd)bd.value=l.beds||'2';
+  var bt=document.getElementById('lBt');if(bt)bt.value=l.baths||'1';
+  var po=document.getElementById('lPo');if(po)po.value=l.poss||'';
+  var stEl=document.querySelector('#lStW select#lSt');if(stEl)stEl.value=l.stype||'';
+  // Pre-fill tags and amenities
+  selTags=l.tags?l.tags.slice():[];
+  selAmens=l.amens?l.amens.slice():[];
+  // Rebuild tag/amen chip UIs
+  if(typeof mkTags==='function')mkTags('selT',selTags);
+  if(typeof mkAmen==='function'){mkAmen('fRA',selAmens);mkAmen('fBA',selAmens);}
+  // Pre-fill images
+  upImgs=l.images?l.images.slice():[];
+  if(typeof rPv==='function')rPv();
+  // Open the modal
+  openM('addM');
+}
+
+// Reset addM modal back to "new listing" mode
+function resetAddModal(){
+  _editingListingId=null;
+  var mt=document.getElementById('addMTitle');if(mt)mt.textContent='New Property Listing';
+  var mb=document.getElementById('addMBtn');if(mb)mb.textContent='Submit for Review';
+}
+
 async function doSub(){
   var getVal=function(id){var e=document.getElementById(id);return e&&e.value?String(e.value).trim():'';};
   var title=getVal('lTl');
@@ -2579,14 +2966,12 @@ async function doSub(){
   if(!owner)missing.push('Owner / Broker Name');
   if(!contact)missing.push('Contact Number');
   if(missing.length){if(le){le.style.display='';le.textContent='Please fill: '+missing.join(', ')+'.';}return;}
-  // Contact must look like a phone number
   if(contact.replace(/\D/g,'').length<10){if(le){le.style.display='';le.textContent='Please enter a valid 10-digit contact number.';}return;}
   if(lMode==='rent'&&!rv){if(le){le.style.display='';le.textContent='Please enter monthly rent.';}return;}
   if(lMode==='buy'&&!pv){if(le){le.style.display='';le.textContent='Please enter sale price.';}return;}
   if(le)le.style.display='none';
-  // Note: we read lSt via the modal's select by unique scoping — use querySelector to avoid any legacy id collisions
   var saleTypeEl=document.querySelector('#lStW select#lSt');
-  var nl={id:Date.now(),lf:lMode,title:title,city:city,
+  var listingData={lf:lMode,title:title,city:city,
     loc:getVal('lLo'),
     type:getVal('lTp')||'Apartment',
     beds:getVal('lBd')||'2',
@@ -2603,14 +2988,46 @@ async function doSub(){
     owner:owner,contact:contact,agency:cu?cu.agency||'':'',
     desc:getVal('lDs'),
     amens:selAmens.slice(),tags:selTags.slice(),
-    images:upImgs.slice(),verified:false,status:'pending',
-    postedAt:new Date().toISOString().split('T')[0],uid:cu?cu.id:null,urole:cu?cu.role:'owner'
+    images:upImgs.slice()
   };
-  await createListing(nl);closeM('addM');
-  ['lTl','lCy','lLo','lAr','lRt','lDp','lPr','lRe','lOw','lCt','lDs','lFl','lFc','lFn'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var lBdSel=document.getElementById('lBd');if(lBdSel)lBdSel.selectedIndex=1;var lBtSel=document.getElementById('lBt');if(lBtSel)lBtSel.selectedIndex=0;
-  upImgs=[];selTags=[];selAmens=[];
-  toast('Submitted! Admin reviews within 24 hrs. &#10003;');
-  if(cu&&(cu.role==='broker'||cu.role==='owner'))renderLister();
+
+  // Upload images to Supabase Storage (converts base64 → public URLs)
+  var uploadBtn=document.getElementById('addMBtn');
+  var origBtnTxt=uploadBtn?uploadBtn.textContent:'';
+  if(uploadBtn&&listingData.images.some(function(img){return img.indexOf('data:')===0;})){
+    uploadBtn.disabled=true;uploadBtn.textContent='Uploading images…';
+  }
+  listingData.images=await uploadListingImages(listingData.images);
+  if(uploadBtn){uploadBtn.disabled=false;uploadBtn.textContent=origBtnTxt;}
+
+  if(_editingListingId){
+    // ── EDIT MODE: update existing listing, re-set to pending for re-approval ──
+    var row=unmapL(listingData);
+    row.status='pending';
+    row.verified=false;
+    var {error}=await sb.from('listings').update(row).eq('id',_editingListingId);
+    if(error){toast('Failed to update listing: '+error.message,'e');return;}
+    _clr('l');
+    closeM('addM');resetAddModal();
+    ['lTl','lCy','lLo','lAr','lRt','lDp','lPr','lRe','lOw','lCt','lDs','lFl','lFc','lFn'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    upImgs=[];selTags=[];selAmens=[];
+    toast('Listing updated! It will be re-reviewed by admin. &#10003;');
+    if(cu&&(cu.role==='broker'||cu.role==='owner'))await renderLister();
+  } else {
+    // ── CREATE MODE: new listing ──
+    listingData.id=Date.now();
+    listingData.verified=false;
+    listingData.status='pending';
+    listingData.postedAt=new Date().toISOString().split('T')[0];
+    listingData.uid=cu?cu.id:null;
+    listingData.urole=cu?cu.role:'owner';
+    await createListing(listingData);
+    closeM('addM');resetAddModal();
+    ['lTl','lCy','lLo','lAr','lRt','lDp','lPr','lRe','lOw','lCt','lDs','lFl','lFc','lFn'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var lBdSel=document.getElementById('lBd');if(lBdSel)lBdSel.selectedIndex=1;var lBtSel=document.getElementById('lBt');if(lBtSel)lBtSel.selectedIndex=0;
+    upImgs=[];selTags=[];selAmens=[];
+    toast('Submitted! Admin reviews within 24 hrs. &#10003;');
+    if(cu&&(cu.role==='broker'||cu.role==='owner'))await renderLister();
+  }
 }
 
 // ══ USER DASH ══
@@ -2700,6 +3117,7 @@ async function renderLister(){
       +'<span class="pill '+(l.status==='approved'?'pill-g':l.status==='pending'?'pill-y':'pill-r')+'">'+l.status+'</span>'
       +'<div class="li-ac" onclick="event.stopPropagation()">'
       +(l.status==='approved'?'<button class="btn-sm" onclick="event.stopPropagation();showLeads('+l.id+')" style="background:transparent;color:var(--t);border:1px solid var(--sa);border-radius:6px;padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'var(--cr)\';this.style.borderColor=\'var(--tl)\'" onmouseout="this.style.background=\'transparent\';this.style.borderColor=\'var(--sa)\'">Leads ('+lc+')</button>':'')
+      +'<button class="btn-sm" onclick="event.stopPropagation();editListing('+l.id+')" title="Edit listing" style="background:transparent;color:var(--t);border:1px solid var(--sa);border-radius:6px;padding:5px 9px;font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'transparent\'">&#9998; Edit</button>'
       +'<button class="btn-sm" onclick="event.stopPropagation();removeMyListing('+l.id+')" title="Delete listing" style="background:transparent;color:#999;border:1px solid transparent;border-radius:6px;padding:5px 9px;font-size:13px;font-weight:400;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:color .15s;" onmouseover="this.style.color=\'var(--red)\'" onmouseout="this.style.color=\'#999\'">&#128465;</button>'
       +'</div></div>';
   }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No listings yet. Click &ldquo;+ New Listing&rdquo; to get started.</div>';
@@ -3048,16 +3466,24 @@ function openM(id){
   if(id==='addM'){
     if(!cu){openM('authM');return;}
     if(cu.role==='user'){toast('Only owners and brokers can list properties.','e');return;}
-    selTags=[];selAmens=[];upImgs=[];
-    bldLT();bldLA();rPv();setLM('rent');
-    var lo=document.getElementById('lOw'),lc=document.getElementById('lCt'),le=document.getElementById('lErr');
-    if(lo)lo.value=cu.agency?cu.name+' – '+esc(cu.agency):cu.name;
-    if(lc)lc.value=cu.phone||'';
-    if(le)le.style.display='none';
+    // Reset to "new listing" mode (editListing overrides this after openM)
+    if(!_editingListingId){
+      resetAddModal();
+      selTags=[];selAmens=[];upImgs=[];
+      bldLT();bldLA();rPv();setLM('rent');
+      var lo=document.getElementById('lOw'),lc=document.getElementById('lCt'),le=document.getElementById('lErr');
+      if(lo)lo.value=cu.agency?cu.name+' – '+esc(cu.agency):cu.name;
+      if(lc)lc.value=cu.phone||'';
+      if(le)le.style.display='none';
+    }
   }
   var el=document.getElementById(id);if(el)el.classList.add('open');
 }
-function closeM(id){var el=document.getElementById(id);if(el)el.classList.remove('open');}
+function closeM(id){
+  var el=document.getElementById(id);if(el)el.classList.remove('open');
+  // Reset edit mode when closing listing modal
+  if(id==='addM')resetAddModal();
+}
 
 // ══ TOAST ══
 function toast(msg,type){
