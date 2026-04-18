@@ -396,8 +396,13 @@ textarea.fi{resize:vertical;height:72px;}
 .tg.on{border-color:var(--t);background:var(--tl);color:var(--td);}
 
 /* DETAIL VIEW */
-.dv-img{position:relative;height:260px;border-radius:12px;overflow:hidden;background:var(--sa);margin-bottom:14px;}
-.dv-img img{width:100%;height:100%;object-fit:cover;}
+.dv-img{position:relative;height:260px;border-radius:12px;overflow:hidden;background:var(--sa);margin-bottom:4px;touch-action:pan-y pinch-zoom;user-select:none;-webkit-user-select:none;}
+.dv-img img{width:100%;height:100%;object-fit:cover;transition:transform .2s ease;transform-origin:center center;will-change:transform;}
+.dv-img-counter{text-align:center;font-size:12px;color:var(--mu);margin-bottom:12px;font-family:'DM Sans',sans-serif;}
+/* Listing map */
+.listing-map-wrap{margin:16px 0;border-radius:12px;overflow:hidden;border:1px solid var(--sa);}
+.listing-map-wrap h4{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;color:var(--ink);padding:10px 14px 0;margin:0;}
+.listing-map{height:200px;width:100%;z-index:0;}
 .dv-blur{position:absolute;inset:0;backdrop-filter:blur(12px);background:rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
 .dv-blur p{font-size:13px;color:#fff;font-weight:600;text-align:center;padding:0 20px;}
 .info-g{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px;}
@@ -511,6 +516,8 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 </head>
 <body>
 <noscript>
@@ -533,6 +540,16 @@ footer{background:var(--ink);color:rgba(255,255,255,.45);padding:22px 60px;displ
     <button class="nlk" id="nD" style="display:none;" onclick="go('dashboard')">My Account</button>
     <button class="nlk" id="nL" style="display:none;" onclick="go('lister')">My Listings</button>
     <button class="nlk" id="nA" style="display:none;color:#f0d070;font-weight:700;" onclick="go('admin')">⚙ Admin</button>
+    <div id="nNotifWrap" style="display:none;position:relative;">
+      <button onclick="toggleNotifPanel()" style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;position:relative;" title="Notifications" aria-label="Notifications">&#128276;<span id="nNotifBadge" style="display:none;position:absolute;top:-2px;right:0;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:50%;min-width:18px;height:18px;line-height:18px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
+      <div id="nNotifPanel" style="display:none;position:absolute;right:0;top:42px;width:340px;max-height:400px;overflow-y:auto;background:var(--wh);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);border:1px solid var(--sa);z-index:100;">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--sa);display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:14px;font-family:'DM Sans',sans-serif;">Notifications</strong>
+          <button onclick="markAllNotifRead()" style="background:none;border:none;color:var(--t);font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Mark all read</button>
+        </div>
+        <div id="nNotifList" style="padding:4px 0;"></div>
+      </div>
+    </div>
     <button class="btn-nav-login" id="nLg" onclick="openM('authM');setAT('login')">Login</button>
     <button class="btn-nav-signup" id="nRg" onclick="openM('authM');setAT('reg')">Sign Up</button>
     <button class="btn-nav-logout" id="nLo" style="display:none;" onclick="doLogout()">Logout</button>
@@ -1471,19 +1488,50 @@ function renderTurnstile(containerId,tokenSetter){
     setTimeout(function(){renderTurnstile(containerId,tokenSetter);},500);
     return;
   }
-  // Clear existing widget in this container
+  // Remove existing widget before creating new one
+  try{
+    var existingId=(containerId==='turnstileWrap')?_turnstileWidgetId:(containerId==='turnstileLoginWrap')?_turnstileLoginWidgetId:null;
+    if(existingId!==null){
+      try{turnstile.remove(existingId);}catch(e){}
+    }
+  }catch(e){}
+  // Clear container and reset widget ID
   wrap.innerHTML='';
-  var widgetId=turnstile.render(wrap,{
-    sitekey:TURNSTILE_SITEKEY,
-    theme:'light',
-    size:'flexible',
-    callback:function(token){tokenSetter(token);},
-    'expired-callback':function(){tokenSetter(null);},
-    'error-callback':function(){tokenSetter(null);}
-  });
-  // Store widget IDs for reset
-  if(containerId==='turnstileWrap')_turnstileWidgetId=widgetId;
-  else _turnstileLoginWidgetId=widgetId;
+  if(containerId==='turnstileWrap'){_turnstileWidgetId=null;_turnstileToken=null;}
+  else if(containerId==='turnstileLoginWrap'){_turnstileLoginWidgetId=null;_turnstileLoginToken=null;}
+  else{_turnstileResetToken=null;}
+  // Render after a small delay to ensure DOM is ready (modal transition)
+  setTimeout(function(){
+    try{
+      var widgetId=turnstile.render(wrap,{
+        sitekey:TURNSTILE_SITEKEY,
+        theme:'light',
+        size:'flexible',
+        callback:function(token){tokenSetter(token);},
+        'expired-callback':function(){tokenSetter(null);},
+        'error-callback':function(){tokenSetter(null);}
+      });
+      if(containerId==='turnstileWrap')_turnstileWidgetId=widgetId;
+      else if(containerId==='turnstileLoginWrap')_turnstileLoginWidgetId=widgetId;
+    }catch(e){
+      // Retry once after 1 second if render fails
+      setTimeout(function(){
+        try{
+          wrap.innerHTML='';
+          var widgetId=turnstile.render(wrap,{
+            sitekey:TURNSTILE_SITEKEY,
+            theme:'light',
+            size:'flexible',
+            callback:function(token){tokenSetter(token);},
+            'expired-callback':function(){tokenSetter(null);},
+            'error-callback':function(){tokenSetter(null);}
+          });
+          if(containerId==='turnstileWrap')_turnstileWidgetId=widgetId;
+          else if(containerId==='turnstileLoginWrap')_turnstileLoginWidgetId=widgetId;
+        }catch(e2){}
+      },1000);
+    }
+  },150);
 }
 
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
@@ -1738,7 +1786,7 @@ function upNav(){
   var hide=function(id){var e=document.getElementById(id);if(e)e.style.display='none';};
   var set=function(id,h){var e=document.getElementById(id);if(e)e.innerHTML=h;};
   if(cu){
-    hide('nLg');hide('nRg');show('nLo');show('nG');show('nB');
+    hide('nLg');hide('nRg');show('nLo');show('nG');show('nB');show('nNotifWrap');
     set('nG','Hi, '+esc(cu.name));
     set('nB',cu.role==='broker'?'<span class="brk-b">&#127970; Broker</span>':cu.role==='owner'?'<span class="own-b">&#127969; Owner</span>':cu.role==='admin'?'<span style="background:rgba(240,208,112,.2);color:#f0d070;font-size:11px;font-weight:700;padding:2px 9px;border-radius:50px;">Admin</span>':'');
     hide('nD');hide('nL');hide('nA');
@@ -1746,7 +1794,7 @@ function upNav(){
     else if(cu.role==='broker'||cu.role==='owner'){show('nL');show('nPost');}
     else if(cu.role==='admin'){show('nA');hide('nPost');}
   } else {
-    show('nLg');show('nRg');hide('nLo');hide('nG');hide('nB');
+    show('nLg');show('nRg');hide('nLo');hide('nG');hide('nB');hide('nNotifWrap');
     hide('nD');hide('nL');hide('nA');show('nPost');
   }
 }
@@ -1828,6 +1876,7 @@ async function doLogin(){
     resetSessionState();
     cu={id:profile.id,name:profile.name,email:profile.email,phone:profile.phone||'',role:profile.role,agency:profile.agency||'',lic:profile.license_no||'',joinedAt:profile.joined_at?(profile.joined_at+'').split('T')[0]:'',verified:profile.verified||false};
     await loadFavs();
+    await loadNotifs();
     closeM('authM');upNav();
     if(cu.role==='admin'){go('admin');toast('Welcome, Admin &#9881;');}
     else if(cu.role==='user'){go('dashboard');toast('Welcome back, '+esc(cu.name)+'! &#128075;');}
@@ -2679,10 +2728,11 @@ async function viewL(id){
   if(l.images&&l.images.length>0){
     var disp=cu?l.images:l.images.slice(0,2);
     window._vI=disp;window._vIdx=0;
-    imgH='<div class="dv-img">'
+    imgH='<div class="dv-img" id="dvImgWrap">'
       +'<img src="'+disp[0]+'" id="vImg" alt="'+escAttr(l.title)+'" style="width:100%;height:100%;object-fit:cover;"/>'
       +(disp.length>1?'<button class="arr l" onclick="_vS(-1)" aria-label="Previous photo">&#8249;</button><button class="arr r" onclick="_vS(1)" aria-label="Next photo">&#8250;</button>':'')
-      +'</div>';
+      +'</div>'
+      +'<div class="dv-img-counter" id="vImgCounter">'+(disp.length>1?'1 / '+disp.length:'')+'</div>';
     if(!cu&&l.images.length>2){
       imgH+='<div class="lock-box"><div style="font-size:30px;">&#128274;</div>'
         +'<p>'+( l.images.length-2)+' more photo'+(l.images.length-2>1?'s':'')+' unlock after free sign-up.</p>'
@@ -2712,6 +2762,7 @@ async function viewL(id){
     +'</div>'
     +amH
     +'<p style="font-size:13px;line-height:1.75;margin-bottom:13px;">'+esc(l.desc)+'</p>'
+    +'<div class="listing-map-wrap" id="listingMapWrap" style="display:none;"><h4>&#128205; Location</h4><div class="listing-map" id="listingMap"></div></div>'
     +cntH
     +'<button class="btn btn-bl" onclick="closeM(\'viewM\');oCnt('+l.id+')">&#128222; '+(cu?'Contact Directly':'Send Inquiry')+'</button>'
     +'<div style="display:flex;gap:8px;margin-top:10px;">'
@@ -2722,11 +2773,183 @@ async function viewL(id){
   openM('viewM');
   // Set URL hash for shareable deep link
   if(window.history.replaceState)window.history.replaceState(null,null,'#listing/'+id);
+  // Init touch gestures on the image gallery
+  _initGalleryTouch();
+  // Show map for this listing's location
+  showListingMap(l.city,l.loc,l.title);
 }
 window._vS=function(d){
   var len=window._vI.length;window._vIdx=(window._vIdx+d+len)%len;
-  var img=document.getElementById('vImg');if(img)img.src=window._vI[window._vIdx];
+  var img=document.getElementById('vImg');if(img){img.src=window._vI[window._vIdx];img.style.transform='scale(1)';}
+  var ctr=document.getElementById('vImgCounter');if(ctr&&len>1)ctr.textContent=(window._vIdx+1)+' / '+len;
+  // Reset zoom on slide change
+  window._vZoom=1;
 };
+
+// ══ TOUCH SWIPE + PINCH ZOOM ══
+// Vanilla JS — no external libraries. Handles:
+// - Single-finger horizontal swipe to navigate images
+// - Two-finger pinch to zoom in/out
+// - Double-tap to toggle zoom
+
+var _touchState={startX:0,startY:0,startDist:0,swiping:false};
+window._vZoom=1;
+
+function _initGalleryTouch(){
+  var wrap=document.getElementById('dvImgWrap');
+  if(!wrap)return;
+  // Remove old listeners (re-init safe)
+  wrap.removeEventListener('touchstart',_onTouchStart);
+  wrap.removeEventListener('touchmove',_onTouchMove);
+  wrap.removeEventListener('touchend',_onTouchEnd);
+  // Add listeners
+  wrap.addEventListener('touchstart',_onTouchStart,{passive:false});
+  wrap.addEventListener('touchmove',_onTouchMove,{passive:false});
+  wrap.addEventListener('touchend',_onTouchEnd,{passive:true});
+  // Double-tap to zoom
+  wrap.removeEventListener('dblclick',_onDblTap);
+  wrap.addEventListener('dblclick',_onDblTap);
+}
+
+function _getTouchDist(touches){
+  var dx=touches[0].clientX-touches[1].clientX;
+  var dy=touches[0].clientY-touches[1].clientY;
+  return Math.sqrt(dx*dx+dy*dy);
+}
+
+function _onTouchStart(e){
+  if(e.touches.length===1){
+    _touchState.startX=e.touches[0].clientX;
+    _touchState.startY=e.touches[0].clientY;
+    _touchState.swiping=true;
+  }
+  if(e.touches.length===2){
+    // Pinch start
+    _touchState.swiping=false;
+    _touchState.startDist=_getTouchDist(e.touches);
+    e.preventDefault();
+  }
+}
+
+function _onTouchMove(e){
+  if(e.touches.length===2){
+    // Pinch zoom
+    e.preventDefault();
+    var dist=_getTouchDist(e.touches);
+    var scale=dist/_touchState.startDist;
+    var newZoom=Math.max(1,Math.min(4,window._vZoom*scale));
+    var img=document.getElementById('vImg');
+    if(img)img.style.transform='scale('+newZoom+')';
+  }
+  if(e.touches.length===1&&_touchState.swiping&&window._vZoom<=1){
+    // Prevent vertical scroll while swiping horizontally
+    var dx=e.touches[0].clientX-_touchState.startX;
+    var dy=e.touches[0].clientY-_touchState.startY;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>10){
+      e.preventDefault();
+    }
+  }
+}
+
+function _onTouchEnd(e){
+  if(e.changedTouches.length===1&&_touchState.swiping&&window._vZoom<=1){
+    var dx=e.changedTouches[0].clientX-_touchState.startX;
+    var dy=e.changedTouches[0].clientY-_touchState.startY;
+    // Require at least 50px horizontal swipe with more horizontal than vertical movement
+    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){
+      if(dx<0)_vS(1);   // Swipe left → next
+      else _vS(-1);      // Swipe right → prev
+    }
+  }
+  // Pinch end — lock in the new zoom level
+  if(_touchState.startDist>0){
+    var img=document.getElementById('vImg');
+    if(img){
+      var current=img.style.transform.match(/scale\(([\d.]+)\)/);
+      window._vZoom=current?parseFloat(current[1]):1;
+      if(window._vZoom<1.1){window._vZoom=1;img.style.transform='scale(1)';}
+    }
+    _touchState.startDist=0;
+  }
+  _touchState.swiping=false;
+}
+
+function _onDblTap(e){
+  e.preventDefault();
+  var img=document.getElementById('vImg');
+  if(!img)return;
+  if(window._vZoom>1){
+    window._vZoom=1;
+    img.style.transform='scale(1)';
+  } else {
+    window._vZoom=2.5;
+    img.style.transform='scale(2.5)';
+  }
+}
+
+// ══ LISTING MAP (Leaflet + Nominatim) ══
+// Geocodes city+locality to lat/lng using OpenStreetMap's free Nominatim API,
+// then renders a Leaflet map with a marker. No API key needed.
+var _listingMap=null;
+
+async function showListingMap(city,locality,title){
+  var wrap=document.getElementById('listingMapWrap');
+  var mapEl=document.getElementById('listingMap');
+  if(!wrap||!mapEl)return;
+  // Don't show map if no city
+  if(!city){wrap.style.display='none';return;}
+  // Build geocoding query — locality + city + India for best results
+  var query=((locality?locality+', ':'')+city+', India').trim();
+  try{
+    var resp=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(query)+'&limit=1&countrycodes=in',{
+      headers:{'Accept':'application/json'}
+    });
+    var results=await resp.json();
+    if(!results||!results.length){
+      // Retry with just city if locality didn't match
+      if(locality){
+        resp=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(city+', India')+'&limit=1&countrycodes=in',{
+          headers:{'Accept':'application/json'}
+        });
+        results=await resp.json();
+      }
+    }
+    if(!results||!results.length){wrap.style.display='none';return;}
+    var lat=parseFloat(results[0].lat);
+    var lng=parseFloat(results[0].lon);
+    // Show the map container
+    wrap.style.display='';
+    // Destroy previous map instance if exists
+    if(_listingMap){try{_listingMap.remove();}catch(e){}_listingMap=null;}
+    // Wait for Leaflet to be available
+    if(!window.L){wrap.style.display='none';return;}
+    // Small delay for DOM to be ready
+    setTimeout(function(){
+      _listingMap=L.map('listingMap',{
+        scrollWheelZoom:false,
+        zoomControl:true,
+        dragging:true,
+        attributionControl:true
+      }).setView([lat,lng],14);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        maxZoom:19,
+        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+      }).addTo(_listingMap);
+      // Custom marker with listing title
+      L.marker([lat,lng]).addTo(_listingMap)
+        .bindPopup('<strong>'+esc(title)+'</strong><br/>'+esc((locality?locality+', ':'')+city))
+        .openPopup();
+      // Fix Leaflet rendering issue in modals (tiles not loading fully)
+      setTimeout(function(){_listingMap.invalidateSize();},300);
+    },100);
+  }catch(e){
+    wrap.style.display='none';
+  }
+}
+
+// Clean up map when modal closes
+var _origCloseM=closeM;
+// (closeM already handles viewM hash clearing — we piggyback map cleanup)
 
 // ══ SHARE ══
 function _listingUrl(id){
@@ -2791,6 +3014,95 @@ function handleHashRoute(){
 // Listen for hash changes (back/forward navigation, manual URL entry)
 window.addEventListener('hashchange',function(){handleHashRoute();});
 
+
+// ══ NOTIFICATIONS ══
+var _notifs=[];
+var _notifOpen=false;
+
+async function loadNotifs(){
+  if(!cu)return;
+  try{
+    var {data,error}=await sb.from('notifications').select('*').eq('user_id',cu.id).order('created_at',{ascending:false}).limit(30);
+    if(error||!data){_notifs=[];return;}
+    _notifs=data;
+    updateNotifBadge();
+  }catch(e){_notifs=[];}
+}
+
+function updateNotifBadge(){
+  var badge=document.getElementById('nNotifBadge');
+  var unread=_notifs.filter(function(n){return !n.read;}).length;
+  if(badge){
+    if(unread>0){badge.style.display='';badge.textContent=unread>9?'9+':unread;}
+    else{badge.style.display='none';}
+  }
+}
+
+function toggleNotifPanel(){
+  _notifOpen=!_notifOpen;
+  var panel=document.getElementById('nNotifPanel');
+  if(panel)panel.style.display=_notifOpen?'':'none';
+  if(_notifOpen)renderNotifList();
+}
+
+function renderNotifList(){
+  var list=document.getElementById('nNotifList');
+  if(!list)return;
+  if(!_notifs.length){
+    list.innerHTML='<div style="padding:24px;text-align:center;color:var(--mu);font-size:13px;">No notifications yet</div>';
+    return;
+  }
+  list.innerHTML=_notifs.map(function(n){
+    var icon=n.type==='inquiry'?'&#128232;':n.type==='listing_approved'?'&#9989;':n.type==='listing_rejected'?'&#10060;':n.type==='report'?'&#128681;':'&#128276;';
+    var bg=n.read?'':'background:rgba(18,90,81,.04);';
+    var dot=n.read?'':'<div style="width:8px;height:8px;border-radius:50%;background:var(--t);flex-shrink:0;"></div>';
+    var ago=_timeAgo(n.created_at);
+    var click=n.link_id?'onclick="closeNotifPanel();viewL('+n.link_id+')" style="cursor:pointer;"':'';
+    return '<div '+click+' style="padding:10px 16px;border-bottom:1px solid var(--cr);display:flex;gap:10px;align-items:flex-start;transition:background .15s;'+bg+'" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\''+(n.read?'':'rgba(18,90,81,.04)')+'\'">'
+      +'<div style="font-size:20px;flex-shrink:0;margin-top:2px;">'+icon+'</div>'
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-size:13px;font-weight:'+(n.read?'400':'600')+';color:var(--ink);line-height:1.4;">'+esc(n.title)+'</div>'
+      +'<div style="font-size:11px;color:var(--mu);margin-top:2px;">'+esc(n.body)+'</div>'
+      +'<div style="font-size:10px;color:var(--mu);margin-top:4px;">'+ago+'</div>'
+      +'</div>'
+      +dot
+      +'</div>';
+  }).join('');
+}
+
+function closeNotifPanel(){
+  _notifOpen=false;
+  var panel=document.getElementById('nNotifPanel');
+  if(panel)panel.style.display='none';
+}
+
+async function markAllNotifRead(){
+  if(!cu||!_notifs.length)return;
+  var unreadIds=_notifs.filter(function(n){return !n.read;}).map(function(n){return n.id;});
+  if(!unreadIds.length)return;
+  await sb.from('notifications').update({read:true}).in('id',unreadIds);
+  _notifs.forEach(function(n){n.read=true;});
+  updateNotifBadge();
+  renderNotifList();
+}
+
+function _timeAgo(dateStr){
+  var now=Date.now();
+  var then=new Date(dateStr).getTime();
+  var diff=Math.floor((now-then)/1000);
+  if(diff<60)return 'Just now';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  if(diff<604800)return Math.floor(diff/86400)+'d ago';
+  return new Date(dateStr).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+}
+
+// Close notification panel when clicking outside
+document.addEventListener('click',function(e){
+  if(!_notifOpen)return;
+  var wrap=document.getElementById('nNotifWrap');
+  if(wrap&&!wrap.contains(e.target))closeNotifPanel();
+});
 
 // ══ CONTACT ══
 async function oCnt(id){
@@ -3579,9 +3891,12 @@ function closeM(id){
   var el=document.getElementById(id);if(el)el.classList.remove('open');
   // Reset edit mode when closing listing modal
   if(id==='addM')resetAddModal();
-  // Clear listing deep-link hash when closing detail view
-  if(id==='viewM'&&window.location.hash.indexOf('#listing/')===0){
-    if(window.history.replaceState)window.history.replaceState(null,null,window.location.pathname);
+  // Clear listing deep-link hash and destroy map when closing detail view
+  if(id==='viewM'){
+    if(window.location.hash.indexOf('#listing/')===0){
+      if(window.history.replaceState)window.history.replaceState(null,null,window.location.pathname);
+    }
+    if(_listingMap){try{_listingMap.remove();}catch(e){}_listingMap=null;}
   }
 }
 
@@ -3913,6 +4228,7 @@ acInit('lLo','ac-lLo','lLo');     // Listing form locality
       if(profile){
         cu={id:profile.id,name:profile.name,email:profile.email,phone:profile.phone||'',role:profile.role,agency:profile.agency||'',lic:profile.license_no||'',joinedAt:profile.joined_at?(profile.joined_at+'').split('T')[0]:'',verified:profile.verified||false};
         await loadFavs();
+        await loadNotifs();
         upNav();
       }
     }
@@ -3933,6 +4249,8 @@ sb.auth.onAuthStateChange(function(ev,session){
     openM('pwUpdateM');
   }
 });
+// Poll for new notifications every 60 seconds
+setInterval(function(){if(cu)loadNotifs();},60000);
 
 </script>
 </body></html>
