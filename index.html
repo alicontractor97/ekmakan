@@ -2703,13 +2703,83 @@ async function viewL(id){
     +'<p style="font-size:13px;line-height:1.75;margin-bottom:13px;">'+esc(l.desc)+'</p>'
     +cntH
     +'<button class="btn btn-bl" onclick="closeM(\'viewM\');oCnt('+l.id+')">&#128222; '+(cu?'Contact Directly':'Send Inquiry')+'</button>'
+    +'<div style="display:flex;gap:8px;margin-top:10px;">'
+    +'<button onclick="shareWhatsApp('+l.id+')" style="flex:1;padding:11px;background:#25D366;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">&#128172; Share on WhatsApp</button>'
+    +'<button onclick="copyListingLink('+l.id+')" style="flex:1;padding:11px;background:var(--cr);color:var(--ink);border:1.5px solid var(--sa);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">&#128279; Copy Link</button>'
+    +'</div>'
     +'<button onclick="openReport('+l.id+')" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1.5px solid #ffcccc;color:var(--red);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .18s;" onmouseover="this.style.background=\'#fff5f5\'" onmouseout="this.style.background=\'transparent\'">&#128681; Report Discrimination or Unfair Treatment</button>';
   openM('viewM');
+  // Set URL hash for shareable deep link
+  if(window.history.replaceState)window.history.replaceState(null,null,'#listing/'+id);
 }
 window._vS=function(d){
   var len=window._vI.length;window._vIdx=(window._vIdx+d+len)%len;
   var img=document.getElementById('vImg');if(img)img.src=window._vI[window._vIdx];
 };
+
+// ══ SHARE ══
+function _listingUrl(id){
+  return window.location.origin+window.location.pathname+'#listing/'+id;
+}
+
+async function shareWhatsApp(id){
+  var l=(await gL()).find(function(x){return x.id===id;});
+  if(!l)return;
+  var ir=l.lf==='rent';
+  var price=ir?'\u20B9'+l.rent.toLocaleString('en-IN')+'/mo':'\u20B9'+(l.price>=10000000?(l.price/10000000).toFixed(2)+' Cr':(l.price/100000).toFixed(2)+' L');
+  var text=l.title+' \u2014 '+l.city;
+  if(l.loc)text+=', '+l.loc;
+  text+='\n'+price+' \u00B7 '+l.beds+' BHK \u00B7 '+(l.area?l.area+' sq.ft':'');
+  text+='\n\nView on Ek Mak\u0101n: '+_listingUrl(id);
+  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+}
+
+function copyListingLink(id){
+  var url=_listingUrl(id);
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){
+      toast('Link copied to clipboard! &#128279;');
+    }).catch(function(){
+      _fallbackCopy(url);
+    });
+  } else {
+    _fallbackCopy(url);
+  }
+}
+function _fallbackCopy(text){
+  var ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');toast('Link copied! &#128279;');}
+  catch(e){toast('Copy failed. URL: '+text,'e');}
+  document.body.removeChild(ta);
+}
+
+// ══ URL ROUTING ══
+// Handles hash-based deep links: #listing/42, #browse, #dashboard, etc.
+function handleHashRoute(){
+  var hash=window.location.hash;
+  if(!hash||hash==='#')return false;
+  // Skip recovery tokens (handled by Supabase)
+  if(hash.indexOf('access_token')>=0||hash.indexOf('type=recovery')>=0)return false;
+  // Listing deep link: #listing/42
+  var listingMatch=hash.match(/^#listing\/(\d+)$/);
+  if(listingMatch){
+    var lid=Number(listingMatch[1]);
+    viewL(lid);
+    return true;
+  }
+  // Page deep links: #browse, #dashboard, #lister, #admin
+  var pageMatch=hash.match(/^#(home|browse|dashboard|lister|admin)$/);
+  if(pageMatch){
+    go(pageMatch[1]);
+    return true;
+  }
+  return false;
+}
+// Listen for hash changes (back/forward navigation, manual URL entry)
+window.addEventListener('hashchange',function(){handleHashRoute();});
+
 
 // ══ CONTACT ══
 async function oCnt(id){
@@ -3498,6 +3568,10 @@ function closeM(id){
   var el=document.getElementById(id);if(el)el.classList.remove('open');
   // Reset edit mode when closing listing modal
   if(id==='addM')resetAddModal();
+  // Clear listing deep-link hash when closing detail view
+  if(id==='viewM'&&window.location.hash.indexOf('#listing/')===0){
+    if(window.history.replaceState)window.history.replaceState(null,null,window.location.pathname);
+  }
 }
 
 // ══ TOAST ══
@@ -3837,6 +3911,8 @@ acInit('lLo','ac-lLo','lLo');     // Listing form locality
     }
   }catch(e){}
   await renderHome();
+  // Handle deep links on initial page load (e.g. ekmakan.com/#listing/42)
+  handleHashRoute();
 })();
 // Listen for auth state changes (token refresh, sign-out in another tab, recovery)
 sb.auth.onAuthStateChange(function(ev,session){
