@@ -1732,14 +1732,14 @@ function showEmpty(elId,icon,title,sub){
 // ══ DATA ACCESS (Supabase) ══
 async function gL(){
   if(_cacheL)return _cacheL;
-  var {data,error}=await sb.from('listings').select('*').order('posted_at',{ascending:false});
+  var {data,error}=await sb.from('listings').select('id,listing_for,title,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability').order('posted_at',{ascending:false});
   if(error){toast('Failed to load listings. Please refresh.','e');_cacheL=[];return[];}
   _cacheL=(data||[]).map(mapL);
   return _cacheL;
 }
 async function gInq(){
   if(_cacheI)return _cacheI;
-  var {data,error}=await sb.from('inquiries').select('*').order('sent_at',{ascending:false});
+  var {data,error}=await sb.from('inquiries').select('id,listing_id,listing_title,listing_city,listing_for,inquirer_name,inquirer_phone,inquirer_email,message,user_id,sent_at').order('sent_at',{ascending:false});
   if(error){toast('Failed to load inquiries. Please refresh.','e');_cacheI=[];return[];}
   _cacheI=(data||[]).map(mapInq);
   return _cacheI;
@@ -1872,7 +1872,7 @@ async function doLogin(){
   try{
     var {data,error}=await sb.auth.signInWithPassword({email:em,password:pw,options:{captchaToken:_turnstileLoginToken}});
     if(error)throw error;
-    var {data:profile,error:pErr}=await sb.from('users').select('*').eq('id',data.user.id).single();
+    var {data:profile,error:pErr}=await sb.from('users').select('id,name,email,phone,role,agency,license_no,joined_at,verified').eq('id',data.user.id).single();
     if(pErr)throw pErr;
     resetSessionState();
     cu={id:profile.id,name:profile.name,email:profile.email,phone:profile.phone||'',role:profile.role,agency:profile.agency||'',lic:profile.license_no||'',joinedAt:profile.joined_at?(profile.joined_at+'').split('T')[0]:'',verified:profile.verified||false};
@@ -2714,7 +2714,7 @@ async function viewL(id){
   if(!l){
     // Direct fetch by ID — handles deep links before cache is warm
     try{
-      var {data,error}=await sb.from('listings').select('*').eq('id',id).eq('status','approved').single();
+      var {data,error}=await sb.from('listings').select('id,listing_for,title,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability').eq('id',id).eq('status','approved').single();
       if(data&&!error)l=mapL(data);
     }catch(e){}
   }
@@ -3119,7 +3119,7 @@ var _notifOpen=false;
 async function loadNotifs(){
   if(!cu)return;
   try{
-    var {data,error}=await sb.from('notifications').select('*').eq('user_id',cu.id).order('created_at',{ascending:false}).limit(30);
+    var {data,error}=await sb.from('notifications').select('id,type,title,body,link_id,read,created_at').eq('user_id',cu.id).order('created_at',{ascending:false}).limit(30);
     if(error||!data){_notifs=[];return;}
     _notifs=data;
     updateNotifBadge();
@@ -4250,7 +4250,7 @@ function submitContact(e){
 // ══ REPORTS (Supabase) ══
 async function gRpts(){
   if(_cacheR)return _cacheR;
-  var {data,error}=await sb.from('reports').select('*').order('submitted_at',{ascending:false});
+  var {data,error}=await sb.from('reports').select('id,listing_id,listing_title,report_type,description,reporter_name,reporter_contact,reporter_user_id,status,submitted_at').order('submitted_at',{ascending:false});
   if(error){toast('Failed to load reports. Please refresh.','e');_cacheR=[];return[];}
   _cacheR=(data||[]).map(mapRpt);
   return _cacheR;
@@ -4272,7 +4272,7 @@ async function updateReport(id,updates){
 // ══ USERS (Supabase) ══
 async function gU(){
   if(_cacheU)return _cacheU;
-  var {data,error}=await sb.from('users').select('*').order('joined_at',{ascending:false});
+  var {data,error}=await sb.from('users').select('id,name,email,phone,role,agency,license_no,joined_at,verified').order('joined_at',{ascending:false});
   if(error){toast('Failed to load users. Please refresh.','e');_cacheU=[];return[];}
   _cacheU=(data||[]).map(mapUsr);
   return _cacheU;
@@ -4321,7 +4321,7 @@ acInit('lLo','ac-lLo','lLo');     // Listing form locality
 
     var {data:{session}}=await sb.auth.getSession();
     if(session){
-      var {data:profile}=await sb.from('users').select('*').eq('id',session.user.id).single();
+      var {data:profile}=await sb.from('users').select('id,name,email,phone,role,agency,license_no,joined_at,verified').eq('id',session.user.id).single();
       if(profile){
         cu={id:profile.id,name:profile.name,email:profile.email,phone:profile.phone||'',role:profile.role,agency:profile.agency||'',lic:profile.license_no||'',joinedAt:profile.joined_at?(profile.joined_at+'').split('T')[0]:'',verified:profile.verified||false};
         await loadFavs();
