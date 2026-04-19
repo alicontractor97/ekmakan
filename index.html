@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="Ek Makān – India's inclusive property platform. Find homes where every family is welcome. Rent or buy across India. Zero discrimination. ekmakan.com"/>
+<meta name="keywords" content="Ek Makān, ekmakan, inclusive property India, homes for all communities, rent buy home India, barrier-free housing, one home every family"/>
+<meta name="author" content="HAFAR CONTRATECH AI LLP"/>
+<meta name="robots" content="index,follow,max-image-preview:large"/>
+<meta name="googlebot" content="index,follow"/>
+<meta name="format-detection" content="telephone=no"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
+<meta name="color-scheme" content="light"/>
+<meta name="theme-color" content="#125a51"/>
+<meta name="application-name" content="Ek Makān"/>
+<meta name="apple-mobile-web-app-title" content="Ek Makān"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+
+<!-- Open Graph -->
+<meta property="og:site_name" content="Ek Makān"/>
+<meta property="og:title" content="Ek Makān – One Home for Every Family"/>
+<meta property="og:description" content="India’s first inclusive property platform. Verified religion-neutral listings to rent or buy. Zero discrimination, verified listings, all communities welcome."/>
+<meta property="og:type" content="website"/>
+<meta property="og:locale" content="en_IN"/>
+<meta property="og:image" content="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect fill='%23125a51' width='1200' height='630'/%3E%3Ctext x='600' y='300' text-anchor='middle' font-family='Georgia,serif' font-size='120' font-weight='700' fill='white'%3EEk%20Mak%C4%81n%3C/text%3E%3Ctext x='600' y='400' text-anchor='middle' font-family='sans-serif' font-size='32' fill='%23f0d080'%3EOne Home for Every Family%3C/text%3E%3C/svg%3E"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="Ek Makān – One Home for Every Family"/>
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Ek Makān – One Home for Every Family"/>
+<meta name="twitter:description" content="India’s first inclusive property platform. Verified religion-neutral listings to rent or buy."/>
+<meta name="twitter:image" content="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect fill='%23125a51' width='1200' height='630'/%3E%3Ctext x='600' y='300' text-anchor='middle' font-family='Georgia,serif' font-size='120' font-weight='700' fill='white'%3EEk%20Mak%C4%81n%3C/text%3E%3Ctext x='600' y='400' text-anchor='middle' font-family='sans-serif' font-size='32' fill='%23f0d080'%3EOne Home for Every Family%3C/text%3E%3C/svg%3E"/>
+
+<!-- Favicon (inline SVG for single-file deployment) -->
+<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23125a51'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Georgia,serif' font-size='38' font-weight='700' fill='%23f0d080'%3EM%3C/text%3E%3C/svg%3E"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='34' fill='%23125a51'/%3E%3Ctext x='90' y='128' text-anchor='middle' font-family='Georgia,serif' font-size='106' font-weight='700' fill='%23f0d080'%3EM%3C/text%3E%3C/svg%3E"/>
+
+<!-- JSON-LD structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Ek Makān",
+  "alternateName": "EkMakan",
+  "description": "India’s first inclusive property platform. Find religion-neutral homes to rent or buy across India.",
+  "inLanguage": "en-IN",
+  "publisher": {
+    "@type": "Organization",
+    "name": "HAFAR CONTRATECH AI LLP",
+    "description": "Operator of the Ek Makān inclusive property platform",
+    "areaServed": "IN"
+  }
+}
+</script>
+
+<title>Ek Makān – One Home for Every Family</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="app.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+</head>
+<body>
+<noscript>
+<div style="padding:40px 24px;max-width:640px;margin:40px auto;font-family:Georgia,serif;text-align:center;background:#f9f5ee;border:1px solid #e8dcc8;border-radius:16px;color:#1a1a1a;">
+  <h1 style="font-size:32px;margin-bottom:12px;color:#125a51;">Ek Makān</h1>
+  <p style="font-size:14px;color:#6b6b6b;margin-bottom:20px;letter-spacing:2px;text-transform:uppercase;">Inclusive Property Platform</p>
+  <h2 style="font-size:20px;margin-bottom:12px;font-family:sans-serif;">JavaScript Required</h2>
+  <p style="line-height:1.7;font-family:sans-serif;font-size:15px;color:#6b6b6b;">This application requires JavaScript to browse listings and submit inquiries. Please enable JavaScript in your browser settings and reload the page.</p>
+  <p style="line-height:1.7;font-family:sans-serif;font-size:13px;color:#6b6b6b;margin-top:20px;">For assistance, contact us through the email service at your organisation.</p>
+</div>
+</noscript>
+<nav>
+  <div onclick="go('home')" style="cursor:pointer;display:flex;flex-direction:column;justify-content:center;padding:8px 0;">
+    <div class="logo"><span>Ek</span> Makān</div>
+    <span class="logo-sub">One Home for Every Family</span>
+  </div>
+  <div class="nl">
+    <span id="nG" style="font-size:13px;color:rgba(255,255,255,.75);padding:0 5px;display:none;"></span>
+    <span id="nB" style="display:none;"></span>
+    <button class="nlk" id="nD" style="display:none;" onclick="go('dashboard')">My Account</button>
+    <button class="nlk" id="nL" style="display:none;" onclick="go('lister')">My Listings</button>
+    <button class="nlk" id="nA" style="display:none;color:#f0d070;font-weight:700;" onclick="go('admin')">⚙ Admin</button>
+    <div id="nNotifWrap" style="display:none;position:relative;">
+      <button onclick="toggleNotifPanel()" style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;position:relative;" title="Notifications" aria-label="Notifications">&#128276;<span id="nNotifBadge" style="display:none;position:absolute;top:-2px;right:0;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:50%;min-width:18px;height:18px;line-height:18px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
+      <div id="nNotifPanel" style="display:none;position:absolute;right:0;top:42px;width:340px;max-height:400px;overflow-y:auto;background:var(--wh);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);border:1px solid var(--sa);z-index:100;">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--sa);display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:14px;font-family:'DM Sans',sans-serif;">Notifications</strong>
+          <button onclick="markAllNotifRead()" style="background:none;border:none;color:var(--t);font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Mark all read</button>
+        </div>
+        <div id="nNotifList" style="padding:4px 0;"></div>
+      </div>
+    </div>
+    <button class="btn-nav-login" id="nLg" onclick="openM('authM');setAT('login')">Login</button>
+    <button class="btn-nav-signup" id="nRg" onclick="openM('authM');setAT('reg')">Sign Up</button>
+    <button class="btn-nav-logout" id="nLo" style="display:none;" onclick="doLogout()">Logout</button>
+    <button class="btn-nav-post" id="nPost" onclick="openM('addM')">Post Property <span class="free-tag">FREE</span></button>
+  </div>
+</nav>
+
+<!-- QUICK ACTION STRIP - scrollable icon row like 99acres -->
+<div id="qaStrip" style="background:#f0f9f8;border-bottom:1px solid var(--sa);overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+  <div style="display:flex;width:100%;justify-content:space-between;padding:0;">
+    <button onclick="setBMode('buy');go('browse')" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:5px;padding:12px 18px;background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;transition:border-color .18s;" onmouseover="this.style.borderBottomColor='var(--t)'" onmouseout="this.style.borderBottomColor='transparent'">
+      <span style="font-size:22px;">🏠</span><span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;">Buy</span>
+    </button>
+    <button onclick="setBMode('rent');go('browse')" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:5px;padding:12px 18px;background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;transition:border-color .18s;" onmouseover="this.style.borderBottomColor='var(--t)'" onmouseout="this.style.borderBottomColor='transparent'">
+      <span style="font-size:22px;">🔑</span><span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;">Rent</span>
+    </button>
+    <button onclick="qaNewProjects()" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:5px;padding:12px 18px;background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;transition:border-color .18s;" onmouseover="this.style.borderBottomColor='var(--t)'" onmouseout="this.style.borderBottomColor='transparent'">
+      <span style="font-size:22px;">✨</span><span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;">New Projects</span>
+    </button>
+    <button onclick="qaPG()" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:5px;padding:12px 18px;background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;transition:border-color .18s;" onmouseover="this.style.borderBottomColor='var(--t)'" onmouseout="this.style.borderBottomColor='transparent'">
+      <span style="font-size:22px;">🛏️</span><span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;">PG / Room</span>
+    </button>
+    <button onclick="openM('authM');setAT('reg');setRR('owner')" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:5px;padding:12px 18px;background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;transition:border-color .18s;" onmouseover="this.style.borderBottomColor='var(--t)'" onmouseout="this.style.borderBottomColor='transparent'">
+      <span style="font-size:22px;">🏡</span><span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;">List as Owner</span>
+    </button>
+    <button onclick="openM('authM');setAT('reg');setRR('broker')" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:5px;padding:12px 18px;background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;transition:border-color .18s;" onmouseover="this.style.borderBottomColor='var(--t)'" onmouseout="this.style.borderBottomColor='transparent'">
+      <span style="font-size:22px;">🏢</span><span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;">Join as Broker</span>
+    </button>
+    <button onclick="qaRERA()" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:5px;padding:12px 18px;background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;transition:border-color .18s;" onmouseover="this.style.borderBottomColor='var(--gr)'" onmouseout="this.style.borderBottomColor='transparent'">
+      <span style="font-size:22px;">✅</span><span style="font-size:12px;font-weight:600;color:var(--gr);font-family:'DM Sans',sans-serif;">RERA Listed</span>
+    </button>
+    <button onclick="qaVerified()" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:5px;padding:12px 18px;background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;transition:border-color .18s;" onmouseover="this.style.borderBottomColor='var(--t)'" onmouseout="this.style.borderBottomColor='transparent'">
+      <span style="font-size:22px;">🛡️</span><span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;">Verified</span>
+    </button>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="pg-home" class="page active">
+  <div class="hero">
+    <div class="hero-in">
+      <div class="hero-text">
+        <div class="hero-badge">✦ One Home for Every Family · ekmakan.com</div>
+        <h1>Find a home that<br/><em>truly welcomes you</em></h1>
+        <p class="hero-sub">Discover verified homes where every family is welcomed. Rent or buy with confidence — no barriers, no questions asked.</p>
+        <div class="stats-strip">
+          <div class="ss"><div class="ss-n">12,400+</div><div class="ss-l">Listings</div></div>
+          <div class="ss"><div class="ss-n">28</div><div class="ss-l">Cities</div></div>
+          <div class="ss"><div class="ss-n">3,800+</div><div class="ss-l">Families Housed</div></div>
+          <div class="ss"><div class="ss-n">96%</div><div class="ss-l">Satisfaction</div></div>
+        </div>
+      </div>
+      <div class="hero-right">
+      <div class="srch-box">
+        <div class="mode-bar">
+          <button class="mb-btn ar" id="hmr" onclick="setHMode('rent')">🏠 Rent</button>
+          <button class="mb-btn" id="hmb" onclick="setHMode('buy')">🔑 Buy</button>
+        </div>
+        <!-- RENT SEARCH -->
+        <div id="hfr">
+          <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hrc" placeholder="Mumbai, Hyderabad, Delhi…" autocomplete="off"/><div class="ac-list" id="ac-hrc"></div></div></div>
+          <div class="srow srow-sec"><span class="slbl">Type</span><select class="sinp" id="hrt"><option value="">Any type</option><option>Apartment</option><option>Flat</option><option>House</option><option>Villa</option><option>PG / Room</option></select></div>
+          <div class="srow srow-sec"><span class="slbl">Max Rent</span><div style="flex:1;display:flex;align-items:center;gap:0;height:36px;">
+<input type="hidden" id="hrr" value="0"/>
+<button type="button" onclick="stepRent(-1)" aria-label="Decrease max rent" style="width:32px;height:32px;border:1.5px solid var(--sa);border-radius:7px 0 0 7px;background:var(--cr);color:var(--ink);font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;flex-shrink:0;transition:background .15s;" onmouseover="this.style.background='var(--tl)'" onmouseout="this.style.background='var(--cr)'">−</button>
+<span id="hrrLbl" style="flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--t);border-top:1.5px solid var(--sa);border-bottom:1.5px solid var(--sa);height:32px;line-height:32px;white-space:nowrap;min-width:80px;user-select:none;">No limit</span>
+<button type="button" onclick="stepRent(1)" aria-label="Increase max rent" style="width:32px;height:32px;border:1.5px solid var(--sa);border-radius:0 7px 7px 0;background:var(--cr);color:var(--ink);font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;flex-shrink:0;transition:background .15s;" onmouseover="this.style.background='var(--tl)'" onmouseout="this.style.background='var(--cr)'">+</button>
+</div></div>
+          <div class="srow srow-sec"><span class="slbl">Beds</span><select class="sinp" id="hrb"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5+</option></select></div>
+          <button class="smore-btn" id="smore-r" onclick="toggleSMore('r')">+ More options</button>
+          <button class="sgo-btn" onclick="doHS()">Search →</button>
+        </div>
+        <!-- BUY SEARCH -->
+        <div id="hfb" style="display:none;">
+          <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hbc" placeholder="Bengaluru, Pune, Mumbai…" autocomplete="off"/><div class="ac-list" id="ac-hbc"></div></div></div>
+          <div class="srow srow-sec"><span class="slbl">Type</span><select class="sinp" id="hbt"><option value="">Any type</option><option>Apartment</option><option>House</option><option>Villa</option><option>Plot</option></select></div>
+          <div class="srow srow-sec"><span class="slbl">Budget</span><select class="sinp" id="hbb"><option value="">Any budget</option><option value="2500000">Under 25L</option><option value="5000000">Under 50L</option><option value="10000000">Under 1Cr</option><option value="25000000">Under 2.5Cr</option></select></div>
+          <div class="srow srow-sec"><span class="slbl">Beds</span><select class="sinp" id="hbd"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5+</option></select></div>
+          <button class="smore-btn" id="smore-b" onclick="toggleSMore('b')">+ More options</button>
+          <button class="sgo-btn buy" onclick="doHS()">Search →</button>
+        </div>
+      </div>
+      </div><!-- /hero-right -->
+    </div>
+  </div>
+
+  <!-- City Cards -->
+  <div class="sec sec-w">
+    <div class="sec-tag">Explore by City</div>
+    <div class="sec-hdr"><h2>Where are you looking?</h2></div>
+    <div class="city-row" id="cityCds"></div>
+  </div>
+
+  <!-- Rent -->
+  <div class="sec">
+    <div class="sec-tag">For Rent</div>
+    <div class="sec-hdr">
+      <h2>Rentals ready for you</h2>
+      <button class="btn btn-o btn-sm" onclick="setBMode('rent');go('browse')">View all →</button>
+    </div>
+    <div class="g3" id="hFR"></div>
+  </div>
+
+  <!-- How it works -->
+  <div class="sec sec-w">
+    <div class="sec-tag">How It Works</div>
+    <h2 style="text-align:center;margin-bottom:44px;">Four steps to your inclusive home</h2>
+    <div class="how">
+      <div class="hw"><div class="hw-dot">🔍</div><h3>Search Freely</h3><p>Powerful filters for rent or buy — zero bias.</p></div>
+      <div class="hw"><div class="hw-dot">✅</div><h3>All Verified</h3><p>Owners sign our <span onclick="openM('charterM')" style="color:var(--g);cursor:pointer;font-weight:700;text-decoration:underline;">Inclusion Charter</span> before listing.</p></div>
+      <div class="hw"><div class="hw-dot">🔒</div><h3>Sign Up to Connect</h3><p>Full details unlock after free registration.</p></div>
+      <div class="hw"><div class="hw-dot">🏠</div><h3>Move In / Buy</h3><p>Find your home with dignity.</p></div>
+    </div>
+  </div>
+
+  <!-- Buy -->
+  <div class="sec">
+    <div class="sec-tag">For Sale</div>
+    <div class="sec-hdr">
+      <h2>Properties for purchase</h2>
+      <button class="btn btn-o btn-sm" onclick="setBMode('buy');go('browse')">View all →</button>
+    </div>
+    <div class="g3" id="hFB"></div>
+  </div>
+
+  <!-- Why Makan -->
+  <div class="sec sec-w">
+    <div class="sec-tag">Why Ek Makān</div>
+    <div class="why">
+      <div class="why-img" style="background:var(--td);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;">
+        <div style="font-family:'Playfair Display',serif;font-size:72px;font-weight:700;color:#fff;letter-spacing:-2px;line-height:1;"><span style="color:#f0d070;">Ek</span> Makān</div>
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.55);letter-spacing:3px;text-transform:uppercase;">Inclusive Property Platform</div>
+        <div style="width:48px;height:3px;background:rgba(240,208,112,.5);border-radius:2px;"></div>
+        <div style="font-family:'Playfair Display',serif;font-size:18px;color:rgba(255,255,255,.75);text-align:center;line-height:1.6;font-style:italic;max-width:240px;">"Every family deserves<br/>a home they&rsquo;re proud of"</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px;">
+          <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:50px;padding:7px 16px;font-size:12px;color:rgba(255,255,255,.8);font-weight:600;">&#10003; Verified Listings</div>
+          <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:50px;padding:7px 16px;font-size:12px;color:rgba(255,255,255,.8);font-weight:600;">&#10003; Zero Barriers</div>
+          <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:50px;padding:7px 16px;font-size:12px;color:rgba(255,255,255,.8);font-weight:600;">&#10003; All Welcome</div>
+        </div>
+      </div>
+      <div>
+        <h2 style="margin-bottom:22px;">A platform built on<br/>dignity, not data</h2>
+        <div class="why-pts">
+          <div class="wp"><div class="wp-ic">📜</div><div><h4 onclick="openM('charterM')" style="cursor:pointer;color:var(--t);">Inclusion Charter ↗</h4><p>Every lister signs a charter. No discrimination by religion, caste, or diet — guaranteed.</p></div></div>
+          <div class="wp"><div class="wp-ic">🛡️</div><div><h4>Contact Details After Sign-Up</h4><p>First 2 photos free. All photos and contact info unlock after quick free registration.</p></div></div>
+          <div class="wp"><div class="wp-ic">⭐</div><div><h4 onclick="openM('reportM')" style="cursor:pointer;color:var(--red);">&#128681; Bias Reporting</h4><p>Experienced unfair treatment? <span onclick="openM('reportM')" style="color:var(--red);cursor:pointer;font-weight:700;text-decoration:underline;">File a report instantly.</span> Bad actors removed within 48 hours.</p></div></div>
+          <div class="wp"><div class="wp-ic">🌍</div><div><h4>Open to All</h4><p>Regardless of background, belief, or community — Ek Makān is for every Indian family.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Testimonials -->
+  <div class="sec">
+    <div class="sec-tag">Stories</div>
+    <h2>What families say</h2>
+    <div class="test-grid">
+      <div class="test"><q>After being rejected 6 times for my religion, Ek Makān was the first place I found a home without a single awkward question.</q><div class="test-av"><div class="av-circle" style="background:var(--tl);">👨</div><div><div class="av-name">Arshad Hussain</div><div class="av-loc">Mumbai · Renter</div></div></div></div>
+      <div class="test"><q>I listed here because I believe everyone deserves a home. The platform made it so easy and my tenants have been wonderful.</q><div class="test-av"><div class="av-circle" style="background:var(--gl);">👩</div><div><div class="av-name">Kavitha Reddy</div><div class="av-loc">Hyderabad · Owner</div></div></div></div>
+      <div class="test"><q>I found a RERA-registered 3BHK near a masjid with a gym in under 10 minutes. This platform understands what we actually need.</q><div class="test-av"><div class="av-circle" style="background:#f0eaf8;">👨</div><div><div class="av-name">Salman Shaikh</div><div class="av-loc">Bengaluru · Buyer</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- Join -->
+  <div class="sec sec-dk">
+    <div class="sec-tag">Join Ek Makān</div>
+    <h2>Renter, buyer, owner, or broker?</h2>
+    <div class="join-grid">
+      <div class="jc" onclick="openM('authM');setAT('reg');setRR('user')"><div class="ji">🏠</div><h3>Looking for a Home</h3><p>Rent or buy. Browse, filter, save, and contact listings anonymously. Free forever.</p><button class="btn btn-sm btn-w">Sign Up — Rent or Buy</button></div>
+      <div class="jc" onclick="openM('authM');setAT('reg');setRR('owner')"><div class="ji">🏡</div><h3>Property Owner</h3><p>List directly — no broker needed. Reach verified renters and buyers.</p><button class="btn btn-sm btn-g">List as Owner</button></div>
+      <div class="jc" onclick="openM('authM');setAT('reg');setRR('broker')"><div class="ji">🏢</div><h3>Broker / Agent</h3><p>Manage listings with photos, dashboard and lead tracking.</p><button class="btn btn-sm btn-p" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);">Register as Broker</button></div>
+      <div class="jc" onclick="setBMode('buy');go('browse')"><div class="ji">🔑</div><h3>Buying a Property?</h3><p>Advanced buy filters: RERA, possession, facing direction, floor preference and more.</p><button class="btn btn-sm" style="background:var(--g);">Browse for Sale</button></div>
+    </div>
+  </div>
+
+  <div class="cta-band">
+    <div><h2>List Your Property — Free</h2><p>Owners and brokers welcome. Connect with thousands of inclusive-minded renters and buyers across India.</p></div>
+    <div class="cta-btns">
+      <button class="btn btn-w" onclick="openM('authM');setAT('reg');setRR('owner')">🏡 List as Owner</button>
+      <button class="btn btn-g" onclick="openM('authM');setAT('reg');setRR('broker')">🏢 Register as Broker</button>
+    </div>
+  </div>
+</div>
+
+<!-- BROWSE -->
+<div id="pg-browse" class="page">
+  <div class="list-topbar" id="listTopbar">
+    <div class="browse-mode">
+      <button class="bm-btn ar" id="bmr" onclick="setBMode('rent')">🏠 Rent</button>
+      <button class="bm-btn" id="bmb" onclick="setBMode('buy')">🔑 Buy</button>
+    </div>
+    <span id="bCount"></span>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <div style="position:relative;">
+        <input type="text" id="bSearch" placeholder="Search listings…" oninput="dRender()" style="font-size:13px;padding:7px 12px 7px 30px;border:1px solid var(--sa);border-radius:8px;font-family:'DM Sans',sans-serif;width:180px;background:var(--wh);" autocomplete="off"/>
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--mu);pointer-events:none;">&#128269;</span>
+      </div>
+      <label style="font-size:12px;color:var(--mu);">Sort:</label>
+      <select class="sort-sel" id="bSort" onchange="renderBrowse()"><option value="new">Newest</option><option value="pa">Price: Low→High</option><option value="pd">Price: High→Low</option><option value="aa">Area: Largest</option><option value="ad">Area: Smallest</option></select>
+      <button onclick="document.getElementById('fp').classList.toggle('mob-open')" id="mobFBtn" style="display:none;background:var(--t);color:#fff;border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;align-items:center;gap:5px;">&#9776; Filters</button>
+
+    </div>
+  </div>
+  <div id="activeChips" class="active-chips"></div>
+  <div class="browse-layout">
+    <div class="filter-panel" id="fp">
+      <div class="fp-head">
+        <h3>Filters</h3>
+        <button onclick="clearAllF()" style="font-size:12px;background:none;border:none;color:var(--t);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:700;">Clear All</button>
+      </div>
+      <div class="fp-body">
+        <div id="rFilts">
+          <div class="fs"><h4>Location</h4><div class="fc-wrap"><input type="text" id="fCity" placeholder="City or locality…" oninput="dRender()" autocomplete="off"/><div class="ac-list" id="ac-fCity"></div></div></div>
+          <div class="fs"><h4>Monthly Rent (₹)</h4><div class="rr"><input type="number" id="fRmn" placeholder="Min" oninput="dRender()"/><span class="rsep">–</span><input type="number" id="fRmx" placeholder="Max" oninput="dRender()"/></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;"><span onclick="setRentPreset(0,10000)" class="preset-chip">Up to 10K</span><span onclick="setRentPreset(0,25000)" class="preset-chip">Up to 25K</span><span onclick="setRentPreset(0,50000)" class="preset-chip">Up to 50K</span><span onclick="setRentPreset(0,100000)" class="preset-chip">Up to 1L</span><span onclick="setRentPreset(0,500000)" class="preset-chip">Up to 5L</span></div></div>
+          <div class="fs"><h4>Property Type</h4><div class="chips" id="fRT"></div></div>
+          <div class="fs"><h4>Bedrooms</h4><div class="chips" id="fRB"></div></div>
+          <div class="fs"><h4>Furnishing</h4><div class="chips" id="fRF"></div></div>
+          <div class="fs"><h4>Availability</h4><select id="fAv" class="fi" style="font-size:13px;" onchange="renderBrowse()"><option value="">Any</option><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
+          <div class="fs"><h4>Amenities</h4><div class="amen-chips" id="fRA"></div></div>
+          <div class="fs"><h4>More</h4><div class="chips"><div class="ck" id="ckV" onclick="togBool('ver',this)">✓ Verified</div><div class="ck" id="ckR" onclick="togBool('rer',this)">RERA ✓</div></div></div>
+        </div>
+        <div id="bFilts" style="display:none;">
+          <div class="fs"><h4>Location</h4><div class="fc-wrap"><input type="text" id="fBCity" placeholder="City or locality…" oninput="dRender()" autocomplete="off"/><div class="ac-list" id="ac-fBCity"></div></div></div>
+          <div class="fs"><h4>Budget (₹)</h4><div class="rr"><input type="number" id="fBmn" placeholder="Min" oninput="dRender()"/><span class="rsep">–</span><input type="number" id="fBmx" placeholder="Max" oninput="dRender()"/></div></div>
+          <div class="fs"><h4>Property Type</h4><div class="chips" id="fBT"></div></div>
+          <div class="fs"><h4>Bedrooms</h4><div class="chips" id="fBB"></div></div>
+          <div class="fs"><h4>Area (sq.ft)</h4><div class="rr"><input type="number" id="fAmn" placeholder="Min" oninput="dRender()"/><span class="rsep">–</span><input type="number" id="fAmx" placeholder="Max" oninput="dRender()"/></div></div>
+          <div class="fs"><h4>Possession</h4><div class="chips" id="fBPo"></div></div>
+          <div class="fs"><h4>Sale Type</h4><div class="chips" id="fBST"></div></div>
+          <div class="fs"><h4>Furnishing</h4><div class="chips" id="fBF"></div></div>
+          <div class="fs"><h4>Facing</h4><div class="chips" id="fBFc"></div></div>
+          <div class="fs"><h4>Floor</h4><div class="chips" id="fBFl"></div></div>
+          <div class="fs"><h4>Amenities</h4><div class="amen-chips" id="fBA"></div></div>
+          <div class="fs"><h4>More</h4><div class="chips"><div class="ck" id="ckV2" onclick="togBool('ver',this)">✓ Verified</div><div class="ck" id="ckR2" onclick="togBool('rer',this)">RERA ✓</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="list-area">
+      <div class="list-grid"><div class="g3" id="bGrid"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="pg-dashboard" class="page" style="padding:40px 60px;background:var(--cr);">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
+    <h1 style="font-family:'Playfair Display',serif;font-size:26px;">My Account</h1>
+    <button class="btn btn-o btn-sm" onclick="openEditProfile()">&#9998; Edit Profile</button>
+  </div>
+  <p id="dG" style="font-size:13px;color:var(--mu);margin-bottom:22px;"></p>
+  <div class="g4" id="dSt" style="margin-bottom:26px;"></div>
+  <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:12px;">My Inquiries</h2>
+  <div id="dInq"></div>
+  <div id="dSav"></div>
+</div>
+
+<!-- LISTER -->
+<div id="pg-lister" class="page" style="padding:40px 60px;background:var(--cr);">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:3px;">
+        <h1 style="font-family:'Playfair Display',serif;font-size:26px;" id="lTit">My Listings</h1>
+        <span id="lBdg"></span>
+      </div>
+      <p id="lGrt" style="font-size:13px;color:var(--mu);"></p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-o btn-sm" onclick="openEditProfile()">&#9998; Edit Profile</button>
+      <button class="btn" onclick="openM('addM')">+ New Listing</button>
+    </div>
+  </div>
+  <div class="g4" id="lStats" style="margin-bottom:24px;"></div>
+  <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:12px;">My Properties</h2>
+  <div id="lLst"></div>
+</div>
+
+<!-- ADMIN -->
+<div id="pg-admin" class="page" style="padding:40px 60px;background:var(--cr);">
+  <h1 style="font-family:'Playfair Display',serif;font-size:26px;margin-bottom:4px;">⚙ Admin Dashboard</h1>
+  <p style="font-size:13px;color:var(--mu);margin-bottom:20px;">Full platform control — Ek Makān</p>
+  <div class="atabs">
+    <button class="atab on" onclick="aTab('ov',this)">Overview</button>
+    <button class="atab" onclick="aTab('al',this)">All Listings</button>
+    <button class="atab" onclick="aTab('pd',this)">Pending</button>
+    <button class="atab" onclick="aTab('ls',this)">Brokers &amp; Owners</button>
+    <button class="atab" onclick="aTab('tn',this)">Tenants</button>
+    <button class="atab" onclick="aTab('ld',this)">Leads &amp; Export</button>
+    <button class="atab" onclick="aTab('rp',this)" style="color:var(--red);font-weight:700;">&#128681; Reports</button>
+  </div>
+  <div id="aC"></div>
+</div>
+<!-- MODALS -->
+<div id="authM" class="mo" onclick="ovcM(event,'authM')">
+  <div class="mb" style="max-width:460px;">
+    <div class="mh">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;">Welcome to Ek Makān</h2>
+        <p style="font-size:12px;color:var(--mu);margin-top:2px;">India's inclusive property platform</p>
+      </div>
+      <button class="mc" onclick="closeM('authM')">&#10005;</button>
+    </div>
+    <div class="rtabs" style="margin-bottom:18px;">
+      <button class="rtab on" id="atL" onclick="setAT('login')">Sign In</button>
+      <button class="rtab" id="atR" onclick="setAT('reg')">Create Account</button>
+    </div>
+    <div id="aErr" class="al ale" style="display:none;margin-bottom:12px;"></div>
+
+    <!-- LOGIN -->
+    <div id="lFrm">
+      <div class="fg"><label class="flbl">Email Address</label><input class="fi" type="email" id="lEm" placeholder="you@example.com" autocomplete="email"/></div>
+      <div class="fg">
+        <label class="flbl">Password</label>
+        <div style="position:relative;">
+          <input class="fi" type="password" id="lPw" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:44px;"/>
+          <button type="button" onclick="togglePw('lPw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:16px;">&#128065;</button>
+        </div>
+      </div>
+      <div id="turnstileLoginWrap" style="margin-bottom:12px;display:flex;justify-content:center;"></div>
+      <button class="btn btn-bl" onclick="doLogin()">Sign In</button>
+      <p style="text-align:center;margin-top:12px;"><a href="#" onclick="event.preventDefault();setAT('reset')" style="font-size:12px;color:var(--t);text-decoration:none;font-weight:600;">Forgot your password?</a></p>
+    </div>
+
+    <!-- PASSWORD RESET REQUEST -->
+    <div id="pwResetFrm" style="display:none;">
+      <div style="text-align:center;margin-bottom:18px;">
+        <div style="font-size:36px;margin-bottom:8px;">&#128274;</div>
+        <p style="font-size:13px;color:var(--mu);line-height:1.6;">Enter your email address and we'll send you a link to reset your password.</p>
+      </div>
+      <div class="fg"><label class="flbl">Email Address</label><input class="fi" type="email" id="resetEm" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter')doResetPw()"/></div>
+      <div id="turnstileResetWrap" style="margin-bottom:12px;display:flex;justify-content:center;"></div>
+      <button class="btn btn-bl" id="resetBtn" onclick="doResetPw()">Send Reset Link</button>
+      <p style="text-align:center;margin-top:14px;"><a href="#" onclick="event.preventDefault();setAT('login')" style="font-size:12px;color:var(--t);text-decoration:none;font-weight:600;">&#8592; Back to Sign In</a></p>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="rFrm" style="display:none;" data-role="user">
+      <p style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">I am a</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div id="rrU" onclick="setRR('user')" class="role-card on">
+          <div style="font-size:22px;margin-bottom:4px;">&#127968;</div>
+          <div style="font-size:12px;font-weight:700;">Rent or Buy</div>
+          <div style="font-size:10px;color:var(--mu);margin-top:2px;">Looking for a home</div>
+        </div>
+        <div id="rrO" onclick="setRR('owner')" class="role-card">
+          <div style="font-size:22px;margin-bottom:4px;">&#127969;</div>
+          <div style="font-size:12px;font-weight:700;">Owner</div>
+          <div style="font-size:10px;color:var(--mu);margin-top:2px;">List my property</div>
+        </div>
+        <div id="rrB" onclick="setRR('broker')" class="role-card">
+          <div style="font-size:22px;margin-bottom:4px;">&#127970;</div>
+          <div style="font-size:12px;font-weight:700;">Broker</div>
+          <div style="font-size:10px;color:var(--mu);margin-top:2px;">Agent / Agency</div>
+        </div>
+      </div>
+      <div id="rNote" class="al ali" style="font-size:12px;margin-bottom:10px;">Browse, save, and contact listings for renting or buying. Free forever.</div>
+      <div class="fg2">
+        <div class="fg s2"><label class="flbl">Full Name *</label><input class="fi" type="text" id="rNm" placeholder="Your full name" autocomplete="name"/></div>
+        <div class="fg"><label class="flbl">Email *</label><input class="fi" type="email" id="rEm" placeholder="you@example.com" autocomplete="email"/></div>
+        <div class="fg"><label class="flbl">Mobile *</label><input class="fi" type="tel" id="rPh" placeholder="+91 98765 43210" autocomplete="tel"/></div>
+        <div class="fg s2">
+          <label class="flbl">Password *</label>
+          <div style="position:relative;">
+            <input class="fi" type="password" id="rPw" placeholder="Min. 8 characters" autocomplete="new-password" oninput="checkPwStr(this)" style="padding-right:44px;"/>
+            <button type="button" onclick="togglePw('rPw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:16px;">&#128065;</button>
+          </div>
+          <div id="pwStr" style="margin-top:6px;display:none;">
+            <div style="display:flex;gap:3px;margin-bottom:3px;"><div class="ps-bar" id="ps1"></div><div class="ps-bar" id="ps2"></div><div class="ps-bar" id="ps3"></div><div class="ps-bar" id="ps4"></div></div>
+            <span id="psLbl" style="font-size:11px;color:var(--mu);"></span>
+          </div>
+        </div>
+        <div class="fg s2" id="rAg" style="display:none;"><label class="flbl">Agency / Company</label><input class="fi" type="text" id="rAn" placeholder="e.g. Khan Properties"/></div>
+        <div class="fg s2" id="rLc" style="display:none;"><label class="flbl">RERA / License No.</label><input class="fi" type="text" id="rLn" placeholder="RERA/MH/2024/001"/></div>
+      </div>
+      <div style="background:var(--cr);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.5;">
+        &#9989; By creating an account you agree to our <span onclick="openM('charterM')" style="color:var(--t);cursor:pointer;font-weight:700;">Inclusion Charter</span> and <span onclick="openM('termsM')" style="color:var(--t);cursor:pointer;font-weight:700;">Terms of Service</span>.
+      </div>
+      <div id="turnstileWrap" style="margin-bottom:12px;display:flex;justify-content:center;"></div>
+      <button class="btn btn-bl" onclick="doReg()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- PASSWORD UPDATE (shown after clicking recovery link from email) -->
+<div id="pwUpdateM" class="mo" onclick="ovcM(event,'pwUpdateM')">
+  <div class="mb" style="max-width:420px;">
+    <div class="mh">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;">Set New Password</h2>
+        <p style="font-size:12px;color:var(--mu);margin-top:2px;">Choose a strong password for your Ek Makān account</p>
+      </div>
+      <button class="mc" onclick="closeM('pwUpdateM')" aria-label="Close dialog">&#10005;</button>
+    </div>
+    <div id="pwUpdateErr" class="al ale" style="display:none;margin-bottom:12px;"></div>
+    <div class="fg">
+      <label class="flbl">New Password</label>
+      <div style="position:relative;">
+        <input class="fi" type="password" id="newPw1" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password" style="padding-right:44px;" onkeydown="if(event.key==='Enter')document.getElementById('newPw2').focus()"/>
+        <button type="button" onclick="togglePw('newPw1',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:16px;">&#128065;</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="flbl">Confirm New Password</label>
+      <div style="position:relative;">
+        <input class="fi" type="password" id="newPw2" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password" style="padding-right:44px;" onkeydown="if(event.key==='Enter')doUpdatePw()"/>
+        <button type="button" onclick="togglePw('newPw2',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:16px;">&#128065;</button>
+      </div>
+    </div>
+    <button class="btn btn-bl" id="pwUpdateBtn" onclick="doUpdatePw()">Update Password</button>
+  </div>
+</div>
+
+<!-- EDIT PROFILE -->
+<div id="profileM" class="mo" onclick="ovcM(event,'profileM')">
+  <div class="mb" style="max-width:480px;">
+    <div class="mh">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;">Edit Profile</h2>
+        <p style="font-size:12px;color:var(--mu);margin-top:2px;">Update your account details</p>
+      </div>
+      <button class="mc" onclick="closeM('profileM')" aria-label="Close dialog">&#10005;</button>
+    </div>
+    <div id="profErr" class="al ale" style="display:none;margin-bottom:12px;"></div>
+    <div id="profOk" class="al ali" style="display:none;margin-bottom:12px;"></div>
+
+    <!-- Profile Fields -->
+    <div class="fg"><label class="flbl">Full Name</label><input class="fi" type="text" id="profName" placeholder="Your name"/></div>
+    <div class="fg"><label class="flbl">Phone Number</label><input class="fi" type="tel" id="profPhone" placeholder="10-digit mobile number"/></div>
+    <div class="fg" id="profAgencyWrap" style="display:none;"><label class="flbl">Agency / Company</label><input class="fi" type="text" id="profAgency" placeholder="e.g. Khan Properties"/></div>
+    <div class="fg" id="profLicWrap" style="display:none;"><label class="flbl">RERA / License No.</label><input class="fi" type="text" id="profLic" placeholder="RERA/MH/2024/001"/></div>
+    <button class="btn btn-bl" id="profSaveBtn" onclick="doUpdateProfile()" style="margin-bottom:24px;">Save Changes</button>
+
+    <!-- Change Password Section -->
+    <div style="border-top:1px solid var(--sa);padding-top:20px;margin-top:8px;">
+      <h3 style="font-family:'Playfair Display',serif;font-size:16px;margin-bottom:12px;">Change Password</h3>
+      <div class="fg">
+        <label class="flbl">New Password</label>
+        <div style="position:relative;">
+          <input class="fi" type="password" id="profNewPw" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password" style="padding-right:44px;"/>
+          <button type="button" onclick="togglePw('profNewPw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:16px;">&#128065;</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="flbl">Confirm New Password</label>
+        <div style="position:relative;">
+          <input class="fi" type="password" id="profConfPw" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password" style="padding-right:44px;"/>
+          <button type="button" onclick="togglePw('profConfPw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);font-size:16px;">&#128065;</button>
+        </div>
+      </div>
+      <button class="btn btn-o" id="profPwBtn" onclick="doChangePw()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<div id="cntM" class="mo" onclick="ovcM(event,'cntM')">
+  <div class="mb">
+    <div class="mh"><h2>Send Inquiry</h2><button class="mc" onclick="closeM('cntM')" aria-label="Close dialog">✕</button></div>
+    <div id="cInfo" class="al ali" style="margin-bottom:14px;"></div>
+    <div class="fg"><label class="flbl">Your Name *</label><input class="fi" type="text" id="cNm"/></div>
+    <div class="fg"><label class="flbl">Phone *</label><input class="fi" type="tel" id="cPh"/></div>
+    <div class="fg"><label class="flbl">Email</label><input class="fi" type="email" id="cEm"/></div>
+    <div class="fg"><label class="flbl">Message</label><textarea class="fi" id="cMsg" placeholder="Hi, I'm interested in this property…"></textarea></div>
+    <button class="btn btn-bl" onclick="doInq()">Send Inquiry</button>
+    <p id="cCnt" style="text-align:center;font-size:12px;color:var(--mu);margin-top:10px;"></p>
+  </div>
+</div>
+
+<div id="addM" class="mo" onclick="ovcM(event,'addM')">
+  <div class="mb mb-lg">
+    <div class="mh"><h2 id="addMTitle">New Property Listing</h2><button class="mc" onclick="closeM('addM')" aria-label="Close dialog">✕</button></div>
+    <div id="lErr" class="al ale" style="display:none;"></div>
+    <div style="margin-bottom:14px;">
+      <label class="flbl" style="margin-bottom:6px;">Listing For *</label>
+      <div class="rtabs" style="max-width:240px;"><button class="rtab on" id="lmR" onclick="setLM('rent')">🏠 Rent</button><button class="rtab" id="lmB" onclick="setLM('buy')">🔑 Sale</button></div>
+    </div>
+    <div class="fg2">
+      <div class="fg s2"><label class="flbl">Property Title *</label><input class="fi" type="text" id="lTl" placeholder="e.g. 3 BHK Apartment, Andheri West"/></div>
+      <div class="fg"><label class="flbl">City *</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lCy" placeholder="Mumbai" autocomplete="off"/><div class="ac-list" id="ac-lCy"></div></div></div>
+      <div class="fg"><label class="flbl">Locality</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lLo" placeholder="Andheri West" autocomplete="off"/><div class="ac-list" id="ac-lLo"></div></div></div>
+      <div class="fg"><label class="flbl">Property Type</label><select class="fi" id="lTp"><option>Apartment</option><option>Flat</option><option>House</option><option>Villa</option><option>Plot</option><option>PG / Room</option></select></div>
+      <div class="fg"><label class="flbl">Bedrooms</label><select class="fi" id="lBd"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6+</option></select></div>
+      <div class="fg"><label class="flbl">Bathrooms</label><select class="fi" id="lBt"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+      <div class="fg"><label class="flbl">Area (sq.ft)</label><input class="fi" type="number" id="lAr" placeholder="1200"/></div>
+      <div class="fg"><label class="flbl">Floor</label><select class="fi" id="lFl"><option value="">Select</option><option>Ground</option><option>1st</option><option>2nd</option><option>3rd</option><option>4th</option><option>5th-10th</option><option>10th+</option></select></div>
+      <div class="fg"><label class="flbl">Facing</label><select class="fi" id="lFc"><option value="">Any</option><option>North</option><option>South</option><option>East</option><option>West</option><option>North-East</option><option>North-West</option><option>South-East</option><option>South-West</option></select></div>
+      <div class="fg"><label class="flbl">Furnishing</label><select class="fi" id="lFn"><option value="">Select</option><option>Unfurnished</option><option>Semi-Furnished</option><option>Fully Furnished</option></select></div>
+      <div class="fg" id="lRW"><label class="flbl">Monthly Rent (₹) *</label><input class="fi" type="number" id="lRt" placeholder="25000"/></div>
+      <div class="fg" id="lDW"><label class="flbl">Deposit (₹)</label><input class="fi" type="number" id="lDp" placeholder="50000"/></div>
+      <div class="fg" id="lAvW"><label class="flbl">Availability</label><select class="fi" id="lAv"><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
+      <div class="fg" id="lPrW" style="display:none;"><label class="flbl">Sale Price (₹) *</label><input class="fi" type="number" id="lPr" placeholder="5000000"/></div>
+      <div class="fg" id="lStW" style="display:none;"><label class="flbl">Sale Type</label><select class="fi" id="lSt"><option>New</option><option>Resale</option></select></div>
+      <div class="fg" id="lPoW" style="display:none;"><label class="flbl">Possession</label><select class="fi" id="lPo"><option>Ready to Move</option><option>Under Construction</option><option>Within 6 Months</option><option>Within 1 Year</option></select></div>
+      <div class="fg" id="lReW" style="display:none;"><label class="flbl">RERA Number</label><input class="fi" type="text" id="lRe" placeholder="RERA/MH/2024/001"/></div>
+      <div class="fg"><label class="flbl">Owner / Broker Name *</label><input class="fi" type="text" id="lOw"/></div>
+      <div class="fg"><label class="flbl">Contact Number *</label><input class="fi" type="tel" id="lCt"/></div>
+      <div class="fg s2"><label class="flbl">Description</label><textarea class="fi" id="lDs" placeholder="Describe the property and your openness to all communities…"></textarea></div>
+      <div class="fg s2"><label class="flbl">Amenities</label><div class="amen-chips" id="lAm" style="margin-top:5px;"></div></div>
+      <div class="fg s2"><label class="flbl">Inclusion Tags</label><div class="tp" id="lTgs"></div></div>
+      <div class="fg s2">
+        <label class="flbl">Photos (up to 6) — first 2 free, rest unlock after sign-up</label>
+        <div class="dz" id="dz" onclick="document.getElementById('imgIn').click()" ondragover="dzOv(event)" ondragleave="dzLv()" ondrop="dzDp(event)">
+          <div style="font-size:28px;margin-bottom:6px;">📷</div>
+          <p style="font-size:13px;color:var(--mu);">Click or drag & drop photos here</p>
+          <p style="font-size:11px;color:var(--mu);margin-top:2px;">JPG, PNG, WebP · Auto-compressed for fast loading</p>
+        </div>
+        <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="hImgs(event)"/>
+        <div class="img-pv" id="iPv"></div>
+      </div>
+    </div>
+    <div class="al alw" style="margin-top:10px;font-size:12px;">Listing reviewed by admin before going live — usually within 24 hrs.</div>
+    <button class="btn btn-bl" style="margin-top:12px;" id="addMBtn" onclick="doSub()">Submit for Review</button>
+  </div>
+</div>
+
+<div id="viewM" class="mo" onclick="ovcM(event,'viewM')">
+  <div class="mb" style="max-width:100%;width:100%;min-height:100vh;margin:0;border-radius:0;padding:0;display:flex;flex-direction:column;">
+    <div class="mh" style="position:sticky;top:0;background:var(--wh);z-index:10;padding:16px 28px;border-bottom:1px solid var(--sa);margin-bottom:0;">
+      <h2 id="vTit" style="font-size:18px;line-height:1.3;padding-right:10px;font-family:'Playfair Display',serif;"></h2>
+      <button class="mc" onclick="closeM('viewM')" style="font-size:26px;" title="Close" aria-label="Close dialog">✕</button>
+    </div>
+    <div id="vCnt" style="flex:1;padding:24px 28px;max-width:900px;width:100%;margin:0 auto;"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<footer>
+  <div style="display:flex;flex-direction:column;gap:6px;">
+    <div class="fl"><span>Ek</span> Makān</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.4);max-width:320px;line-height:1.6;">India’s first inclusive property platform — connecting all communities with verified, religion-neutral homes.</div>
+  </div>
+  <div style="display:flex;gap:40px;flex-wrap:wrap;">
+    <div>
+      <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Platform</div>
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <span onclick="setBMode('rent');go('browse')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Browse Rentals</span>
+        <span onclick="setBMode('buy');go('browse')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Properties for Sale</span>
+        <span onclick="openM('addM')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Post a Property</span>
+        <span onclick="openM('authM');setAT('reg')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Register as Broker</span>
+      </div>
+    </div>
+    <div>
+      <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Cities</div>
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <span onclick="goCityBrowse('Mumbai')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Mumbai</span>
+        <span onclick="goCityBrowse('Hyderabad')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Hyderabad</span>
+        <span onclick="goCityBrowse('Bengaluru')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Bengaluru</span>
+        <span onclick="goCityBrowse('Delhi')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Delhi</span>
+      </div>
+    </div>
+    <div>
+      <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Company</div>
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <span onclick="openM('aboutM')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">About Us</span>
+        <span onclick="openM('charterM')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Inclusion Charter</span>
+        <span onclick="openM('privacyM')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Privacy Policy</span>
+        <span onclick="openM('termsM')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Terms of Service</span>
+        <span onclick="openM('contactM')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Contact</span>
+      </div>
+    </div>
+  </div>
+  <div style="width:100%;border-top:1px solid rgba(255,255,255,.1);margin-top:24px;padding-top:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div style="color:rgba(255,255,255,.4);font-size:12px;">© 2026 HAFAR CONTRATECH AI LLP. All rights reserved.</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;"></div>
+      <span style="font-size:12px;color:rgba(255,255,255,.5);">All systems operational</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- COMPANY PAGES — 5 modals                       -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<!-- ABOUT US -->
+<div id="aboutM" class="mo" onclick="ovcM(event,'aboutM')">
+  <div class="mb mb-lg" style="max-width:740px;">
+    <div class="mh"><h2 style="font-family:'Playfair Display',serif;">About Ek Makān</h2><button class="mc" onclick="closeM('aboutM')" aria-label="Close dialog">✕</button></div>
+    <div style="overflow-y:auto;max-height:70vh;padding-right:4px;">
+      <div style="text-align:center;padding:28px 0 32px;border-bottom:1px solid var(--sa);margin-bottom:28px;">
+        <div style="font-family:'Playfair Display',serif;font-size:52px;font-weight:700;color:var(--td);letter-spacing:-1px;line-height:1;"><span style="color:var(--g);">Ek</span> Makān</div>
+        <div style="font-size:11px;font-weight:700;color:var(--mu);letter-spacing:2.5px;text-transform:uppercase;margin-top:6px;">Inclusive Property Platform</div>
+      </div>
+      <div style="font-size:14px;line-height:1.8;color:var(--ink);">
+        <p style="font-size:16px;font-family:'Playfair Display',serif;color:var(--td);margin-bottom:16px;line-height:1.5;">We started Ek Makān because finding a home in India shouldn't depend on your background.</p>
+        <p style="margin-bottom:14px;">Across India's cities, countless families face silent rejection when searching for a place to live — turned away by landlords or brokers based on who they are, not what kind of tenants or buyers they would be. This isn't just unfair. It is a quiet crisis that affects millions of families every year.</p>
+        <p style="margin-bottom:14px;">Ek Makān was built to change that. We are India's first property platform built on a single founding principle: every family deserves a home, and every home should be open to every family.</p>
+        <h3 style="font-family:'Playfair Display',serif;font-size:18px;color:var(--td);margin:24px 0 10px;">What makes us different</h3>
+        <p style="margin-bottom:14px;">Every listing on Ek Makān comes from an owner or broker who has explicitly agreed to our Inclusion Charter — a commitment that their property is open to all prospective residents without discrimination of any kind. This isn't just a checkbox. It is a verified promise.</p>
+        <p style="margin-bottom:14px;">We also make the process transparent: verified badges, RERA registration details, contact information, and multiple photos are all available to registered users — so you can make an informed decision before ever picking up the phone.</p>
+        <h3 style="font-family:'Playfair Display',serif;font-size:18px;color:var(--td);margin:24px 0 10px;">Our mission</h3>
+        <p style="margin-bottom:14px;">To make the search for a home in India a dignified experience for every family — regardless of background, community, dietary preference, profession, or any other factor unrelated to tenancy.</p>
+        <h3 style="font-family:'Playfair Display',serif;font-size:18px;color:var(--td);margin:24px 0 10px;">The team</h3>
+        <p style="margin-bottom:14px;">Ek Makān was founded in 2025 and is headquartered in Mumbai, Maharashtra. Our team includes technologists, real estate professionals, and advocates who believe that access to housing is not a privilege — it is a right.</p>
+        <div style="background:var(--tl);border-left:4px solid var(--t);border-radius:0 10px 10px 0;padding:16px 18px;margin-top:24px;">
+          <p style="font-family:'Playfair Display',serif;font-style:italic;color:var(--td);font-size:15px;line-height:1.6;">"A home is not just four walls. It is where a family grows, rests, and belongs. At Ek Makān, we exist to ensure that belonging is never denied."</p>
+          <p style="font-size:12px;color:var(--mu);margin-top:8px;">— Ek Makān Founding Team</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INCLUSION CHARTER -->
+<div id="charterM" class="mo" onclick="ovcM(event,'charterM')">
+  <div class="mb mb-lg" style="max-width:740px;">
+    <div class="mh"><h2 style="font-family:'Playfair Display',serif;">Inclusion Charter</h2><button class="mc" onclick="closeM('charterM')" aria-label="Close dialog">✕</button></div>
+    <div style="overflow-y:auto;max-height:70vh;padding-right:4px;">
+      <div style="background:var(--tl);border-radius:11px;padding:20px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;">
+        <div style="font-size:28px;flex-shrink:0;">📜</div>
+        <div>
+          <div style="font-weight:700;color:var(--td);margin-bottom:4px;">Every lister on Ek Makān signs this charter</div>
+          <div style="font-size:13px;color:var(--td);line-height:1.6;">By posting a property on Ek Makān, owners and brokers formally agree to these principles. Violations result in immediate removal and permanent ban.</div>
+        </div>
+      </div>
+      <div style="font-size:14px;line-height:1.8;color:var(--ink);">
+        <h3 style="font-family:'Playfair Display',serif;font-size:18px;color:var(--td);margin-bottom:14px;">The Ek Makān Inclusion Charter</h3>
+        <p style="margin-bottom:18px;color:var(--mu);font-size:13px;">Effective from: January 2025 &nbsp;·&nbsp; Version 1.0</p>
+
+        <div style="counter-reset:charter;">
+        <div style="display:flex;gap:14px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--sa);">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--t);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">1</div>
+          <div><strong>Open to All Residents</strong><p style="margin-top:4px;color:var(--mu);font-size:13px;line-height:1.6;">I agree to consider all prospective tenants and buyers on the basis of financial eligibility and tenancy history alone. I will not screen, reject, or discourage any applicant on the basis of their community, background, dietary preferences, profession, marital status, or any factor unrelated to their suitability as a tenant or buyer.</p></div>
+        </div>
+        <div style="display:flex;gap:14px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--sa);">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--t);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">2</div>
+          <div><strong>Honest Listings</strong><p style="margin-top:4px;color:var(--mu);font-size:13px;line-height:1.6;">All information I provide — including photos, price, location, area, amenities, and availability — is accurate and up to date. I will not use misleading descriptions or bait-and-switch pricing.</p></div>
+        </div>
+        <div style="display:flex;gap:14px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--sa);">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--t);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">3</div>
+          <div><strong>Prompt Communication</strong><p style="margin-top:4px;color:var(--mu);font-size:13px;line-height:1.6;">I commit to responding to inquiries within a reasonable time. If a property is no longer available, I will remove or update the listing promptly.</p></div>
+        </div>
+        <div style="display:flex;gap:14px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--sa);">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--t);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">4</div>
+          <div><strong>Privacy of Inquirers</strong><p style="margin-top:4px;color:var(--mu);font-size:13px;line-height:1.6;">I will use contact details shared by prospective tenants or buyers solely for the purpose of this property transaction. I will not share, sell, or misuse this information.</p></div>
+        </div>
+        <div style="display:flex;gap:14px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--sa);">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--t);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">5</div>
+          <div><strong>Zero Tolerance for Discrimination</strong><p style="margin-top:4px;color:var(--mu);font-size:13px;line-height:1.6;">I understand that any verified complaint of discriminatory behaviour will result in immediate removal of all my listings and a permanent ban from the Ek Makān platform. Ek Makān reserves the right to report egregious cases to relevant authorities.</p></div>
+        </div>
+        <div style="display:flex;gap:14px;margin-bottom:20px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--t);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">6</div>
+          <div><strong>Reporting Violations</strong><p style="margin-top:4px;color:var(--mu);font-size:13px;line-height:1.6;">If you experience or witness a violation of this charter, please contact us immediately. Every report is investigated within 48 hours and action is taken swiftly.</p></div>
+        </div>
+        </div>
+
+        <div style="background:var(--cr);border-radius:10px;padding:16px;margin-top:8px;font-size:13px;color:var(--mu);line-height:1.6;">
+          <strong style="color:var(--ink);">Report a violation:</strong> Click the <span onclick="openM('reportM')" style="color:var(--red);cursor:pointer;font-weight:700;">&#128681; Report</span> button on any listing, or use this form directly. We investigate every report within 48 hours.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRIVACY POLICY -->
+<div id="privacyM" class="mo" onclick="ovcM(event,'privacyM')">
+  <div class="mb mb-lg" style="max-width:740px;">
+    <div class="mh"><h2 style="font-family:'Playfair Display',serif;">Privacy Policy</h2><button class="mc" onclick="closeM('privacyM')" aria-label="Close dialog">✕</button></div>
+    <div style="overflow-y:auto;max-height:70vh;padding-right:4px;">
+      <p style="font-size:12px;color:var(--mu);margin-bottom:20px;">Last updated: January 2026 &nbsp;·&nbsp; HAFAR CONTRATECH AI LLP</p>
+      <div style="font-size:14px;line-height:1.8;color:var(--ink);">
+        <p style="margin-bottom:14px;">Ek Makān ("we", "our", "the platform") is committed to protecting your personal information. This policy explains what data we collect, how we use it, and your rights in relation to it.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:22px 0 8px;">1. Information We Collect</h3>
+        <p style="margin-bottom:8px;"><strong>Account information:</strong> When you register, we collect your name, email address, phone number, and role (tenant, owner, or broker).</p>
+        <p style="margin-bottom:8px;"><strong>Listing information:</strong> Owners and brokers provide property details, photos, and contact information for their listings.</p>
+        <p style="margin-bottom:8px;"><strong>Inquiry data:</strong> When you contact a property owner, we store the message and your contact details to facilitate the transaction.</p>
+        <p style="margin-bottom:14px;"><strong>Usage data:</strong> We may collect anonymised data on how users interact with the platform to improve our service.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:22px 0 8px;">2. How We Use Your Information</h3>
+        <ul style="padding-left:18px;margin-bottom:14px;color:var(--mu);font-size:13px;line-height:1.8;">
+          <li>To operate and improve the Ek Makān platform</li>
+          <li>To connect prospective tenants and buyers with property owners</li>
+          <li>To send you relevant notifications about your account or listings</li>
+          <li>To investigate complaints and enforce the Inclusion Charter</li>
+          <li>To comply with applicable Indian laws and regulations</li>
+        </ul>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:22px 0 8px;">3. Data Sharing</h3>
+        <p style="margin-bottom:14px;">We do not sell your personal information to third parties. Your contact details are shared with property owners only when you submit an inquiry. Property owner contact details are shared with registered users only after they log in.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:22px 0 8px;">4. Data Storage</h3>
+        <p style="margin-bottom:14px;">Currently, Ek Makān stores data locally in your browser (localStorage). No data is transmitted to external servers at this stage of the platform. As we scale, data will be stored securely on servers located in India, compliant with the Digital Personal Data Protection Act, 2023.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:22px 0 8px;">5. Your Rights</h3>
+        <ul style="padding-left:18px;margin-bottom:14px;color:var(--mu);font-size:13px;line-height:1.8;">
+          <li>Access the personal data we hold about you</li>
+          <li>Request correction of inaccurate data</li>
+          <li>Request deletion of your account and associated data</li>
+          <li>Withdraw consent for data processing at any time</li>
+        </ul>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:22px 0 8px;">6. Cookies</h3>
+        <p style="margin-bottom:14px;">Ek Makān does not currently use tracking cookies. We may use essential session storage to maintain your login state within a session.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:22px 0 8px;">7. Contact</h3>
+        <p style="margin-bottom:14px;">For any privacy-related questions or requests, please use the Contact page on this platform. We will respond within 5 working days.</p>
+
+        <div style="background:var(--cr);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--mu);line-height:1.6;margin-top:8px;">This policy is subject to change as the platform evolves. Material changes will be communicated to registered users by email or platform notification.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TERMS OF SERVICE -->
+<div id="termsM" class="mo" onclick="ovcM(event,'termsM')">
+  <div class="mb mb-lg" style="max-width:740px;">
+    <div class="mh"><h2 style="font-family:'Playfair Display',serif;">Terms of Service</h2><button class="mc" onclick="closeM('termsM')" aria-label="Close dialog">✕</button></div>
+    <div style="overflow-y:auto;max-height:70vh;padding-right:4px;">
+      <p style="font-size:12px;color:var(--mu);margin-bottom:20px;">Last updated: January 2026 &nbsp;·&nbsp; HAFAR CONTRATECH AI LLP</p>
+      <div style="font-size:14px;line-height:1.8;color:var(--ink);">
+        <p style="margin-bottom:16px;">By accessing or using Ek Makān, you agree to be bound by these Terms of Service. If you do not agree, please do not use the platform.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:20px 0 8px;">1. Eligibility</h3>
+        <p style="margin-bottom:14px;">You must be at least 18 years of age and legally capable of entering into contracts under Indian law to use Ek Makān. By registering, you confirm that the information you provide is accurate and complete.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:20px 0 8px;">2. Platform Role</h3>
+        <p style="margin-bottom:14px;">Ek Makān is a listing and connection platform. We do not own, manage, rent, or sell any of the properties listed. We are not a party to any transaction between property owners and prospective tenants or buyers. All agreements are made directly between the parties involved.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:20px 0 8px;">3. Listings</h3>
+        <p style="margin-bottom:14px;">Property owners and brokers are solely responsible for the accuracy, completeness, and legality of their listings. Ek Makān reserves the right to remove any listing that violates our Inclusion Charter, contains false information, or is otherwise objectionable, at our sole discretion.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:20px 0 8px;">4. User Conduct</h3>
+        <p style="margin-bottom:8px;">You agree not to:</p>
+        <ul style="padding-left:18px;margin-bottom:14px;color:var(--mu);font-size:13px;line-height:1.8;">
+          <li>Post false, misleading, or fraudulent listings or information</li>
+          <li>Discriminate against any prospective tenant or buyer in violation of the Inclusion Charter</li>
+          <li>Harass, threaten, or harm other users</li>
+          <li>Use the platform to collect or harvest personal data of other users</li>
+          <li>Attempt to circumvent any security or access control mechanism</li>
+          <li>Use automated bots or scrapers to extract data from the platform</li>
+        </ul>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:20px 0 8px;">5. Intellectual Property</h3>
+        <p style="margin-bottom:14px;">All content on Ek Makān — including the brand name, logo, design, and platform code — is the intellectual property of HAFAR CONTRATECH AI LLP. You may not reproduce, distribute, or create derivative works without our written consent.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:20px 0 8px;">6. Limitation of Liability</h3>
+        <p style="margin-bottom:14px;">Ek Makān is provided on an "as is" basis. To the maximum extent permitted by law, we disclaim all warranties and shall not be liable for any indirect, incidental, or consequential damages arising from your use of the platform or any transaction conducted through it.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:20px 0 8px;">7. Governing Law</h3>
+        <p style="margin-bottom:14px;">These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts of Mumbai, Maharashtra.</p>
+
+        <h3 style="font-family:'Playfair Display',serif;font-size:16px;color:var(--td);margin:20px 0 8px;">8. Modifications</h3>
+        <p style="margin-bottom:14px;">We reserve the right to modify these terms at any time. Continued use of the platform after changes constitutes acceptance of the revised terms.</p>
+
+        <div style="background:var(--cr);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--mu);margin-top:8px;">Questions about these terms? Use the Contact page and we will respond within 5 working days.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<div id="contactM" class="mo" onclick="ovcM(event,'contactM')">
+  <div class="mb" style="max-width:560px;">
+    <div class="mh"><h2 style="font-family:'Playfair Display',serif;">Contact Us</h2><button class="mc" onclick="closeM('contactM')" aria-label="Close dialog">✕</button></div>
+    <p style="font-size:13px;color:var(--mu);margin-bottom:20px;line-height:1.6;">Have a question, feedback, or want to report a concern? We read every message and typically respond within 2 working days.</p>
+
+    <div id="contactSuccess" style="display:none;" class="al alg">
+      <strong>Your email app has opened &#10003;</strong><br/>Your message is pre-filled &mdash; just press Send in your email client. We respond within 2 working days.
+    </div>
+    <div id="contactErr" style="display:none;" class="al ale"></div>
+
+    <form id="contactForm" onsubmit="submitContact(event)" style="display:flex;flex-direction:column;gap:14px;">
+      <div class="fg">
+        <label class="flbl">Your Name *</label>
+        <input class="fi" type="text" id="ctName" placeholder="Full name" required/>
+      </div>
+      <div class="fg">
+        <label class="flbl">Email Address *</label>
+        <input class="fi" type="email" id="ctEmail" placeholder="your@email.com" required/>
+      </div>
+      <div class="fg">
+        <label class="flbl">Subject *</label>
+        <select class="fi" id="ctSubject" required>
+          <option value="">Select a topic</option>
+          <option>General Enquiry</option>
+          <option>Report a Listing</option>
+          <option>Report a Charter Violation</option>
+          <option>Partnership / Press</option>
+          <option>Technical Issue</option>
+          <option>Broker / Owner Support</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="flbl">Message *</label>
+        <textarea class="fi" id="ctMessage" placeholder="Tell us how we can help…" style="height:100px;" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-bl" id="ctSubmit">Send Message &#8594;</button>
+      <p style="font-size:11px;color:var(--mu);text-align:center;line-height:1.5;">Clicking Send will open your email app with your message pre-filled &mdash; just hit send from there. We respond within 2 working days.</p>
+    </form>
+  </div>
+</div>
+
+
+<!-- REPORT DISCRIMINATION MODAL -->
+<div id="reportM" class="mo" onclick="ovcM(event,'reportM')">
+  <div class="mb" style="max-width:500px;">
+    <div class="mh">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;color:var(--red);">&#128681; Report Discrimination</h2>
+        <p style="font-size:12px;color:var(--mu);margin-top:2px;">Every report is reviewed within 48 hours. We take this seriously.</p>
+      </div>
+      <button class="mc" onclick="closeM('reportM')">&#10005;</button>
+    </div>
+    <div id="reportSuccess" style="display:none;" class="al alg">
+      <strong>Report submitted &#10003;</strong><br/>Thank you. We will investigate within 48 hours and act swiftly. Bad actors are removed permanently.
+    </div>
+    <div id="reportErr" class="al ale" style="display:none;margin-bottom:12px;"></div>
+    <form id="reportForm" style="display:flex;flex-direction:column;gap:13px;">
+      <div id="reportListingInfo" class="al ali" style="font-size:13px;"></div>
+      <div class="fg">
+        <label class="flbl">What happened? *</label>
+        <select class="fi" id="rptType" required>
+          <option value="">Select incident type</option>
+          <option value="Rejected based on background">Rejected based on my background</option>
+          <option value="Rude or discriminatory language">Rude or discriminatory language from owner/broker</option>
+          <option value="Refused to show property">Refused to show me the property</option>
+          <option value="Suddenly unavailable after inquiry">Property suddenly became unavailable after my inquiry</option>
+          <option value="Demanded community proof">Asked for proof of community/religion/caste</option>
+          <option value="Other discrimination">Other form of discrimination</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="flbl">Describe what happened *</label>
+        <textarea class="fi" id="rptDesc" placeholder="Please describe the incident in as much detail as you can — what was said, when it happened, and how you were affected." style="height:110px;" required></textarea>
+      </div>
+      <div class="fg2">
+        <div class="fg">
+          <label class="flbl">Your Name *</label>
+          <input class="fi" type="text" id="rptName" placeholder="Full name"/>
+        </div>
+        <div class="fg">
+          <label class="flbl">You
+          <label class="flbl">Your Contact *</label>
+          <input class="fi" type="text" id="rptContact" placeholder="Email or phone"/>
+        </div>
+      </div>
+      <div style="background:var(--cr);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--mu);line-height:1.5;">
+        &#128274; Your identity is kept confidential. Reports are only shared with our trust &amp; safety team.
+      </div>
+      <button type="button" class="btn btn-r btn-bl" onclick="submitReport()">Submit Report</button>
+    </form>
+  </div>
+</div>
+
+<script src="app.js" defer></script>
+</body></html>
