@@ -138,9 +138,9 @@ function renderTurnstile(containerId,tokenSetter){
 }
 
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
-function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[]};}
+function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',floorNo:r.floor_no!=null?r.floor_no:null,totalFloors:r.total_floors||null,facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[],txnType:r.transaction_type||'',ownership:r.ownership||'',water:r.water_source||'',backup:r.power_backup||''};}
 // Map JS listing → Supabase row
-function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[]};}
+function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',floor_no:l.floorNo!=null&&l.floorNo!==''?Number(l.floorNo):null,total_floors:l.totalFloors?Number(l.totalFloors):null,facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[],transaction_type:l.txnType||'',ownership:l.ownership||'',water_source:l.water||'',power_backup:l.backup||''};}
 function mapInq(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',listingCity:r.listing_city||'',lf:r.listing_for||'rent',contact:'',name:r.inquirer_name||'',phone:r.inquirer_phone||'',email:r.inquirer_email||'',message:r.message||'',uid:r.user_id,sentAt:r.sent_at?(r.sent_at+'').split('T')[0]:''};}
 function mapUsr(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone||'',role:r.role||'user',agency:r.agency||'',lic:r.license_no||'',joinedAt:r.joined_at?(r.joined_at+'').split('T')[0]:'',verified:r.verified||false,trusted:r.is_trusted||false};}
 function mapRpt(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',type:r.report_type||'',desc:r.description||'',reporterName:r.reporter_name||'',reporterContact:r.reporter_contact||'',reporterUid:r.reporter_user_id,status:r.status||'open',submittedAt:r.submitted_at?(r.submitted_at+'').split('T')[0]:''};}
@@ -338,7 +338,7 @@ function showEmpty(elId,icon,title,sub){
 // ══ DATA ACCESS (Supabase) ══
 async function gL(){
   if(_cacheL&&_cacheValid('l'))return _cacheL;
-  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details').order('posted_at',{ascending:false});
+  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors').order('posted_at',{ascending:false});
   if(error){toast('Failed to load listings. Please refresh.','e');_cacheL=[];return[];}
   _cacheL=(data||[]).map(mapL);
   _cacheTime.l=Date.now();
@@ -1443,6 +1443,83 @@ async function renderBrowse(){
 }
 
 // ══ FAVORITES ══
+// ══ SIMILAR PROPERTIES ══
+// Score similarity by: same city > same locality > same type > same BHK > price within 30%
+async function renderSimilarProperties(currentL){
+  var container=document.getElementById('vSimilar');
+  if(!container){
+    // Inject the container at the bottom of vCnt
+    var vCnt=document.getElementById('vCnt');
+    if(!vCnt)return;
+    var div=document.createElement('div');
+    div.id='vSimilar';
+    div.style.marginTop='30px';
+    vCnt.appendChild(div);
+    container=div;
+  }
+  container.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;">Similar Properties</div><div style="font-size:12px;color:var(--mu);">Loading…</div>';
+  try{
+    var allApproved=(await gL()).filter(function(l){return l.status==='approved'&&l.id!==currentL.id;});
+    // Score each candidate
+    var scored=allApproved.map(function(l){
+      var score=0;
+      // Same listing-for type (rent vs buy vs project) is mandatory match
+      if(l.lf!==currentL.lf)return null;
+      if(l.city===currentL.city)score+=4;
+      if(l.loc&&currentL.loc&&l.loc===currentL.loc)score+=3;
+      if(l.type===currentL.type)score+=2;
+      if(l.beds===currentL.beds)score+=2;
+      // Price proximity
+      var p=currentL.lf==='rent'?currentL.rent:currentL.price;
+      var lp=currentL.lf==='rent'?l.rent:l.price;
+      if(p&&lp){
+        var ratio=Math.abs(p-lp)/p;
+        if(ratio<0.15)score+=2;
+        else if(ratio<0.3)score+=1;
+      }
+      // Same agency / lister bonus
+      if(l.agency&&currentL.agency&&l.agency===currentL.agency)score+=1;
+      return {l:l,score:score};
+    }).filter(function(x){return x&&x.score>=2;}).sort(function(a,b){return b.score-a.score;}).slice(0,8);
+
+    if(!scored.length){
+      container.innerHTML='';
+      return;
+    }
+    container.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;">Similar Properties</div>'
+      +'<div class="similar-strip">'
+      +scored.map(function(s){return _similarCard(s.l);}).join('')
+      +'</div>';
+  }catch(e){
+    console.error('renderSimilarProperties:',e);
+    container.innerHTML='';
+  }
+}
+
+function _similarCard(l){
+  var ir=l.lf==='rent';
+  var isProj=l.lf==='project'||l.isProject;
+  var img=l.images&&l.images.length?l.images[0]:'';
+  var price;
+  if(isProj){
+    if(l.priceMax&&l.priceMax>l.priceMin)price=fmtPriceHTML(l.priceMin)+' &ndash; '+fmtPriceHTML(l.priceMax);
+    else price='Starts '+fmtPriceHTML(l.priceMin||l.price);
+  } else if(ir){
+    price=fmtRentHTML(l.rent)+'/mo';
+  } else {
+    price=fmtPriceHTML(l.price);
+  }
+  return '<div class="sim-card" onclick="viewL('+l.id+')">'
+    +'<div class="sim-img">'+(img?'<img src="'+img+'" alt="'+escAttr(l.title)+'" loading="lazy"/>':'<div class="sim-no-img"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-home"/></svg></div>')+'</div>'
+    +'<div class="sim-body">'
+    +'<div class="sim-title">'+esc(l.title)+'</div>'
+    +(l.building?'<div class="sim-bld">'+esc(l.building)+'</div>':'')
+    +'<div class="sim-loc"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-pin"/></svg> '+esc(l.loc||l.city)+'</div>'
+    +'<div class="sim-meta">'+l.beds+' BHK'+(l.area?' &middot; '+l.area+' sq.ft':'')+'</div>'
+    +'<div class="sim-price '+(ir?'rent':'buy')+'">'+price+'</div>'
+    +'</div></div>';
+}
+
 async function togFav(id,btn){
   if(!cu){openM('authM');return;}
   var idx=favs.indexOf(id);
@@ -1459,7 +1536,28 @@ async function togFav(id,btn){
     btn.innerHTML='<svg class="icn icn-sm" aria-hidden="true"><use href="#'+(isFav?'i-heart-fill':'i-heart')+'"/></svg>';
     btn.setAttribute('aria-pressed',isFav?'true':'false');
   }
-  await renderBrowse();
+  // Sync detail-view shortlist button if it's open for this listing
+  if(_currentDetailId===id)updateShortlistBtnState();
+  // Re-render browse to show updated heart state on cards
+  if(document.querySelector('.page#pg-browse.active'))await renderBrowse();
+}
+
+// ══ DETAIL-VIEW SHORTLIST ══
+var _currentDetailId=null;
+function togFavFromDetail(){
+  if(!cu){openM('authM');return;}
+  if(!_currentDetailId)return;
+  togFav(_currentDetailId,null);
+}
+function updateShortlistBtnState(){
+  var btn=document.getElementById('vShortlist');
+  var lbl=document.getElementById('vShortlistLbl');
+  if(!btn||!_currentDetailId)return;
+  var on=favs.indexOf(_currentDetailId)>=0;
+  btn.setAttribute('aria-pressed',on?'true':'false');
+  var useEl=btn.querySelector('use');
+  if(useEl)useEl.setAttribute('href',on?'#i-heart-fill':'#i-heart');
+  if(lbl)lbl.textContent=on?'Shortlisted':'Shortlist';
 }
 
 // ══ VIEW DETAIL ══
@@ -1475,7 +1573,7 @@ async function viewL(id){
   if(!l){
     // Direct fetch by ID — handles deep links before cache is warm
     try{
-      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details').eq('id',id).eq('status','approved').single();
+      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors').eq('id',id).eq('status','approved').single();
       if(data&&!error)l=mapL(data);
     }catch(e){}
   }
@@ -1576,6 +1674,23 @@ async function viewL(id){
       }).join('')
       +'</div></div>';
   }
+  // Floor display: prefer specific floor_no/total_floors, fall back to old range
+  var floorDisplay='—';
+  if(l.floorNo!=null&&l.totalFloors){
+    var fn=l.floorNo===0?'Ground':(l.floorNo+(l.floorNo===1?'st':l.floorNo===2?'nd':l.floorNo===3?'rd':'th'));
+    floorDisplay=fn+' of '+l.totalFloors;
+  } else if(l.floorNo!=null){
+    floorDisplay=l.floorNo===0?'Ground':l.floorNo;
+  } else if(l.floor){
+    floorDisplay=esc(l.floor);
+  }
+  // Water source display
+  var waterDisplay=l.water?l.water.split(',').map(function(w){
+    if(w==='Municipal')return 'Municipal';
+    if(w==='Borewell')return 'Borewell/Tank';
+    if(w==='24x7')return '24x7 Water';
+    return w;
+  }).join(', '):'';
   document.getElementById('vCnt').innerHTML=imgH
     +(tagsH?'<div class="tags-r" style="margin-bottom:12px;">'+tagsH+'</div>':'')
     +'<div class="info-g">'
@@ -1585,9 +1700,13 @@ async function viewL(id){
     +areaHTML
     +(l.age?'<div class="ic"><div class="ll">AGE</div><strong>'+esc(l.age)+'</strong></div>':'')
     +(isProj&&l.projectStatus?'<div class="ic"><div class="ll">PROJECT STATUS</div><strong style="color:#c58600;">'+esc(l.projectStatus)+'</strong></div>':'<div class="ic"><div class="ll">FURNISHING</div><strong>'+esc(l.furnish||'—')+'</strong></div>')
-    +(isProj&&l.completion?'<div class="ic"><div class="ll">COMPLETION</div><strong>'+new Date(l.completion).toLocaleDateString('en-IN',{month:'long',year:'numeric'})+'</strong></div>':'<div class="ic"><div class="ll">FLOOR</div><strong>'+esc(l.floor||'—')+'</strong></div>')
+    +(isProj&&l.completion?'<div class="ic"><div class="ll">COMPLETION</div><strong>'+new Date(l.completion).toLocaleDateString('en-IN',{month:'long',year:'numeric'})+'</strong></div>':'<div class="ic"><div class="ll">FLOOR</div><strong>'+floorDisplay+'</strong></div>')
     +(!isProj?'<div class="ic"><div class="ll">FACING</div><strong>'+esc(l.facing||'—')+'</strong></div>':'')
     +(ir?'<div class="ic"><div class="ll">AVAILABILITY</div><strong>'+esc(l.avail||'—')+'</strong></div>':'')
+    +(!ir&&!isProj&&l.txnType?'<div class="ic"><div class="ll">TRANSACTION</div><strong>'+esc(l.txnType)+'</strong></div>':'')
+    +(l.ownership?'<div class="ic"><div class="ll">OWNERSHIP</div><strong>'+esc(l.ownership)+'</strong></div>':'')
+    +(waterDisplay?'<div class="ic"><div class="ll">WATER</div><strong style="font-size:12px;">'+esc(waterDisplay)+'</strong></div>':'')
+    +(l.backup?'<div class="ic"><div class="ll">POWER BACKUP</div><strong style="font-size:12px;">'+esc(l.backup)+'</strong></div>':'')
     +(!ir&&!isProj?'<div class="ic"><div class="ll">SALE TYPE</div><strong>'+esc(l.stype||'—')+'</strong></div>':'')
     +(!ir&&!isProj?'<div class="ic"><div class="ll">POSSESSION</div><strong>'+esc(l.poss||'—')+'</strong></div>':'')
     +(!ir&&l.rera?'<div class="ic" style="grid-column:1/-1;"><div class="ll">RERA NO.</div><strong style="color:var(--gr);">'+esc(l.rera)+'</strong></div>':'')
@@ -1605,6 +1724,9 @@ async function viewL(id){
     +'</div>'
     +'<button onclick="openReport('+l.id+')" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1.5px solid #ffcccc;color:var(--red);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .18s;" onmouseover="this.style.background=\'#fff5f5\'" onmouseout="this.style.background=\'transparent\'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-flag"/></svg> Report Discrimination or Unfair Treatment</button>';
   openM('viewM');
+  // Track current detail id for the shortlist button
+  _currentDetailId=id;
+  updateShortlistBtnState();
   // Set URL hash for shareable deep link + push history so Back returns to where we came from.
   // Skip when we're responding to a Back/Forward event.
   var targetHash='#listing/'+id;
@@ -1615,6 +1737,8 @@ async function viewL(id){
   _initGalleryTouch();
   // Show map for this listing's location
   showListingMap(l.city,l.loc,l.title);
+  // Render similar properties horizontal scroll
+  renderSimilarProperties(l);
 }
 window._vS=function(d){
   var len=window._vI.length;window._vIdx=(window._vIdx+d+len)%len;
@@ -2313,10 +2437,25 @@ function setLM(m){
   if(wcP)wcP.classList.toggle('on',m==='project');
   // Rent-specific fields
   ['lRW','lDW','lAvW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='rent'?'':'none';});
-  // Buy-specific fields  
-  ['lPrW','lStW','lPoW','lReW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=(m==='buy'||m==='project')?'':'none';});
+  // Buy-specific fields
+  ['lPrW','lStW','lPoW','lReW','lTxnW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=(m==='buy'||m==='project')?'':'none';});
   // Project-specific fields
   ['lProjW','lCompW','lPrMinW','lPrMaxW','lUnitsW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='project'?'':'none';});
+}
+
+// Toggle water source chip selection
+var _selWater=[];
+function togWaterLbl(lbl){
+  var w=lbl.dataset.w;
+  var i=_selWater.indexOf(w);
+  if(i>=0){_selWater.splice(i,1);lbl.classList.remove('on');}
+  else{_selWater.push(w);lbl.classList.add('on');}
+}
+function setWaterFromString(s){
+  _selWater=s?s.split(',').map(function(x){return x.trim();}).filter(Boolean):[];
+  document.querySelectorAll('#lWaterChips label[data-w]').forEach(function(lbl){
+    lbl.classList.toggle('on',_selWater.indexOf(lbl.dataset.w)>=0);
+  });
 }
 function bldLA(){
   var el=document.getElementById('lAm');if(!el)return;
@@ -2357,7 +2496,13 @@ async function editListing(id){
   setVal('lCt',l.contact);
   setVal('lDs',l.desc);
   setVal('lFl',l.floor);
+  setVal('lFlNo',l.floorNo!=null?l.floorNo:'');
+  setVal('lFlTot',l.totalFloors||'');
   setVal('lFc',l.facing);
+  setVal('lTxn',l.txnType||'');
+  setVal('lOwn',l.ownership||'');
+  setVal('lBackup',l.backup||'');
+  setWaterFromString(l.water||'');
   setVal('lFn',l.furnish);
   setVal('lAv',l.avail);
   // New fields: separate areas + age + furnishing details
@@ -2435,7 +2580,13 @@ async function doSub(){
     poss:getVal('lPo'),
     rera:getVal('lRe'),
     floor:getVal('lFl'),
+    floorNo:getVal('lFlNo')!==''?Number(getVal('lFlNo')):null,
+    totalFloors:getVal('lFlTot')?Number(getVal('lFlTot')):null,
     facing:getVal('lFc'),
+    txnType:(lMode==='buy'||lMode==='project')?getVal('lTxn'):'',
+    ownership:getVal('lOwn'),
+    water:_selWater.join(','),
+    backup:getVal('lBackup'),
     furnish:getVal('lFn'),
     avail:lMode==='rent'?getVal('lAv'):'',
     owner:owner,contact:contact,agency:cu?cu.agency||'':'',
@@ -2469,7 +2620,7 @@ async function doSub(){
     if(error){toast('Failed to update listing: '+error.message,'e');return;}
     _clr('l');
     closeM('addM');resetAddModal();
-    ['lTl','lBn','lCy','lLo','lAr','lArC','lArS','lAge','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFc','lFn','lComp'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['lTl','lBn','lCy','lLo','lAr','lArC','lArS','lAge','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFlNo','lFlTot','lFc','lFn','lComp','lTxn','lOwn','lBackup'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
     upImgs=[];selTags=[];selAmens=[];
     toast('Listing updated! It will be re-reviewed by admin. <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg>');
     if(cu&&(cu.role==='broker'||cu.role==='owner'||cu.role==='builder'))await renderLister();
@@ -2487,7 +2638,7 @@ async function doSub(){
       return;
     }
     closeM('addM');resetAddModal();
-    ['lTl','lBn','lCy','lLo','lAr','lArC','lArS','lAge','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFc','lFn','lComp'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var lBdSel=document.getElementById('lBd');if(lBdSel)lBdSel.selectedIndex=1;var lBtSel=document.getElementById('lBt');if(lBtSel)lBtSel.selectedIndex=0;
+    ['lTl','lBn','lCy','lLo','lAr','lArC','lArS','lAge','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFlNo','lFlTot','lFc','lFn','lComp','lTxn','lOwn','lBackup'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var lBdSel=document.getElementById('lBd');if(lBdSel)lBdSel.selectedIndex=1;var lBtSel=document.getElementById('lBt');if(lBtSel)lBtSel.selectedIndex=0;
     upImgs=[];selTags=[];selAmens=[];
     toast('Submitted! Admin reviews within 24 hrs. <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg>');
     if(cu&&(cu.role==='broker'||cu.role==='owner'||cu.role==='builder'))await renderLister();
@@ -3505,6 +3656,7 @@ function openM(id){
       if(wcP)wcP.style.display=cu.role==='builder'?'':'none';
       _unitTypes=[];renderUnits();
       _selFurn=[];renderFurnishingItems();
+      _selWater=[];setWaterFromString('');
       setLM(cu.role==='builder'?'project':'rent');
       var lo=document.getElementById('lOw'),lc=document.getElementById('lCt'),le=document.getElementById('lErr');
       if(lo)lo.value=cu.agency?cu.name+' – '+esc(cu.agency):cu.name;
@@ -3525,6 +3677,7 @@ function closeM(id){
   if(id==='addM')resetAddModal();
   // Clear listing deep-link hash and destroy map when closing detail view
   if(id==='viewM'){
+    _currentDetailId=null;
     // Clear listing deep-link hash (back button still works via popstate handler)
     if(window.location.hash.indexOf('#listing/')===0){
       if(window.history.replaceState)window.history.replaceState(null,null,window.location.pathname);
