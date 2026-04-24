@@ -225,12 +225,12 @@
     <button class="nlk" id="nA" style="display:none;color:#f0d070;font-weight:700;" onclick="go('admin')"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-settings"/></svg> Admin</button>
     <div id="nNotifWrap" style="display:none;position:relative;">
       <button onclick="toggleNotifPanel()" style="background:none;border:none;cursor:pointer;padding:8px;position:relative;color:#fff;display:flex;align-items:center;" title="Notifications" aria-label="Notifications"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-bell"/></svg><span id="nNotifBadge" style="display:none;position:absolute;top:0;right:0;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:50%;min-width:18px;height:18px;line-height:18px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
-      <div id="nNotifPanel" style="display:none;position:absolute;right:0;top:42px;width:340px;max-height:400px;overflow-y:auto;background:var(--wh);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);border:1px solid var(--sa);z-index:100;">
-        <div style="padding:12px 16px;border-bottom:1px solid var(--sa);display:flex;justify-content:space-between;align-items:center;">
-          <strong style="font-size:14px;font-family:'DM Sans',sans-serif;">Notifications</strong>
-          <button onclick="markAllNotifRead()" style="background:none;border:none;color:var(--t);font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Mark all read</button>
+      <div id="nNotifPanel" style="display:none;position:absolute;right:0;top:42px;width:360px;max-height:500px;overflow-y:auto;background:var(--wh);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.18);border:1px solid var(--sa);z-index:100;">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--sa);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--wh);z-index:2;border-radius:14px 14px 0 0;">
+          <strong style="font-size:15px;font-family:'DM Sans',sans-serif;color:var(--ink);">Notifications</strong>
+          <button onclick="markAllNotifRead()" style="background:transparent;border:none;color:var(--t);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;padding:4px 8px;border-radius:6px;transition:background .15s;" onmouseover="this.style.background='var(--cr)'" onmouseout="this.style.background='transparent'">Mark all read</button>
         </div>
-        <div id="nNotifList" style="padding:4px 0;"></div>
+        <div id="nNotifList"></div>
       </div>
     </div>
     <button class="btn-nav-login" id="nLg" onclick="openM('authM');setAT('login')">Login</button>

@@ -1200,7 +1200,7 @@ function pCard(l){
   // ── Footer actions ──
   var footerHTML='<div class="pc-footer">'
     +'<button class="pc-btn-sec" onclick="event.stopPropagation();viewL('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg> View Details</button>'
-    +'<button class="pc-btn-pri '+(ir?'':'buy')+'" onclick="event.stopPropagation();oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-phone"/></svg> '+(cu?'View Number':'Contact')+'</button>'
+    +'<button class="pc-btn-pri '+(ir?'':'buy')+'" onclick="event.stopPropagation();oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> '+(cu&&cu.id===l.uid?'View Number':'Send Inquiry')+'</button>'
     +'<button class="pc-btn-report" onclick="event.stopPropagation();openReport('+l.id+')" aria-label="Report discrimination" title="Report discrimination"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg></button>'
     +'</div>';
 
@@ -1497,9 +1497,28 @@ async function viewL(id){
         +'<button class="btn btn-sm" onclick="openM(\'authM\')">Sign Up Free — Instant</button></div>';
     }
   }
-  var cntH=cu
-    ?'<div class="al alg" style="margin-bottom:13px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-phone"/></svg> <strong>'+esc(l.owner)+(l.agency?' &middot; '+esc(l.agency):'')+'</strong> &nbsp;|&nbsp; '+esc(l.contact)+'</div>'
-    :'<div class="lock-box"><div style="font-size:30px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-lock"/></svg></div><p>Owner name, phone and agency visible after free sign-up.</p><button class="btn" onclick="openM(\'authM\')">Sign Up Free to Unlock</button></div>';
+  // Contact details visibility:
+  //   - Lister of this listing (they own it) → full contact info
+  //   - Admin → full contact info (for moderation)
+  //   - Anyone else (including signed-in renters/buyers) → name/agency only, no phone
+  //     Tenants can only reach out via the inquiry form to generate leads.
+  var canSeeFullContact=cu&&(cu.id===l.uid||cu.role==='admin');
+  var cntH;
+  if(!cu){
+    cntH='<div class="lock-box"><div style="font-size:30px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-lock"/></svg></div><p>Sign up free to send an inquiry and contact the '+(l.urole==='broker'?'broker':l.urole==='builder'?'builder':'owner')+'.</p><button class="btn" onclick="openM(\'authM\')">Sign Up Free</button></div>';
+  } else if(canSeeFullContact){
+    cntH='<div class="al alg" style="margin-bottom:13px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-phone"/></svg> <strong>'+esc(l.owner)+(l.agency?' &middot; '+esc(l.agency):'')+'</strong> &nbsp;|&nbsp; '+esc(l.contact)+'</div>';
+  } else {
+    // Signed-in but not the lister — show name + agency, hide phone, prompt inquiry
+    cntH='<div style="background:var(--tl);border:1px solid var(--t);border-radius:10px;padding:14px;margin-bottom:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
+      +'<div style="flex:1;min-width:180px;"><div style="font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-weight:700;">Listed by</div>'
+      +'<strong style="font-size:15px;color:var(--td);">'+esc(l.owner)+'</strong>'
+      +(l.agency?'<div style="font-size:12px;color:var(--mu);margin-top:2px;">'+esc(l.agency)+'</div>':'')
+      +'</div>'
+      +'<button class="btn" onclick="oCnt('+l.id+')" style="background:var(--t);color:#fff;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;font-family:\'DM Sans\',sans-serif;font-weight:700;font-size:13px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg> Send Inquiry</button>'
+      +'</div>'
+      +'<p style="font-size:11px;color:var(--mu);margin:-8px 0 13px;padding-left:4px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-shield-check"/></svg> For privacy, contact details are exchanged only through the inquiry system.</p>';
+  }
   var tagsH=l.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('');
   if(l.rera)tagsH+='<span class="tag tag-g">RERA <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg></span>';
   var amH=l.amens&&l.amens.length?'<div style="margin-bottom:13px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">Amenities</div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+l.amens.map(function(a){return '<span style="font-size:12px;padding:4px 10px;background:var(--cr);border-radius:6px;border:1px solid var(--sa);">'+esc(a)+'</span>';}).join('')+'</div></div>':'';
@@ -1925,42 +1944,85 @@ function updateNotifBadge(){
   }
 }
 
-function toggleNotifPanel(){
+async function toggleNotifPanel(){
   _notifOpen=!_notifOpen;
   var panel=document.getElementById('nNotifPanel');
   if(panel)panel.style.display=_notifOpen?'':'none';
-  if(_notifOpen)renderNotifList();
+  if(_notifOpen){
+    document.body.classList.add('notif-open');
+    // Fetch latest notifications every time the bell is opened — no stale data
+    await loadNotifs();
+    renderNotifList();
+    // Auto mark-all-as-read after a 1.5s delay (user has time to see what's new)
+    clearTimeout(_notifAutoReadT);
+    _notifAutoReadT=setTimeout(function(){
+      if(_notifOpen)markAllNotifRead();
+    },1500);
+  } else {
+    document.body.classList.remove('notif-open');
+    clearTimeout(_notifAutoReadT);
+  }
 }
+var _notifAutoReadT=null;
 
 function renderNotifList(){
   var list=document.getElementById('nNotifList');
   if(!list)return;
   if(!_notifs.length){
-    list.innerHTML='<div style="padding:24px;text-align:center;color:var(--mu);font-size:13px;">No notifications yet</div>';
+    list.innerHTML='<div style="padding:48px 24px;text-align:center;color:var(--mu);"><svg class="icn icn-xl" aria-hidden="true" style="opacity:.3;margin-bottom:12px;"><use href="#i-bell"/></svg><div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;">All caught up</div><div style="font-size:12px;">You\'ll see inquiries, approvals and updates here.</div></div>';
     return;
   }
   list.innerHTML=_notifs.map(function(n){
-    var icon=n.type==='inquiry'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg>':n.type==='listing_approved'?'&#9989;':n.type==='listing_rejected'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:var(--red);"><use href="#i-x"/></svg>':n.type==='report'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-flag"/></svg>':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-bell"/></svg>';
-    var bg=n.read?'':'background:rgba(18,90,81,.04);';
-    var dot=n.read?'':'<div style="width:8px;height:8px;border-radius:50%;background:var(--t);flex-shrink:0;"></div>';
+    // Clean, consistent icon set by notification type
+    var iconHref,iconBg,iconColor;
+    switch(n.type){
+      case 'inquiry':        iconHref='#i-mail';     iconBg='#e8f4ff'; iconColor='#1a7ab8'; break;
+      case 'listing_approved':iconHref='#i-check';   iconBg='#e4f5ea'; iconColor='var(--gr)'; break;
+      case 'listing_rejected':iconHref='#i-x';       iconBg='#ffe8e8'; iconColor='var(--red)'; break;
+      case 'listing_deleted': iconHref='#i-trash';   iconBg='#ffe8e8'; iconColor='var(--red)'; break;
+      case 'report':          iconHref='#i-flag';    iconBg='#fff3e0'; iconColor='#c55a00'; break;
+      default:                iconHref='#i-bell';    iconBg='var(--tl)'; iconColor='var(--t)';
+    }
+    var rowBg=n.read?'#fff':'rgba(18,90,81,.05)';
+    var titleWeight=n.read?'500':'700';
     var ago=_timeAgo(n.created_at);
-    var click=n.link_id?'onclick="closeNotifPanel();viewL('+n.link_id+')" style="cursor:pointer;"':'';
-    return '<div '+click+' style="padding:10px 16px;border-bottom:1px solid var(--cr);display:flex;gap:10px;align-items:flex-start;transition:background .15s;'+bg+'" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\''+(n.read?'':'rgba(18,90,81,.04)')+'\'">'
-      +'<div style="font-size:20px;flex-shrink:0;margin-top:2px;">'+icon+'</div>'
+    var clickAttrs=n.link_id?'onclick="handleNotifClick('+n.id+','+n.link_id+')" style="cursor:pointer;background:'+rowBg+';"':'onclick="markNotifRead('+n.id+')" style="cursor:pointer;background:'+rowBg+';"';
+    return '<div '+clickAttrs+' class="notif-row" data-id="'+n.id+'">'
+      +'<div class="notif-ic" style="background:'+iconBg+';color:'+iconColor+';"><svg class="icn icn-sm" aria-hidden="true"><use href="'+iconHref+'"/></svg></div>'
       +'<div style="flex:1;min-width:0;">'
-      +'<div style="font-size:13px;font-weight:'+(n.read?'400':'600')+';color:var(--ink);line-height:1.4;">'+esc(n.title)+'</div>'
-      +'<div style="font-size:11px;color:var(--mu);margin-top:2px;">'+esc(n.body)+'</div>'
-      +'<div style="font-size:10px;color:var(--mu);margin-top:4px;">'+ago+'</div>'
+      +'<div class="notif-title" style="font-weight:'+titleWeight+';">'+esc(n.title)+'</div>'
+      +(n.body?'<div class="notif-body">'+esc(n.body)+'</div>':'')
+      +'<div class="notif-time">'+ago+'</div>'
       +'</div>'
-      +dot
+      +(n.read?'':'<div class="notif-dot" title="Unread"></div>')
       +'</div>';
   }).join('');
+}
+
+// Mark a single notification as read (server-side)
+async function markNotifRead(id){
+  var n=_notifs.find(function(x){return x.id===id;});
+  if(!n||n.read)return;
+  try{
+    await sb.from('notifications').update({read:true}).eq('id',id);
+    n.read=true;
+    updateNotifBadge();
+    renderNotifList();
+  }catch(e){console.error('mark read failed',e);}
+}
+
+// Click notification — mark as read and navigate
+async function handleNotifClick(notifId,linkId){
+  await markNotifRead(notifId);
+  closeNotifPanel();
+  if(linkId)viewL(linkId);
 }
 
 function closeNotifPanel(){
   _notifOpen=false;
   var panel=document.getElementById('nNotifPanel');
   if(panel)panel.style.display='none';
+  document.body.classList.remove('notif-open');
 }
 
 async function markAllNotifRead(){
@@ -1999,7 +2061,15 @@ async function oCnt(id){
   var ir=l.lf==='rent';
   var ci=document.getElementById('cInfo');
   if(ci)ci.innerHTML='<strong>'+esc(l.title)+'</strong><br/>'+esc(l.loc)+', '+esc(l.city)+' &middot; '+(ir?'&#8377;'+l.rent.toLocaleString('en-IN')+'/mo':fmtPriceHTML(l.price));
-  var cc=document.getElementById('cCnt');if(cc)cc.textContent='Direct: '+esc(l.contact)+' · '+esc(l.owner)+(l.agency?' · '+esc(l.agency):'');
+  var cc=document.getElementById('cCnt');
+  if(cc){
+    // Only show direct number to the lister themselves or admin. Others see a privacy note.
+    if(cu.id===l.uid||cu.role==='admin'){
+      cc.innerHTML='Direct: '+esc(l.contact)+' &middot; '+esc(l.owner)+(l.agency?' &middot; '+esc(l.agency):'');
+    } else {
+      cc.innerHTML='<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:var(--t);"><use href="#i-shield-check"/></svg> Listed by <strong>'+esc(l.owner)+'</strong>'+(l.agency?' &middot; '+esc(l.agency):'')+'. Your inquiry is sent privately — the '+(l.urole==='broker'?'broker':l.urole==='builder'?'builder':'owner')+' will reach out directly.';
+    }
+  }
   var cn=document.getElementById('cNm'),cp=document.getElementById('cPh'),ce=document.getElementById('cEm');
   if(cn)cn.value=cu.name||'';if(cp)cp.value=cu.phone||'';if(ce)ce.value=cu.email||'';
   openM('cntM');
@@ -3682,4 +3752,10 @@ sb.auth.onAuthStateChange(function(ev,session){
   }
 });
 // Poll for new notifications every 60 seconds
-setInterval(function(){if(cu)loadNotifs();},60000);
+// Poll notifications every 20s for near-real-time updates
+setInterval(function(){if(cu)loadNotifs();},20000);
+// Also refresh when the tab regains focus (user switches back to the app)
+window.addEventListener('focus',function(){if(cu)loadNotifs();});
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden&&cu)loadNotifs();
+});
