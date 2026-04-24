@@ -816,7 +816,7 @@ function resetSessionState(){
     // Hero rent search
     'hrc','hrt','hrb',
     // Hero buy search
-    'hbc','hbt','hbb','hbd',
+    'hbc','hbbMin','hbbMax','hbd',
     // Listing form (addM)
     'lTl','lBn','lCy','lLo','lAr','lRt','lDp','lPr','lRe','lOw','lCt','lDs','lFl','lFc','lFn','lTp','lBd','lBt','lAv',
     // Login + register
@@ -925,15 +925,80 @@ function doHS(){
     if(b)fRB=[b];
   } else {
     var c2=document.getElementById('hbc').value;
-    var t2=document.getElementById('hbt').value;
-    var bg=document.getElementById('hbb').value;
+    // Multi-select types
+    var tBoxes=document.querySelectorAll('#hbtMenu input[type="checkbox"]:checked');
+    var types=[];tBoxes.forEach(function(cb){types.push(cb.value);});
+    // Min/Max budget
+    var bgMinRaw=document.getElementById('hbbMin').value;
+    var bgMaxRaw=document.getElementById('hbbMax').value;
+    var bgMin=parseBudget(bgMinRaw);
+    var bgMax=parseBudget(bgMaxRaw);
     var b2=document.getElementById('hbd').value;
     var fc2=document.getElementById('fBCity');if(fc2&&c2)fc2.value=c2;
-    if(t2)fBT=[t2];
-    var fbx=document.getElementById('fBmx');if(fbx&&bg)fbx.value=bg;
+    if(types.length)fBT=types;
+    var fbmn=document.getElementById('fBmn');if(fbmn)fbmn.value=bgMin>0?bgMin:'';
+    var fbx=document.getElementById('fBmx');if(fbx)fbx.value=bgMax>0?bgMax:'';
     if(b2)fBB=[b2];
   }
   bldF();renderBrowse();
+}
+
+// ══ MULTI-SELECT DROPDOWN ══
+function toggleMS(menuId){
+  var menu=document.getElementById(menuId);
+  if(!menu)return;
+  var isOpen=menu.style.display!=='none';
+  // Close all other menus
+  document.querySelectorAll('.ms-menu').forEach(function(m){if(m!==menu)m.style.display='none';});
+  document.querySelectorAll('.ms-btn').forEach(function(b){b.classList.remove('open');});
+  // Toggle this one
+  menu.style.display=isOpen?'none':'block';
+  var btn=menu.previousElementSibling;
+  if(btn&&btn.classList.contains('ms-btn'))btn.classList.toggle('open',!isOpen);
+  // Wire change events once
+  if(!menu.dataset.wired){
+    menu.dataset.wired='1';
+    menu.querySelectorAll('input[type="checkbox"]').forEach(function(cb){
+      cb.addEventListener('change',function(){
+        var labelEl=btn?btn.querySelector('span'):null;
+        if(!labelEl)return;
+        var selected=[];
+        menu.querySelectorAll('input[type="checkbox"]:checked').forEach(function(c){selected.push(c.parentElement.textContent.trim());});
+        if(!selected.length)labelEl.textContent='Any type';
+        else if(selected.length===1)labelEl.textContent=selected[0];
+        else labelEl.textContent=selected.length+' types selected';
+      });
+    });
+  }
+}
+// Close ms menus when clicking outside
+document.addEventListener('click',function(e){
+  if(e.target.closest('.ms-wrap'))return;
+  document.querySelectorAll('.ms-menu').forEach(function(m){m.style.display='none';});
+  document.querySelectorAll('.ms-btn').forEach(function(b){b.classList.remove('open');});
+});
+
+// ══ BUDGET PARSING ══
+// Accepts: 5000000, "50L", "1.5 Cr", "75 lakh", "2cr"
+// Returns numeric rupees (or 0 if unparseable)
+function parseBudget(raw){
+  if(!raw)return 0;
+  var s=String(raw).trim().toLowerCase().replace(/[,\s\u20B9]/g,'');
+  if(!s)return 0;
+  var m=s.match(/^([\d.]+)\s*(cr|crore|crores|l|lakh|lakhs|k|thousand)?$/);
+  if(!m)return Number(s)||0;
+  var n=Number(m[1]);if(isNaN(n))return 0;
+  var unit=m[2]||'';
+  if(unit==='cr'||unit==='crore'||unit==='crores')return Math.round(n*10000000);
+  if(unit==='l'||unit==='lakh'||unit==='lakhs')return Math.round(n*100000);
+  if(unit==='k'||unit==='thousand')return Math.round(n*1000);
+  return Math.round(n);
+}
+function setBudgetPreset(minId,maxId,min,max){
+  var mn=document.getElementById(minId);
+  var mx=document.getElementById(maxId);
+  if(mn)mn.value=min>0?min:'';
+  if(mx)mx.value=max;
 }
 
 // ══ HOME ══
@@ -2011,6 +2076,10 @@ function setLM(m){
   var lr=document.getElementById('lmR'),lb=document.getElementById('lmB');
   if(lr)lr.classList.toggle('on',m==='rent');
   if(lb)lb.classList.toggle('on',m==='buy');
+  // Wizard intent cards
+  var wcR=document.getElementById('wizCardRent'),wcB=document.getElementById('wizCardBuy');
+  if(wcR)wcR.classList.toggle('on',m==='rent');
+  if(wcB)wcB.classList.toggle('on',m==='buy');
   ['lRW','lDW','lAvW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='rent'?'':'none';});
   ['lPrW','lStW','lPoW','lReW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='buy'?'':'none';});
 }
@@ -2282,6 +2351,77 @@ async function showLeads(lid){
   var exportBtn=inqs.length?'<div style="text-align:right;margin-bottom:10px;"><button class="btn btn-o btn-sm" onclick="exportLeadsForListing('+lid+')"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg> Export to CSV</button></div>':'';
   document.getElementById('vCnt').innerHTML=inqs.length?exportBtn+'<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Message</th><th>Date</th></tr></thead><tbody>'+inqs.map(function(i){return '<tr><td><strong>'+esc(i.name)+'</strong></td><td>'+esc(i.phone)+'</td><td>'+esc(i.email||'—')+'</td><td style="max-width:140px;font-size:12px;">'+esc(i.message||'—')+'</td><td>'+i.sentAt+'</td></tr>';}).join('')+'</tbody></table></div>':'<p style="text-align:center;color:var(--mu);padding:28px;">No leads yet.</p>';
   openM('viewM');
+}
+
+// ══ LISTING FORM WIZARD ══
+var _wizStep=1;
+var _wizTotal=4;
+
+function wizGoto(step){
+  step=Math.max(1,Math.min(_wizTotal,step));
+  _wizStep=step;
+  // Update panes
+  document.querySelectorAll('.wiz-pane').forEach(function(p){
+    p.classList.toggle('on',Number(p.dataset.pane)===step);
+  });
+  // Update step indicators
+  document.querySelectorAll('.wiz-step').forEach(function(s){
+    var n=Number(s.dataset.step);
+    s.classList.remove('on','done');
+    if(n===step)s.classList.add('on');
+    else if(n<step)s.classList.add('done');
+  });
+  // Show/hide nav buttons
+  var prev=document.getElementById('wizPrev');
+  var next=document.getElementById('wizNext');
+  var submit=document.getElementById('addMBtn');
+  if(prev)prev.style.display=step>1?'':'none';
+  if(step===_wizTotal){
+    if(next)next.style.display='none';
+    if(submit)submit.style.display='';
+  } else {
+    if(next)next.style.display='';
+    if(submit)submit.style.display='none';
+  }
+  // Clear any error when navigating
+  var err=document.getElementById('lErr');
+  if(err)err.style.display='none';
+}
+
+function wizGo(delta){
+  var newStep=_wizStep+delta;
+  // Validate current step before advancing
+  if(delta>0&&!_wizValidate(_wizStep)){
+    return;
+  }
+  wizGoto(newStep);
+  // Scroll modal body to top
+  var mb=document.querySelector('#addM .mb');
+  if(mb)mb.scrollTop=0;
+}
+
+function _wizValidate(step){
+  var err=document.getElementById('lErr');
+  var showErr=function(msg){if(err){err.style.display='';err.textContent=msg;}};
+  if(step===1){
+    // Intent — already has default, always valid
+    return true;
+  }
+  if(step===2){
+    var title=(document.getElementById('lTl').value||'').trim();
+    var city=(document.getElementById('lCy').value||'').trim();
+    if(title.length<3){showErr('Please enter a property title (at least 3 characters).');return false;}
+    if(city.length<2){showErr('Please enter a city.');return false;}
+    return true;
+  }
+  if(step===3){
+    var owner=(document.getElementById('lOw').value||'').trim();
+    var contact=(document.getElementById('lCt').value||'').trim();
+    if(owner.length<2){showErr('Please enter the owner/broker name.');return false;}
+    if(contact.replace(/\D/g,'').length<10){showErr('Please enter a valid contact number (10 digits).');return false;}
+    return true;
+  }
+  return true;
 }
 
 // ══ CSV EXPORT ══
@@ -2713,7 +2853,12 @@ function openM(id){
       if(lo)lo.value=cu.agency?cu.name+' – '+esc(cu.agency):cu.name;
       if(lc)lc.value=cu.phone||'';
       if(le)le.style.display='none';
+      wizGoto(1);
     }
+  }
+  // If opening addM in edit mode, start on step 2 (skip intent)
+  if(id==='addM'&&_editingListingId){
+    wizGoto(2);
   }
   var el=document.getElementById(id);if(el)el.classList.add('open');
 }

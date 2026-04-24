@@ -316,8 +316,36 @@
         <!-- BUY SEARCH -->
         <div id="hfb" style="display:none;">
           <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hbc" name="search" placeholder="Bengaluru, Pune, Mumbai…" autocomplete="new-password"/><div class="ac-list" id="ac-hbc"></div></div></div>
-          <div class="srow srow-sec"><span class="slbl">Type</span><select class="sinp" id="hbt"><option value="">Any type</option><option>Apartment</option><option>House</option><option>Villa</option><option>Plot</option></select></div>
-          <div class="srow srow-sec"><span class="slbl">Budget</span><select class="sinp" id="hbb"><option value="">Any budget</option><option value="2500000">Under 25L</option><option value="5000000">Under 50L</option><option value="10000000">Under 1Cr</option><option value="25000000">Under 2.5Cr</option></select></div>
+          <div class="srow srow-sec"><span class="slbl">Type</span>
+            <div class="ms-wrap">
+              <button type="button" class="sinp ms-btn" id="hbtBtn" onclick="toggleMS('hbtMenu')"><span id="hbtLabel">Any type</span><svg class="icn icn-sm" aria-hidden="true" style="opacity:.6;"><use href="#i-chevron-right"/></svg></button>
+              <div class="ms-menu" id="hbtMenu" style="display:none;">
+                <label><input type="checkbox" value="Apartment"/> Flat / Apartment</label>
+                <label><input type="checkbox" value="Builder Floor"/> Builder Floor</label>
+                <label><input type="checkbox" value="House"/> Independent House / Villa</label>
+                <label><input type="checkbox" value="Villa"/> Villa</label>
+                <label><input type="checkbox" value="Plot"/> Residential Land / Plot</label>
+                <label><input type="checkbox" value="Studio"/> 1 RK / Studio Apartment</label>
+                <label><input type="checkbox" value="Farm House"/> Farm House</label>
+                <label><input type="checkbox" value="Serviced Apartment"/> Serviced Apartment</label>
+                <label><input type="checkbox" value="Other"/> Other</label>
+              </div>
+            </div>
+          </div>
+          <div class="srow srow-sec"><span class="slbl">Budget</span>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input class="sinp" type="text" id="hbbMin" placeholder="Min" style="width:50%;" autocomplete="off"/>
+              <span style="color:var(--mu);font-size:12px;">to</span>
+              <input class="sinp" type="text" id="hbbMax" placeholder="Max" style="width:50%;" autocomplete="off"/>
+            </div>
+            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap;">
+              <button type="button" onclick="setBudgetPreset('hbbMin','hbbMax',0,2500000)" style="background:none;border:1px solid var(--sa);border-radius:50px;padding:2px 10px;font-size:10px;color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;">&lt;25L</button>
+              <button type="button" onclick="setBudgetPreset('hbbMin','hbbMax',0,5000000)" style="background:none;border:1px solid var(--sa);border-radius:50px;padding:2px 10px;font-size:10px;color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;">&lt;50L</button>
+              <button type="button" onclick="setBudgetPreset('hbbMin','hbbMax',0,10000000)" style="background:none;border:1px solid var(--sa);border-radius:50px;padding:2px 10px;font-size:10px;color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;">&lt;1Cr</button>
+              <button type="button" onclick="setBudgetPreset('hbbMin','hbbMax',0,25000000)" style="background:none;border:1px solid var(--sa);border-radius:50px;padding:2px 10px;font-size:10px;color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;">&lt;2.5Cr</button>
+              <button type="button" onclick="setBudgetPreset('hbbMin','hbbMax',0,100000000)" style="background:none;border:1px solid var(--sa);border-radius:50px;padding:2px 10px;font-size:10px;color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;">&lt;10Cr</button>
+            </div>
+          </div>
           <div class="srow srow-sec"><span class="slbl">Beds</span><select class="sinp" id="hbd"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5+</option></select></div>
           <button class="smore-btn" id="smore-b" onclick="toggleSMore('b')">+ More options</button>
           <button class="sgo-btn buy" onclick="doHS()">Search →</button>
@@ -711,48 +739,100 @@
 <div id="addM" class="mo" onclick="ovcM(event,'addM')">
   <div class="mb mb-lg">
     <div class="mh"><h2 id="addMTitle">New Property Listing</h2><button class="mc" onclick="closeM('addM')" aria-label="Close dialog"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button></div>
-    <div id="lErr" class="al ale" style="display:none;"></div>
-    <div style="margin-bottom:14px;">
-      <label class="flbl" style="margin-bottom:6px;">Listing For *</label>
-      <div class="rtabs" style="max-width:240px;"><button class="rtab on" id="lmR" onclick="setLM('rent')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-rent"/></svg> Rent</button><button class="rtab" id="lmB" onclick="setLM('buy')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-key"/></svg> Sale</button></div>
+
+    <!-- Progress bar -->
+    <div class="wiz-steps">
+      <div class="wiz-step on" data-step="1"><div class="wiz-num">1</div><div class="wiz-lbl">Intent</div></div>
+      <div class="wiz-step" data-step="2"><div class="wiz-num">2</div><div class="wiz-lbl">Basics</div></div>
+      <div class="wiz-step" data-step="3"><div class="wiz-num">3</div><div class="wiz-lbl">Details</div></div>
+      <div class="wiz-step" data-step="4"><div class="wiz-num">4</div><div class="wiz-lbl">Pricing &amp; Photos</div></div>
     </div>
-    <div class="fg2">
-      <div class="fg s2"><label class="flbl">Property Title *</label><input class="fi" type="text" id="lTl" placeholder="e.g. 3 BHK Apartment, Andheri West"/></div>
-      <div class="fg s2"><label class="flbl">Building / Society Name <span style="color:var(--mu);font-weight:400;">(optional)</span></label><input class="fi" type="text" id="lBn" placeholder="e.g. Lodha World One, Prestige Falcon City"/></div>
-      <div class="fg"><label class="flbl">City *</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lCy" name="listing-city" placeholder="Mumbai" autocomplete="new-password"/><div class="ac-list" id="ac-lCy"></div></div></div>
-      <div class="fg"><label class="flbl">Locality</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lLo" placeholder="Andheri West" autocomplete="off"/><div class="ac-list" id="ac-lLo"></div></div></div>
-      <div class="fg"><label class="flbl">Property Type</label><select class="fi" id="lTp"><option>Apartment</option><option>Flat</option><option>House</option><option>Villa</option><option>Plot</option><option>PG / Room</option></select></div>
-      <div class="fg"><label class="flbl">Bedrooms</label><select class="fi" id="lBd"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6+</option></select></div>
-      <div class="fg"><label class="flbl">Bathrooms</label><select class="fi" id="lBt"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
-      <div class="fg"><label class="flbl">Area (sq.ft)</label><input class="fi" type="number" id="lAr" placeholder="1200"/></div>
-      <div class="fg"><label class="flbl">Floor</label><select class="fi" id="lFl"><option value="">Select</option><option>Ground</option><option>1st</option><option>2nd</option><option>3rd</option><option>4th</option><option>5th-10th</option><option>10th+</option></select></div>
-      <div class="fg"><label class="flbl">Facing</label><select class="fi" id="lFc"><option value="">Any</option><option>North</option><option>South</option><option>East</option><option>West</option><option>North-East</option><option>North-West</option><option>South-East</option><option>South-West</option></select></div>
-      <div class="fg"><label class="flbl">Furnishing</label><select class="fi" id="lFn"><option value="">Select</option><option>Unfurnished</option><option>Semi-Furnished</option><option>Fully Furnished</option></select></div>
-      <div class="fg" id="lRW"><label class="flbl">Monthly Rent (₹) *</label><input class="fi" type="number" id="lRt" placeholder="25000"/></div>
-      <div class="fg" id="lDW"><label class="flbl">Deposit (₹)</label><input class="fi" type="number" id="lDp" placeholder="50000"/></div>
-      <div class="fg" id="lAvW"><label class="flbl">Availability</label><select class="fi" id="lAv"><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
-      <div class="fg" id="lPrW" style="display:none;"><label class="flbl">Sale Price (₹) *</label><input class="fi" type="number" id="lPr" placeholder="5000000"/></div>
-      <div class="fg" id="lStW" style="display:none;"><label class="flbl">Sale Type</label><select class="fi" id="lSt"><option>New</option><option>Resale</option></select></div>
-      <div class="fg" id="lPoW" style="display:none;"><label class="flbl">Possession</label><select class="fi" id="lPo"><option>Ready to Move</option><option>Under Construction</option><option>Within 6 Months</option><option>Within 1 Year</option></select></div>
-      <div class="fg" id="lReW" style="display:none;"><label class="flbl">RERA Number</label><input class="fi" type="text" id="lRe" placeholder="RERA/MH/2024/001"/></div>
-      <div class="fg"><label class="flbl">Owner / Broker Name *</label><input class="fi" type="text" id="lOw"/></div>
-      <div class="fg"><label class="flbl">Contact Number *</label><input class="fi" type="tel" id="lCt"/></div>
-      <div class="fg s2"><label class="flbl">Description</label><textarea class="fi" id="lDs" placeholder="Describe the property and your openness to all communities…"></textarea></div>
-      <div class="fg s2"><label class="flbl">Amenities</label><div class="amen-chips" id="lAm" style="margin-top:5px;"></div></div>
-      <div class="fg s2"><label class="flbl">Inclusion Tags</label><div class="tp" id="lTgs"></div></div>
-      <div class="fg s2">
-        <label class="flbl">Photos (up to 6) — first 2 free, rest unlock after sign-up</label>
-        <div class="dz" id="dz" onclick="document.getElementById('imgIn').click()" ondragover="dzOv(event)" ondragleave="dzLv()" ondrop="dzDp(event)">
-          <div style="margin-bottom:8px;color:var(--t);"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-eye"/></svg></div>
-          <p style="font-size:13px;color:var(--mu);">Click or drag & drop photos here</p>
-          <p style="font-size:11px;color:var(--mu);margin-top:2px;">JPG, PNG, WebP · Auto-compressed for fast loading</p>
-        </div>
-        <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="hImgs(event)"/>
-        <div class="img-pv" id="iPv"></div>
+
+    <div id="lErr" class="al ale" style="display:none;"></div>
+
+    <!-- STAGE 1: Intent -->
+    <div class="wiz-pane on" data-pane="1">
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;">What would you like to list?</h3>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Choose whether you want to rent out the property or sell it.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+        <button type="button" class="wiz-card on" id="wizCardRent" onclick="setLM('rent')">
+          <svg class="icn icn-xl" aria-hidden="true" style="color:var(--t);"><use href="#i-rent"/></svg>
+          <div class="wiz-card-t">Rent</div>
+          <div class="wiz-card-s">Monthly lease, deposit &amp; availability</div>
+        </button>
+        <button type="button" class="wiz-card" id="wizCardBuy" onclick="setLM('buy')">
+          <svg class="icn icn-xl" aria-hidden="true" style="color:var(--g);"><use href="#i-key"/></svg>
+          <div class="wiz-card-t">Sale</div>
+          <div class="wiz-card-s">New or resale, with RERA &amp; possession</div>
+        </button>
       </div>
     </div>
-    <div class="al alw" style="margin-top:10px;font-size:12px;">Listing reviewed by admin before going live — usually within 24 hrs.</div>
-    <button class="btn btn-bl" style="margin-top:12px;" id="addMBtn" onclick="doSub()">Submit for Review</button>
+
+    <!-- STAGE 2: Basics -->
+    <div class="wiz-pane" data-pane="2">
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;">Property basics</h3>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">The essentials we need to identify your listing.</p>
+      <div class="fg2">
+        <div class="fg s2"><label class="flbl">Property Title *</label><input class="fi" type="text" id="lTl" placeholder="e.g. 3 BHK Apartment, Andheri West"/></div>
+        <div class="fg s2"><label class="flbl">Building / Society Name <span style="color:var(--mu);font-weight:400;">(optional)</span></label><input class="fi" type="text" id="lBn" placeholder="e.g. Lodha World One, Prestige Falcon City"/></div>
+        <div class="fg"><label class="flbl">City *</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lCy" name="listing-city" placeholder="Mumbai" autocomplete="new-password"/><div class="ac-list" id="ac-lCy"></div></div></div>
+        <div class="fg"><label class="flbl">Locality</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lLo" placeholder="Andheri West" autocomplete="off"/><div class="ac-list" id="ac-lLo"></div></div></div>
+        <div class="fg"><label class="flbl">Property Type *</label><select class="fi" id="lTp"><option>Apartment</option><option>Builder Floor</option><option>Independent House</option><option>Villa</option><option>1 RK / Studio</option><option>Plot</option><option>Farm House</option><option>Serviced Apartment</option><option>PG / Room</option><option>Other</option></select></div>
+        <div class="fg"><label class="flbl">Bedrooms *</label><select class="fi" id="lBd"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6+</option></select></div>
+      </div>
+    </div>
+
+    <!-- STAGE 3: Property details -->
+    <div class="wiz-pane" data-pane="3">
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;">Property details</h3>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Help buyers understand the property better.</p>
+      <div class="fg2">
+        <div class="fg"><label class="flbl">Bathrooms</label><select class="fi" id="lBt"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+        <div class="fg"><label class="flbl">Area (sq.ft)</label><input class="fi" type="number" id="lAr" placeholder="1200"/></div>
+        <div class="fg"><label class="flbl">Floor</label><select class="fi" id="lFl"><option value="">Select</option><option>Ground</option><option>1st</option><option>2nd</option><option>3rd</option><option>4th</option><option>5th-10th</option><option>10th+</option></select></div>
+        <div class="fg"><label class="flbl">Facing</label><select class="fi" id="lFc"><option value="">Any</option><option>North</option><option>South</option><option>East</option><option>West</option><option>North-East</option><option>North-West</option><option>South-East</option><option>South-West</option></select></div>
+        <div class="fg"><label class="flbl">Furnishing</label><select class="fi" id="lFn"><option value="">Select</option><option>Unfurnished</option><option>Semi-Furnished</option><option>Fully Furnished</option></select></div>
+        <div class="fg" id="lAvW"><label class="flbl">Availability</label><select class="fi" id="lAv"><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
+        <div class="fg" id="lPoW" style="display:none;"><label class="flbl">Possession</label><select class="fi" id="lPo"><option>Ready to Move</option><option>Under Construction</option><option>Within 6 Months</option><option>Within 1 Year</option></select></div>
+        <div class="fg" id="lStW" style="display:none;"><label class="flbl">Sale Type</label><select class="fi" id="lSt"><option>New</option><option>Resale</option></select></div>
+        <div class="fg" id="lReW" style="display:none;"><label class="flbl">RERA Number</label><input class="fi" type="text" id="lRe" placeholder="RERA/MH/2024/001"/></div>
+        <div class="fg"><label class="flbl">Owner / Broker Name *</label><input class="fi" type="text" id="lOw"/></div>
+        <div class="fg"><label class="flbl">Contact Number *</label><input class="fi" type="tel" id="lCt"/></div>
+        <div class="fg s2"><label class="flbl">Amenities</label><div class="amen-chips" id="lAm" style="margin-top:5px;"></div></div>
+        <div class="fg s2"><label class="flbl">Inclusion Tags</label><div class="tp" id="lTgs"></div></div>
+      </div>
+    </div>
+
+    <!-- STAGE 4: Pricing, Photos, Description -->
+    <div class="wiz-pane" data-pane="4">
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;">Pricing &amp; photos</h3>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Final step — set your price, upload photos, and add a description.</p>
+      <div class="fg2">
+        <div class="fg" id="lRW"><label class="flbl">Monthly Rent (₹) *</label><input class="fi" type="number" id="lRt" placeholder="25000"/></div>
+        <div class="fg" id="lDW"><label class="flbl">Deposit (₹)</label><input class="fi" type="number" id="lDp" placeholder="50000"/></div>
+        <div class="fg" id="lPrW" style="display:none;"><label class="flbl">Sale Price (₹) *</label><input class="fi" type="number" id="lPr" placeholder="5000000"/></div>
+        <div class="fg s2"><label class="flbl">Description</label><textarea class="fi" id="lDs" placeholder="Describe the property and your openness to all communities…"></textarea></div>
+        <div class="fg s2">
+          <label class="flbl">Photos (up to 6) — first 2 free, rest unlock after sign-up</label>
+          <div class="dz" id="dz" onclick="document.getElementById('imgIn').click()" ondragover="dzOv(event)" ondragleave="dzLv()" ondrop="dzDp(event)">
+            <div style="margin-bottom:8px;color:var(--t);"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-eye"/></svg></div>
+            <p style="font-size:13px;color:var(--mu);">Click or drag &amp; drop photos here</p>
+            <p style="font-size:11px;color:var(--mu);margin-top:2px;">JPG, PNG, WebP · Auto-compressed for fast loading</p>
+          </div>
+          <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="hImgs(event)"/>
+          <div class="img-pv" id="iPv"></div>
+        </div>
+      </div>
+      <div class="al alw" style="margin-top:10px;font-size:12px;">Listing reviewed by admin before going live — usually within 24 hrs.</div>
+    </div>
+
+    <!-- Nav buttons -->
+    <div class="wiz-nav">
+      <button type="button" class="btn btn-o" id="wizPrev" onclick="wizGo(-1)" style="display:none;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-chevron-left"/></svg> Back</button>
+      <div style="flex:1;"></div>
+      <button type="button" class="btn btn-bl" id="wizNext" onclick="wizGo(1)">Continue <svg class="icn icn-sm" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+      <button type="button" class="btn btn-bl" id="addMBtn" onclick="doSub()" style="display:none;">Submit for Review</button>
+    </div>
   </div>
 </div>
 
