@@ -554,7 +554,9 @@
     <button class="atab on" onclick="aTab('ov',this)">Overview</button>
     <button class="atab" onclick="aTab('al',this)">All Listings</button>
     <button class="atab" onclick="aTab('pd',this)">Pending</button>
+    <button class="atab" onclick="aTab('rj',this)" style="color:#b85050;">Rejected</button>
     <button class="atab" onclick="aTab('ls',this)">Brokers &amp; Owners</button>
+    <button class="atab" onclick="aTab('bd',this)">Builders</button>
     <button class="atab" onclick="aTab('tn',this)">Tenants</button>
     <button class="atab" onclick="aTab('ld',this)">Leads &amp; Export</button>
     <button class="atab" onclick="aTab('rp',this)" style="color:var(--red);font-weight:700;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-flag"/></svg> Reports</button>
@@ -825,6 +827,12 @@
         <div class="fg" id="lPrW" style="display:none;"><label class="flbl">Sale Price (₹) *</label><input class="fi" type="number" id="lPr" placeholder="5000000"/></div>
         <div class="fg" id="lPrMinW" style="display:none;"><label class="flbl">Starting Price (₹) *</label><input class="fi" type="number" id="lPrMin" placeholder="5000000"/></div>
         <div class="fg" id="lPrMaxW" style="display:none;"><label class="flbl">Maximum Price (₹)</label><input class="fi" type="number" id="lPrMax" placeholder="20000000"/></div>
+        <div class="fg s2" id="lUnitsW" style="display:none;">
+          <label class="flbl">Unit Configurations <span style="color:var(--mu);font-weight:400;">(optional — helps buyers compare)</span></label>
+          <div style="font-size:11px;color:var(--mu);margin-bottom:8px;">Add each available configuration. E.g. "3 BHK, 1450 sq.ft, ₹85L – ₹1.2Cr"</div>
+          <div id="lUnits"></div>
+          <button type="button" onclick="addUnit()" style="background:transparent;color:var(--t);border:1.5px dashed var(--t);border-radius:8px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;margin-top:6px;">+ Add Unit Configuration</button>
+        </div>
         <div class="fg s2"><label class="flbl">Description</label><textarea class="fi" id="lDs" placeholder="Describe the property and your openness to all communities…"></textarea></div>
         <div class="fg s2">
           <label class="flbl">Photos (up to 6) — first 2 free, rest unlock after sign-up</label>

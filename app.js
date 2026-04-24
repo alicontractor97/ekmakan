@@ -138,11 +138,11 @@ function renderTurnstile(containerId,tokenSetter){
 }
 
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
-function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0};}
+function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[]};}
 // Map JS listing → Supabase row
-function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0};}
+function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[]};}
 function mapInq(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',listingCity:r.listing_city||'',lf:r.listing_for||'rent',contact:'',name:r.inquirer_name||'',phone:r.inquirer_phone||'',email:r.inquirer_email||'',message:r.message||'',uid:r.user_id,sentAt:r.sent_at?(r.sent_at+'').split('T')[0]:''};}
-function mapUsr(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone||'',role:r.role||'user',agency:r.agency||'',lic:r.license_no||'',joinedAt:r.joined_at?(r.joined_at+'').split('T')[0]:'',verified:r.verified||false};}
+function mapUsr(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone||'',role:r.role||'user',agency:r.agency||'',lic:r.license_no||'',joinedAt:r.joined_at?(r.joined_at+'').split('T')[0]:'',verified:r.verified||false,trusted:r.is_trusted||false};}
 function mapRpt(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',type:r.report_type||'',desc:r.description||'',reporterName:r.reporter_name||'',reporterContact:r.reporter_contact||'',reporterUid:r.reporter_user_id,status:r.status||'open',submittedAt:r.submitted_at?(r.submitted_at+'').split('T')[0]:''};}
 
 // In-memory caches (invalidated on writes). Avoids re-fetching on every render.
@@ -165,7 +165,7 @@ let _cIdx={};
 const PAGE_SIZE=30;
 let _browseShown=0;       // How many listings currently rendered in browse grid
 let _browseFiltered=[];   // Full filtered+sorted array for current browse view
-let _adminPage={al:0,pd:0,ls:0,tn:0,ld:0}; // Per-tab page counters for admin
+let _adminPage={al:0,pd:0,rj:0,ls:0,bd:0,tn:0,ld:0}; // Per-tab page counters for admin
 let _editingListingId=null; // When set, doSub updates instead of creates
 
 // ══ UTILITIES ══
@@ -338,7 +338,7 @@ function showEmpty(elId,icon,title,sub){
 // ══ DATA ACCESS (Supabase) ══
 async function gL(){
   if(_cacheL&&_cacheValid('l'))return _cacheL;
-  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max').order('posted_at',{ascending:false});
+  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types').order('posted_at',{ascending:false});
   if(error){toast('Failed to load listings. Please refresh.','e');_cacheL=[];return[];}
   _cacheL=(data||[]).map(mapL);
   _cacheTime.l=Date.now();
@@ -491,7 +491,7 @@ async function doLogin(){
   try{
     var {data,error}=await sb.auth.signInWithPassword({email:em,password:pw,options:{captchaToken:_turnstileLoginToken}});
     if(error)throw error;
-    var {data:profile,error:pErr}=await sb.from('users').select('id,name,email,phone,role,agency,license_no,joined_at,verified').eq('id',data.user.id).single();
+    var {data:profile,error:pErr}=await sb.from('users').select('id,name,email,phone,role,agency,license_no,joined_at,verified,is_trusted').eq('id',data.user.id).single();
     if(pErr)throw pErr;
     resetSessionState();
     cu={id:profile.id,name:profile.name,email:profile.email,phone:profile.phone||'',role:profile.role,agency:profile.agency||'',lic:profile.license_no||'',joinedAt:profile.joined_at?(profile.joined_at+'').split('T')[0]:'',verified:profile.verified||false};
@@ -811,7 +811,7 @@ function resetSessionState(){
   _cIdx={};
   // Pagination
   _browseShown=0;_browseFiltered=[];
-  _adminPage={al:0,pd:0,ls:0,tn:0,ld:0};
+  _adminPage={al:0,pd:0,rj:0,ls:0,bd:0,tn:0,ld:0};
   _editingListingId=null;
   // Reset Turnstile CAPTCHA
   _turnstileToken=null;
@@ -1434,7 +1434,7 @@ async function viewL(id){
   if(!l){
     // Direct fetch by ID — handles deep links before cache is warm
     try{
-      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max').eq('id',id).eq('status','approved').single();
+      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types').eq('id',id).eq('status','approved').single();
       if(data&&!error)l=mapL(data);
     }catch(e){}
   }
@@ -1466,21 +1466,52 @@ async function viewL(id){
   var tagsH=l.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('');
   if(l.rera)tagsH+='<span class="tag tag-g">RERA <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg></span>';
   var amH=l.amens&&l.amens.length?'<div style="margin-bottom:13px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">Amenities</div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+l.amens.map(function(a){return '<span style="font-size:12px;padding:4px 10px;background:var(--cr);border-radius:6px;border:1px solid var(--sa);">'+esc(a)+'</span>';}).join('')+'</div></div>':'';
+  // For projects: custom price display + unit types table
+  var isProj=l.lf==='project'||l.isProject;
+  var priceDisplay;
+  if(isProj){
+    if(l.priceMax&&l.priceMax>l.priceMin){
+      priceDisplay=fmtPriceHTML(l.priceMin)+' &ndash; '+fmtPriceHTML(l.priceMax);
+    } else {
+      priceDisplay='Starts '+fmtPriceHTML(l.priceMin||l.price);
+    }
+  } else if(ir){
+    priceDisplay=fmtRentHTML(l.rent)+'/mo';
+  } else {
+    priceDisplay=fmtPriceHTML(l.price);
+  }
+  var priceLbl=isProj?'PRICE RANGE':(ir?'RENT':'PRICE');
+  // Unit types table (for projects)
+  var unitsTableHTML='';
+  if(isProj&&l.unitTypes&&l.unitTypes.length){
+    unitsTableHTML='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Unit Configurations</div>'
+      +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;font-family:\'DM Sans\',sans-serif;border:1px solid var(--sa);border-radius:8px;overflow:hidden;">'
+      +'<thead><tr style="background:var(--cr);text-align:left;"><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Configuration</th><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Area</th><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Price Range</th></tr></thead><tbody>'
+      +l.unitTypes.map(function(u){
+        var pr;
+        if(u.priceMax&&u.priceMax>u.priceMin)pr=fmtPriceHTML(u.priceMin)+' &ndash; '+fmtPriceHTML(u.priceMax);
+        else if(u.priceMin)pr=fmtPriceHTML(u.priceMin);
+        else pr='—';
+        return '<tr style="border-top:1px solid var(--sa);"><td style="padding:10px 14px;font-weight:700;color:var(--ink);">'+esc(u.bhk||'—')+'</td><td style="padding:10px 14px;color:var(--ink);">'+(u.area?u.area+' sq.ft':'—')+'</td><td style="padding:10px 14px;font-weight:700;color:var(--g);">'+pr+'</td></tr>';
+      }).join('')
+      +'</tbody></table></div></div>';
+  }
   document.getElementById('vCnt').innerHTML=imgH
-    +'<div class="tags-r" style="margin-bottom:12px;">'+tagsH+'</div>'
+    +(tagsH?'<div class="tags-r" style="margin-bottom:12px;">'+tagsH+'</div>':'')
     +'<div class="info-g">'
-    +'<div class="ic"><div class="ll">'+(ir?'RENT':'PRICE')+'</div><strong style="color:'+(ir?'var(--t)':'var(--g)')+';">'+(ir?fmtRentHTML(l.rent)+'/mo':fmtPriceHTML(l.price))+'</strong></div>'
+    +'<div class="ic"><div class="ll">'+priceLbl+'</div><strong style="color:'+(ir?'var(--t)':'var(--g)')+';">'+priceDisplay+'</strong></div>'
     +(ir?'<div class="ic"><div class="ll">DEPOSIT</div><strong>&#8377;'+l.dep.toLocaleString('en-IN')+'</strong></div>':'')
     +'<div class="ic"><div class="ll">TYPE</div><strong>'+esc(l.type)+' &middot; '+l.beds+'BHK &middot; '+l.baths+'B</strong></div>'
     +'<div class="ic"><div class="ll">AREA</div><strong>'+l.area+' sq.ft</strong></div>'
-    +'<div class="ic"><div class="ll">FURNISHING</div><strong>'+esc(l.furnish||'—')+'</strong></div>'
-    +'<div class="ic"><div class="ll">FLOOR</div><strong>'+esc(l.floor||'—')+'</strong></div>'
-    +'<div class="ic"><div class="ll">FACING</div><strong>'+esc(l.facing||'—')+'</strong></div>'
+    +(isProj&&l.projectStatus?'<div class="ic"><div class="ll">PROJECT STATUS</div><strong style="color:#c58600;">'+esc(l.projectStatus)+'</strong></div>':'<div class="ic"><div class="ll">FURNISHING</div><strong>'+esc(l.furnish||'—')+'</strong></div>')
+    +(isProj&&l.completion?'<div class="ic"><div class="ll">COMPLETION</div><strong>'+new Date(l.completion).toLocaleDateString('en-IN',{month:'long',year:'numeric'})+'</strong></div>':'<div class="ic"><div class="ll">FLOOR</div><strong>'+esc(l.floor||'—')+'</strong></div>')
+    +(!isProj?'<div class="ic"><div class="ll">FACING</div><strong>'+esc(l.facing||'—')+'</strong></div>':'')
     +(ir?'<div class="ic"><div class="ll">AVAILABILITY</div><strong>'+esc(l.avail||'—')+'</strong></div>':'')
-    +(!ir?'<div class="ic"><div class="ll">SALE TYPE</div><strong>'+esc(l.stype||'—')+'</strong></div>':'')
-    +(!ir?'<div class="ic"><div class="ll">POSSESSION</div><strong>'+esc(l.poss||'—')+'</strong></div>':'')
+    +(!ir&&!isProj?'<div class="ic"><div class="ll">SALE TYPE</div><strong>'+esc(l.stype||'—')+'</strong></div>':'')
+    +(!ir&&!isProj?'<div class="ic"><div class="ll">POSSESSION</div><strong>'+esc(l.poss||'—')+'</strong></div>':'')
     +(!ir&&l.rera?'<div class="ic" style="grid-column:1/-1;"><div class="ll">RERA NO.</div><strong style="color:var(--gr);">'+esc(l.rera)+'</strong></div>':'')
     +'</div>'
+    +unitsTableHTML
     +amH
     +'<p style="font-size:13px;line-height:1.75;margin-bottom:13px;">'+esc(l.desc)+'</p>'
     +'<div class="listing-map-wrap" id="listingMapWrap" style="display:none;"><h4><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-pin"/></svg> Location</h4><div class="listing-map" id="listingMap"></div></div>'
@@ -2120,7 +2151,7 @@ function setLM(m){
   // Buy-specific fields  
   ['lPrW','lStW','lPoW','lReW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=(m==='buy'||m==='project')?'':'none';});
   // Project-specific fields
-  ['lProjW','lCompW','lPrMinW','lPrMaxW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='project'?'':'none';});
+  ['lProjW','lCompW','lPrMinW','lPrMaxW','lUnitsW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='project'?'':'none';});
 }
 function bldLA(){
   var el=document.getElementById('lAm');if(!el)return;
@@ -2167,6 +2198,8 @@ async function editListing(id){
   // Project-specific
   if(l.completion)setVal('lComp',l.completion.substring(0,7));
   var projEl=document.getElementById('lProj');if(projEl)projEl.value=l.projectStatus||'New Launch';
+  _unitTypes=l.unitTypes?l.unitTypes.slice():[];
+  renderUnits();
   // Set dropdowns
   var tp=document.getElementById('lTp');if(tp)tp.value=l.type||'Apartment';
   var bd=document.getElementById('lBd');if(bd)bd.value=l.beds||'2';
@@ -2238,7 +2271,8 @@ async function doSub(){
     projectStatus:isProject?getVal('lProj'):'',
     completion:isProject&&getVal('lComp')?getVal('lComp')+'-01':null,
     priceMin:isProject?(Number(getVal('lPrMin'))||0):0,
-    priceMax:isProject?(Number(getVal('lPrMax'))||0):0
+    priceMax:isProject?(Number(getVal('lPrMax'))||0):0,
+    unitTypes:isProject?_unitTypes.slice():[]
   };
 
   // Upload images to Supabase Storage (converts base64 → public URLs)
@@ -2405,6 +2439,39 @@ async function showLeads(lid){
   openM('viewM');
 }
 
+// ══ PROJECT UNIT TYPES ══
+// Each unit: { bhk: '3 BHK', area: 1450, priceMin: 8500000, priceMax: 12000000 }
+var _unitTypes=[];
+
+function renderUnits(){
+  var el=document.getElementById('lUnits');
+  if(!el)return;
+  if(!_unitTypes.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--mu);padding:10px 0;">No unit configurations added yet.</div>';
+    return;
+  }
+  el.innerHTML=_unitTypes.map(function(u,i){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center;">'
+      +'<input class="fi" type="text" placeholder="2 BHK" value="'+escAttr(u.bhk||'')+'" onchange="updateUnit('+i+',\'bhk\',this.value)" style="font-size:12px;padding:7px 9px;"/>'
+      +'<input class="fi" type="number" placeholder="Area (sq.ft)" value="'+(u.area||'')+'" onchange="updateUnit('+i+',\'area\',Number(this.value)||0)" style="font-size:12px;padding:7px 9px;"/>'
+      +'<input class="fi" type="number" placeholder="Min ₹" value="'+(u.priceMin||'')+'" onchange="updateUnit('+i+',\'priceMin\',Number(this.value)||0)" style="font-size:12px;padding:7px 9px;"/>'
+      +'<input class="fi" type="number" placeholder="Max ₹" value="'+(u.priceMax||'')+'" onchange="updateUnit('+i+',\'priceMax\',Number(this.value)||0)" style="font-size:12px;padding:7px 9px;"/>'
+      +'<button type="button" onclick="removeUnit('+i+')" aria-label="Remove" style="background:transparent;border:none;color:var(--red);cursor:pointer;padding:6px;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-trash"/></svg></button>'
+    +'</div>';
+  }).join('');
+}
+function addUnit(){
+  _unitTypes.push({bhk:'',area:0,priceMin:0,priceMax:0});
+  renderUnits();
+}
+function updateUnit(idx,key,val){
+  if(_unitTypes[idx])_unitTypes[idx][key]=val;
+}
+function removeUnit(idx){
+  _unitTypes.splice(idx,1);
+  renderUnits();
+}
+
 // ══ LISTING FORM WIZARD ══
 var _wizStep=1;
 var _wizTotal=4;
@@ -2474,6 +2541,23 @@ function _wizValidate(step){
     return true;
   }
   return true;
+}
+
+// ══ TRUSTED USER ══
+async function toggleTrusted(uid,trusted){
+  var confirmMsg=trusted
+    ?'Mark this user as TRUSTED? Their future listings will auto-approve.'
+    :'Revoke trusted status? Their future listings will need admin review.';
+  if(!confirm(confirmMsg))return;
+  try{
+    var {error}=await sb.rpc('set_user_trusted',{p_user_id:uid,p_trusted:trusted});
+    if(error)throw error;
+    _clr('u');
+    toast(trusted?'User marked as trusted.':'Trust revoked.');
+    await renderAdmin(curAT);
+  }catch(e){
+    toast('Failed: '+(e.message||'unknown error'),'e');
+  }
 }
 
 // ══ CSV EXPORT ══
@@ -2558,8 +2642,10 @@ async function renderAdmin(t){
   var ls=await gL(),us=await gU(),inqs=await gInq();
   var pn=ls.filter(function(l){return l.status==='pending';});
   var ap=ls.filter(function(l){return l.status==='approved';});
+  var rj=ls.filter(function(l){return l.status==='rejected';});
   var brs=us.filter(function(u){return u.role==='broker';});
   var own=us.filter(function(u){return u.role==='owner';});
+  var bld=us.filter(function(u){return u.role==='builder';});
   var ten=us.filter(function(u){return u.role==='user';});
   var el=document.getElementById('aC');if(!el)return;
 
@@ -2569,8 +2655,10 @@ async function renderAdmin(t){
       {label:'Listings',val:ls.length,col:'var(--t)',tab:'al'},
       {label:'Approved',val:ap.length,col:'var(--gr)',tab:'al'},
       {label:'Pending',val:pn.length,col:'var(--g)',tab:'pd'},
+      {label:'Rejected',val:rj.length,col:'var(--red)',tab:'rj'},
       {label:'Brokers',val:brs.length,col:'var(--pu)',tab:'ls'},
       {label:'Owners',val:own.length,col:'var(--g)',tab:'ls'},
+      {label:'Builders',val:bld.length,col:'#c58600',tab:'bd'},
       {label:'Tenants',val:ten.length,col:'var(--t)',tab:'tn'},
       {label:'Leads',val:inqs.length,col:'#e05c1a',tab:'ld'}
     ];
@@ -2624,6 +2712,12 @@ async function renderAdmin(t){
       }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:30px;text-align:center;color:var(--mu);border:1px solid var(--sa);">All caught up!</div>');
   }
 
+  // Rejected tab
+  if(t==='rj'){
+    el.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:14px;color:var(--red);"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-x"/></svg> Rejected Listings ('+rj.length+')</h2>'
+      +(rj.length?'<div style="display:flex;flex-direction:column;gap:10px;">'+rj.map(aRow).join('')+'</div>':'<div style="background:var(--wh);border-radius:12px;padding:30px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No rejected listings.</div>');
+  }
+
   // Brokers & Owners tab — paginated rows clickable to show their listings
   if(t==='ls'){
     var all=brs.concat(own);
@@ -2634,16 +2728,21 @@ async function renderAdmin(t){
     var rowsHtml=shown.map(function(u){
             var uListings=ls.filter(function(l){return l.uid===u.id;});
             var listCount=uListings.length;
-            return '<tr style="cursor:pointer;" onclick="showUserListings(\''+u.id+'\')" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'\'"><td><strong>'+esc(u.name)+'</strong></td>'
+            var trustBadge=u.trusted?'<span style="background:#e4f5ea;color:var(--gr);font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;margin-left:6px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-shield-check"/></svg> Trusted</span>':'';
+            var trustBtn=u.trusted
+              ?'<button onclick="event.stopPropagation();toggleTrusted(\''+u.id+'\',false)" style="background:transparent;color:#999;border:1px solid var(--sa);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;" title="Revoke trusted status">Revoke Trust</button>'
+              :'<button onclick="event.stopPropagation();toggleTrusted(\''+u.id+'\',true)" style="background:var(--gr);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;" title="Auto-approve this user\'s listings"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-shield-check"/></svg> Trust</button>';
+            return '<tr style="cursor:pointer;" onclick="showUserListings(\''+u.id+'\')" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'\'"><td><strong>'+esc(u.name)+'</strong>'+trustBadge+'</td>'
               +'<td><span class="pill '+(u.role==='broker'?'pill-p':'pill-y')+'">'+u.role+'</span></td>'
               +'<td>'+esc(u.email)+'</td><td>'+esc(u.phone)+'</td>'
               +'<td>'+esc(u.agency||'—')+'</td><td>'+esc(u.lic||'—')+'</td><td>'+esc(u.joinedAt)+'</td>'
-              +'<td><span style="font-weight:700;color:var(--t);cursor:pointer;text-decoration:underline;">'+listCount+'</span></td></tr>';
+              +'<td><span style="font-weight:700;color:var(--t);cursor:pointer;text-decoration:underline;">'+listCount+'</span></td>'
+              +'<td>'+trustBtn+'</td></tr>';
           }).join('');
     el.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:14px;">Brokers & Owners ('+all.length+')</h2>'
       +(all.length
         ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow:hidden;">'
-          +'<table class="tbl"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Agency</th><th>RERA</th><th>Joined</th><th>Listings</th></tr></thead><tbody>'
+          +'<table class="tbl"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Agency</th><th>RERA</th><th>Joined</th><th>Listings</th><th>Trust</th></tr></thead><tbody>'
           +rowsHtml
           +'</tbody></table></div></div>'
           +(remaining>0?'<div class="mk-load-more"><button onclick="_adminPage.ls++;renderAdmin(\'ls\')">Load More ('+remaining+' remaining)</button><div class="mk-load-more-count">Showing '+end+' of '+all.length+'</div></div>':'')
@@ -2652,6 +2751,36 @@ async function renderAdmin(t){
   }
 
   // Tenants tab — paginated rows clickable to show their inquiries
+  // Builders tab
+  if(t==='bd'){
+    var page=_adminPage.bd||0;
+    var end=Math.min((page+1)*PAGE_SIZE,bld.length);
+    var shown=bld.slice(0,end);
+    var remaining=bld.length-end;
+    var rowsHtml=shown.map(function(u){
+            var uListings=ls.filter(function(l){return l.uid===u.id;});
+            var projCount=uListings.filter(function(l){return l.lf==='project'||l.isProject;}).length;
+            var trustBadge=u.trusted?'<span style="background:#e4f5ea;color:var(--gr);font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;margin-left:6px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-shield-check"/></svg> Trusted</span>':'';
+            var trustBtn=u.trusted
+              ?'<button onclick="event.stopPropagation();toggleTrusted(\''+u.id+'\',false)" style="background:transparent;color:#999;border:1px solid var(--sa);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;">Revoke Trust</button>'
+              :'<button onclick="event.stopPropagation();toggleTrusted(\''+u.id+'\',true)" style="background:var(--gr);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-shield-check"/></svg> Trust</button>';
+            return '<tr style="cursor:pointer;" onclick="showUserListings(\''+u.id+'\')" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'\'"><td><strong>'+esc(u.name)+'</strong>'+trustBadge+'</td>'
+              +'<td>'+esc(u.agency||'—')+'</td>'
+              +'<td>'+esc(u.email)+'</td><td>'+esc(u.phone)+'</td><td>'+esc(u.joinedAt)+'</td>'
+              +'<td><span style="font-weight:700;color:#c58600;">'+projCount+'</span></td>'
+              +'<td>'+trustBtn+'</td></tr>';
+          }).join('');
+    el.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:14px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:#c58600;"><use href="#i-sparkle"/></svg> Builders ('+bld.length+')</h2>'
+      +(bld.length
+        ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow:hidden;">'
+          +'<table class="tbl"><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Phone</th><th>Joined</th><th>Projects</th><th>Trust</th></tr></thead><tbody>'
+          +rowsHtml
+          +'</tbody></table></div></div>'
+          +(remaining>0?'<div class="mk-load-more"><button onclick="_adminPage.bd++;renderAdmin(\'bd\')">Load More ('+remaining+' remaining)</button><div class="mk-load-more-count">Showing '+end+' of '+bld.length+'</div></div>':'')
+          +'<p style="font-size:11px;color:var(--mu);margin-top:8px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-sparkle"/></svg> Trusted builders\' new projects auto-approve on submission</p>'
+        :'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No builders yet.</div>');
+  }
+
   if(t==='tn'){
     var page=_adminPage.tn||0;
     var end=Math.min((page+1)*PAGE_SIZE,ten.length);
@@ -2904,6 +3033,7 @@ function openM(id){
       // Builders default to 'project' mode and see the Project card
       var wcP=document.getElementById('wizCardProject');
       if(wcP)wcP.style.display=cu.role==='builder'?'':'none';
+      _unitTypes=[];renderUnits();
       setLM(cu.role==='builder'?'project':'rent');
       var lo=document.getElementById('lOw'),lc=document.getElementById('lCt'),le=document.getElementById('lErr');
       if(lo)lo.value=cu.agency?cu.name+' – '+esc(cu.agency):cu.name;
@@ -3059,11 +3189,17 @@ var INDIAN_CITIES=[
   {n:'Ajmer',s:'Rajasthan'},{n:'Srinagar',s:'J&K'},{n:'Gwalior',s:'Madhya Pradesh'}
 ];
 
-function acInit(inputId, listId, targetField){
+// Build set of major city names (entries where 's' is a state, not a city)
+// Any entry whose 's' matches another entry's 'n' is a locality under that city
+var _INDIAN_STATES=['Maharashtra','Karnataka','Delhi','Telangana','Tamil Nadu','Gujarat','Punjab','Haryana','Uttar Pradesh','West Bengal','Rajasthan','Kerala','Goa','Andhra Pradesh','Madhya Pradesh','Bihar','Odisha','Assam','Chhattisgarh','Jharkhand','Jammu and Kashmir','Uttarakhand','Himachal Pradesh','Chandigarh','Puducherry'];
+function _isCity(c){return _INDIAN_STATES.indexOf(c.s)>=0;}
+
+function acInit(inputId, listId, targetField, opts){
   var inp = document.getElementById(inputId);
   var lst = document.getElementById(listId);
   if(!inp || !lst) return;
   var hiIdx = -1;
+  var mode=(opts&&opts.mode)||'all'; // 'city' = only cities; 'locality' = only localities; 'all' = everything
   inp.setAttribute('autocomplete','off');
 
   inp.addEventListener('input', function(){
@@ -3071,7 +3207,10 @@ function acInit(inputId, listId, targetField){
     hiIdx = -1;
     if(!q){ lst.className='ac-list'; lst.innerHTML=''; return; }
     var matches = INDIAN_CITIES.filter(function(c){
-      return c.n.toLowerCase().indexOf(q) >= 0;
+      if(c.n.toLowerCase().indexOf(q) < 0) return false;
+      if(mode==='city') return _isCity(c);
+      if(mode==='locality') return !_isCity(c);
+      return true;
     }).sort(function(a,b){
       var ai = a.n.toLowerCase().indexOf(q);
       var bi = b.n.toLowerCase().indexOf(q);
@@ -3207,7 +3346,7 @@ async function updateReport(id,updates){
 // ══ USERS (Supabase) ══
 async function gU(){
   if(_cacheU&&_cacheValid('u'))return _cacheU;
-  var {data,error}=await sb.from('users').select('id,name,email,phone,role,agency,license_no,joined_at,verified').order('joined_at',{ascending:false});
+  var {data,error}=await sb.from('users').select('id,name,email,phone,role,agency,license_no,joined_at,verified,is_trusted').order('joined_at',{ascending:false});
   if(error){toast('Failed to load users. Please refresh.','e');_cacheU=[];return[];}
   _cacheU=(data||[]).map(mapUsr);
   _cacheTime.u=Date.now();
@@ -3248,12 +3387,12 @@ async function deleteListing(id){
 setAT('login');setRR('user');upNav();
 
 // Init city autocomplete for all inputs that need it
-acInit('hrc','ac-hrc','hrc');      // Hero rent
-acInit('hbc','ac-hbc','hbc');      // Hero buy
-acInit('fCity','ac-fCity','fCity'); // Browse rent
-acInit('fBCity','ac-fBCity','fBCity'); // Browse buy
-acInit('lCy','ac-lCy','lCy');     // Listing form city
-acInit('lLo','ac-lLo','lLo');     // Listing form locality
+acInit('hrc','ac-hrc','hrc',{mode:'city'});      // Hero rent - city only
+acInit('hbc','ac-hbc','hbc',{mode:'city'});      // Hero buy - city only
+acInit('fCity','ac-fCity','fCity',{mode:'city'}); // Browse rent city
+acInit('fBCity','ac-fBCity','fBCity',{mode:'city'}); // Browse buy city
+acInit('lCy','ac-lCy','lCy',{mode:'city'});     // Listing form city
+acInit('lLo','ac-lLo','lLo',{mode:'locality'});     // Listing form locality
 
 // ══ BOOTSTRAP ══
 // Restore Supabase Auth session, load favorites, then render homepage.
@@ -3266,7 +3405,7 @@ acInit('lLo','ac-lLo','lLo');     // Listing form locality
 
     var {data:{session}}=await sb.auth.getSession();
     if(session){
-      var {data:profile}=await sb.from('users').select('id,name,email,phone,role,agency,license_no,joined_at,verified').eq('id',session.user.id).single();
+      var {data:profile}=await sb.from('users').select('id,name,email,phone,role,agency,license_no,joined_at,verified,is_trusted').eq('id',session.user.id).single();
       if(profile){
         cu={id:profile.id,name:profile.name,email:profile.email,phone:profile.phone||'',role:profile.role,agency:profile.agency||'',lic:profile.license_no||'',joinedAt:profile.joined_at?(profile.joined_at+'').split('T')[0]:'',verified:profile.verified||false};
         await loadFavs();

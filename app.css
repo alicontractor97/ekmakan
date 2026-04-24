@@ -299,6 +299,10 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .ac{font-size:11px;padding:4px 9px;border-radius:6px;border:1.5px solid var(--sa);cursor:pointer;background:var(--wh);color:var(--mu);transition:all .15s;user-select:none;}
 .ac:hover{border-color:var(--tl);}
 .ac.on{border-color:var(--t);background:var(--tl);color:var(--td);font-weight:700;}
+/* Inclusion tags (read-only pills on listing detail) */
+.tags-r{display:flex;flex-wrap:wrap;gap:6px;}
+.tag{font-size:11px;padding:4px 10px;border-radius:50px;background:var(--tl);color:var(--td);font-weight:600;display:inline-flex;align-items:center;border:1px solid rgba(18,90,81,.15);}
+.tag-g{background:#e4f5ea;color:var(--gr);border-color:rgba(30,107,58,.2);}
 
 /* LISTINGS AREA */
 .list-area{background:var(--cr);display:flex;flex-direction:column;}
