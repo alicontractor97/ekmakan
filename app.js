@@ -138,7 +138,7 @@ function renderTurnstile(containerId,tokenSetter){
 }
 
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
-function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',facing:r.facing||'',avail:r.availability||''};}
+function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',facing:r.facing||'',avail:r.availability||''};}
 // Map JS listing → Supabase row
 function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',facing:l.facing||'',availability:l.avail||''};}
 function mapInq(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',listingCity:r.listing_city||'',lf:r.listing_for||'rent',contact:'',name:r.inquirer_name||'',phone:r.inquirer_phone||'',email:r.inquirer_email||'',message:r.message||'',uid:r.user_id,sentAt:r.sent_at?(r.sent_at+'').split('T')[0]:''};}
@@ -337,7 +337,7 @@ function showEmpty(elId,icon,title,sub){
 // ══ DATA ACCESS (Supabase) ══
 async function gL(){
   if(_cacheL&&_cacheValid('l'))return _cacheL;
-  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability').order('posted_at',{ascending:false});
+  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability').order('posted_at',{ascending:false});
   if(error){toast('Failed to load listings. Please refresh.','e');_cacheL=[];return[];}
   _cacheL=(data||[]).map(mapL);
   _cacheTime.l=Date.now();
@@ -1335,7 +1335,7 @@ async function viewL(id){
   if(!l){
     // Direct fetch by ID — handles deep links before cache is warm
     try{
-      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability').eq('id',id).eq('status','approved').single();
+      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability').eq('id',id).eq('status','approved').single();
       if(data&&!error)l=mapL(data);
     }catch(e){}
   }
@@ -2242,17 +2242,27 @@ async function renderLister(){
   var ll=document.getElementById('lLst');
   if(ll)ll.innerHTML=myL.length?myL.map(function(l){
     var thumbH=l.images&&l.images.length?'<img loading="lazy" decoding="async" src="'+l.images[0]+'" alt="'+escAttr(l.title)+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;"/>':'<div style="font-size:28px;">'+(l.lf==='buy'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg>':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg>')+'</div>';
-    var pr=l.lf==='rent'?'&#8377;'+l.rent.toLocaleString('en-IN')+'/mo':fmtPriceHTML(l.price);
+    var pr=l.lf==='rent'?fmtRentHTML(l.rent)+'/mo':fmtPriceHTML(l.price);
     var lc=leadsByListing[l.id]||0;
-    return '<div class="li" style="cursor:pointer;" onclick="viewL('+l.id+')" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'var(--wh)\'">'
+    var isRejected=l.status==='rejected'&&l.rejectionReason;
+    var rejectedBanner=isRejected?
+      '<div style="background:#fff5f5;border:1px solid #ffcccc;border-left:3px solid var(--red);border-radius:6px;padding:9px 12px;margin-top:10px;font-size:12px;line-height:1.5;color:#7a2222;">'
+        +'<div style="font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;"><svg class="icn icn-sm" aria-hidden="true" style="color:var(--red);"><use href="#i-flag"/></svg> Rejected by admin</div>'
+        +'<div style="color:#5a3a3a;">'+esc(l.rejectionReason)+'</div>'
+        +'<button onclick="event.stopPropagation();editListing('+l.id+')" style="margin-top:8px;background:var(--t);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-edit"/></svg> Edit &amp; Resubmit</button>'
+      +'</div>':'';
+    return '<div class="li" style="cursor:pointer;flex-wrap:wrap;" onclick="viewL('+l.id+')" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'var(--wh)\'">'
+      +'<div style="display:flex;align-items:center;gap:12px;width:100%;">'
       +thumbH
       +'<div class="li-in"><strong>'+esc(l.title)+'</strong><span>'+esc(l.city)+' &middot; '+pr+' &middot; '+(l.images?l.images.length:0)+' photo(s)</span></div>'
       +'<span class="pill '+(l.status==='approved'?'pill-g':l.status==='pending'?'pill-y':'pill-r')+'">'+l.status+'</span>'
       +'<div class="li-ac" onclick="event.stopPropagation()">'
       +(l.status==='approved'?'<button class="btn-sm" onclick="event.stopPropagation();showLeads('+l.id+')" style="background:transparent;color:var(--t);border:1px solid var(--sa);border-radius:6px;padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'var(--cr)\';this.style.borderColor=\'var(--tl)\'" onmouseout="this.style.background=\'transparent\';this.style.borderColor=\'var(--sa)\'">Leads ('+lc+')</button>':'')
-      +'<button class="btn-sm" onclick="event.stopPropagation();editListing('+l.id+')" title="Edit listing" style="background:transparent;color:var(--t);border:1px solid var(--sa);border-radius:6px;padding:5px 9px;font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'transparent\'">&#9998; Edit</button>'
+      +'<button class="btn-sm" onclick="event.stopPropagation();editListing('+l.id+')" title="Edit listing" style="background:transparent;color:var(--t);border:1px solid var(--sa);border-radius:6px;padding:5px 9px;font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'transparent\'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-edit"/></svg> Edit</button>'
       +'<button class="btn-sm" onclick="event.stopPropagation();removeMyListing('+l.id+')" title="Delete listing" style="background:transparent;color:#999;border:1px solid transparent;border-radius:6px;padding:5px 9px;font-size:13px;font-weight:400;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:color .15s;" onmouseover="this.style.color=\'var(--red)\'" onmouseout="this.style.color=\'#999\'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-trash"/></svg></button>'
-      +'</div></div>';
+      +'</div></div>'
+      +rejectedBanner
+      +'</div>';
   }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No listings yet. Click &ldquo;+ New Listing&rdquo; to get started.</div>';
 }
 async function removeMyListing(lid){
@@ -2528,20 +2538,27 @@ function aRow(l){
   var thumbH=l.images&&l.images.length
     ?'<img loading="lazy" decoding="async" src="'+l.images[0]+'" alt="'+escAttr(l.title)+'" style="width:44px;height:44px;object-fit:cover;border-radius:7px;flex-shrink:0;cursor:pointer;" onclick="viewL('+l.id+')" title="Preview listing"/>'
     :'<div style="font-size:26px;cursor:pointer;" onclick="viewL('+l.id+')">'+(l.lf==='buy'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg>':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg>')+'</div>';
-  var pr=l.lf==='rent'?'&#8377;'+l.rent.toLocaleString('en-IN')+'/mo':fmtPriceHTML(l.price);
-  return '<div class="li" style="cursor:default;">'
+  var pr=l.lf==='rent'?fmtRentHTML(l.rent)+'/mo':fmtPriceHTML(l.price);
+  var statusPill='<span class="pill '+(l.status==='approved'?'pill-g':l.status==='pending'?'pill-y':'pill-r')+'"'+(l.status==='rejected'&&l.rejectionReason?' title="Rejection reason: '+escAttr(l.rejectionReason)+'" style="cursor:help;"':'')+'>'+l.status+'</span>';
+  var rejectedNote=l.status==='rejected'&&l.rejectionReason?
+    '<div style="flex-basis:100%;background:#fff5f5;border-left:3px solid var(--red);border-radius:4px;padding:6px 10px;margin-top:8px;font-size:11px;color:#7a2222;line-height:1.4;"><strong>Rejection reason:</strong> '+esc(l.rejectionReason)+'</div>':'';
+  return '<div class="li" style="cursor:default;flex-wrap:wrap;">'
+    +'<div style="display:flex;align-items:center;gap:12px;width:100%;">'
     +thumbH
     +'<div class="li-in" style="cursor:pointer;" onclick="viewL('+l.id+')">'
     +'<strong style="color:var(--t);">'+esc(l.title)+'</strong>'
     +'<span>'+esc(l.city)+' &middot; '+pr+' &middot; '+esc(l.owner)+(l.agency?' &middot; '+esc(l.agency):'')+'</span>'
     +'</div>'
-    +'<span class="pill '+(l.status==='approved'?'pill-g':l.status==='pending'?'pill-y':'pill-r')+'">'+l.status+'</span>'
+    +statusPill
     +'<span class="pill '+(l.lf==='rent'?'pill-b':'pill-y')+'" style="font-size:10px;">'+l.lf.toUpperCase()+'</span>'
     +'<div class="li-ac">'
     +'<button class="btn btn-sm btn-o" onclick="viewL('+l.id+')"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-eye"/></svg> View</button>'
     +(l.status==='pending'?'<button class="btn btn-gr btn-sm" onclick="apL('+l.id+')" aria-label="Approve listing"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg></button><button class="btn btn-r btn-sm" onclick="rjL('+l.id+')" aria-label="Reject listing"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-x"/></svg></button>':'')
     +'<button style="background:transparent;color:var(--red);border:none;font-size:14px;cursor:pointer;padding:3px 5px;" onclick="dlL('+l.id+')" aria-label="Delete listing"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-trash"/></svg></button>'
-    +'</div></div>';
+    +'</div>'
+    +'</div>'
+    +rejectedNote
+    +'</div>';
 }
 async function apL(id){
   if(!confirm('Approve listing #'+id+'?'))return;
@@ -2549,9 +2566,19 @@ async function apL(id){
   if(ok){_clr('l');toast('Listing approved \u2714');await renderAdmin(curAT);}
 }
 async function rjL(id){
-  if(!confirm('Reject listing #'+id+'?'))return;
-  var ok=await updateListing(id,{status:'rejected'});
-  if(ok){_clr('l');toast('Listing rejected.','e');await renderAdmin(curAT);}
+  var reason=prompt('Reason for rejecting this listing?\n\nThis will be shown to the broker/owner so they can fix the issue and resubmit.','');
+  if(reason===null)return; // Admin cancelled
+  reason=reason.trim();
+  if(!reason){
+    alert('Please provide a reason so the broker knows what to fix.');
+    return;
+  }
+  if(reason.length>500){
+    alert('Please keep the reason under 500 characters.');
+    return;
+  }
+  var ok=await updateListing(id,{status:'rejected',rejection_reason:reason});
+  if(ok){_clr('l');toast('Listing rejected with reason.','e');await renderAdmin(curAT);}
 }
 async function dlL(id){
   if(!confirm('Permanently delete listing #'+id+'?'))return;

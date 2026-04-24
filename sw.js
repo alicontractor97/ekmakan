@@ -1,19 +1,11 @@
 // ============================================================================
 // Ek Makān — Service Worker
-// Cache-first for static assets, network-first for API calls
+// Network-first for same-origin (always fresh code), cache-first for CDN
 // ============================================================================
 
-const CACHE_NAME = 'ekmakan-v1';
+const CACHE_NAME = 'ekmakan-v2';
 
-// Static assets to pre-cache on install
-const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/app.css',
-  '/app.js',
-];
-
-// External CDN assets — cached on first use (cache-first after that)
+// CDN assets with versioned URLs / integrity hashes — safe to cache aggressively
 const CDN_HOSTS = [
   'cdn.jsdelivr.net',
   'unpkg.com',
@@ -29,16 +21,12 @@ const NO_CACHE_PATTERNS = [
   'tile.openstreetmap.org',
 ];
 
-// ── INSTALL: Pre-cache core static assets ──
+// ── INSTALL: activate immediately, don't pre-cache our own files ──
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
-// ── ACTIVATE: Clean up old caches ──
+// ── ACTIVATE: Clean up old caches and take control of all pages ──
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -67,10 +55,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Same-origin static assets: stale-while-revalidate
-  // Serve from cache immediately, update cache in background
+  // Same-origin: NETWORK-FIRST so users always get the latest code
+  // Falls back to cache only if network is completely unavailable
   if (url.origin === self.location.origin) {
-    event.respondWith(staleWhileRevalidate(event.request));
+    event.respondWith(networkFirst(event.request));
     return;
   }
 });
@@ -88,35 +76,29 @@ async function cacheFirst(request) {
     }
     return response;
   } catch (err) {
-    // Offline and not cached — return a basic fallback
     return new Response('', { status: 503, statusText: 'Offline' });
   }
 }
 
-// ── STRATEGY: Stale-while-revalidate (for own static files) ──
-// Returns cached version immediately for speed, then fetches fresh copy
-// in the background so next load has the latest version.
-async function staleWhileRevalidate(request) {
+// ── STRATEGY: Network-first (for our own code — always fresh) ──
+// Try network first. Save to cache on success. If network fails, fall back to cache.
+// Result: changes you push always show up on next page load, no hard-refresh needed.
+async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request);
-
-  // Fetch fresh copy in background (don't await — return cached immediately)
-  const fetchPromise = fetch(request).then((response) => {
+  try {
+    const response = await fetch(request, { cache: 'no-store' });
     if (response.ok) {
       cache.put(request, response.clone());
     }
     return response;
-  }).catch(() => null);
-
-  // Return cached version if available, otherwise wait for network
-  if (cached) return cached;
-  
-  const response = await fetchPromise;
-  if (response) return response;
-
-  // Both cache and network failed — offline fallback
-  return new Response(
-    '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ek Makān — Offline</title><style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f5f5f0;color:#333;text-align:center;padding:20px;}div{max-width:400px;}h1{color:#1a7a6e;font-size:28px;margin-bottom:12px;}p{color:#666;line-height:1.6;}</style></head><body><div><h1>You\'re offline</h1><p>Ek Makān needs an internet connection to load listings. Please check your connection and try again.</p><button onclick="location.reload()" style="margin-top:20px;padding:12px 28px;background:#1a7a6e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Retry</button></div></body></html>',
-    { status: 503, headers: { 'Content-Type': 'text/html' } }
-  );
+  } catch (err) {
+    // Network failed — fall back to cache
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    // Offline fallback page
+    return new Response(
+      '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ek Makān — Offline</title><style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f5f5f0;color:#333;text-align:center;padding:20px;}div{max-width:400px;}h1{color:#1a7a6e;font-size:28px;margin-bottom:12px;}p{color:#666;line-height:1.6;}</style></head><body><div><h1>You\'re offline</h1><p>Ek Makān needs an internet connection to load listings. Please check your connection and try again.</p><button onclick="location.reload()" style="margin-top:20px;padding:12px 28px;background:#1a7a6e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Retry</button></div></body></html>',
+      { status: 503, headers: { 'Content-Type': 'text/html' } }
+    );
+  }
 }

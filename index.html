@@ -301,7 +301,7 @@
         </div>
         <!-- RENT SEARCH -->
         <div id="hfr">
-          <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hrc" placeholder="Mumbai, Hyderabad, Delhi…" autocomplete="off"/><div class="ac-list" id="ac-hrc"></div></div></div>
+          <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hrc" name="search" placeholder="Mumbai, Hyderabad, Delhi…" autocomplete="new-password"/><div class="ac-list" id="ac-hrc"></div></div></div>
           <div class="srow srow-sec"><span class="slbl">Type</span><select class="sinp" id="hrt"><option value="">Any type</option><option>Apartment</option><option>Flat</option><option>House</option><option>Villa</option><option>PG / Room</option></select></div>
           <div class="srow srow-sec"><span class="slbl">Max Rent</span><div style="flex:1;display:flex;align-items:center;gap:0;height:36px;">
 <input type="hidden" id="hrr" value="0"/>
@@ -315,7 +315,7 @@
         </div>
         <!-- BUY SEARCH -->
         <div id="hfb" style="display:none;">
-          <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hbc" placeholder="Bengaluru, Pune, Mumbai…" autocomplete="off"/><div class="ac-list" id="ac-hbc"></div></div></div>
+          <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hbc" name="search" placeholder="Bengaluru, Pune, Mumbai…" autocomplete="new-password"/><div class="ac-list" id="ac-hbc"></div></div></div>
           <div class="srow srow-sec"><span class="slbl">Type</span><select class="sinp" id="hbt"><option value="">Any type</option><option>Apartment</option><option>House</option><option>Villa</option><option>Plot</option></select></div>
           <div class="srow srow-sec"><span class="slbl">Budget</span><select class="sinp" id="hbb"><option value="">Any budget</option><option value="2500000">Under 25L</option><option value="5000000">Under 50L</option><option value="10000000">Under 1Cr</option><option value="25000000">Under 2.5Cr</option></select></div>
           <div class="srow srow-sec"><span class="slbl">Beds</span><select class="sinp" id="hbd"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5+</option></select></div>
@@ -435,7 +435,7 @@
     <span id="bCount"></span>
     <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <div style="position:relative;">
-        <input type="text" id="bSearch" placeholder="Search listings…" oninput="dRender()" style="font-size:13px;padding:7px 12px 7px 30px;border:1px solid var(--sa);border-radius:8px;font-family:'DM Sans',sans-serif;width:180px;background:var(--wh);" autocomplete="off"/>
+        <input type="text" id="bSearch" name="q" placeholder="Search listings…" oninput="dRender()" style="font-size:13px;padding:7px 12px 7px 30px;border:1px solid var(--sa);border-radius:8px;font-family:'DM Sans',sans-serif;width:180px;background:var(--wh);" autocomplete="off"/>
         <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--mu);pointer-events:none;"><svg class="icn icn-sm" aria-hidden="true" style="color:var(--mu);"><use href="#i-search"/></svg></span>
       </div>
       <label style="font-size:12px;color:var(--mu);">Sort:</label>
@@ -453,7 +453,7 @@
       </div>
       <div class="fp-body">
         <div id="rFilts">
-          <div class="fs"><h4>Location</h4><div class="fc-wrap"><input type="text" id="fCity" placeholder="City or locality…" oninput="dRender()" autocomplete="off"/><div class="ac-list" id="ac-fCity"></div></div></div>
+          <div class="fs"><h4>Location</h4><div class="fc-wrap"><input type="text" id="fCity" name="city-search" placeholder="City or locality…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fCity"></div></div></div>
           <div class="fs"><h4>Monthly Rent (₹)</h4><div class="rr"><input type="number" id="fRmn" placeholder="Min" oninput="dRender()"/><span class="rsep">–</span><input type="number" id="fRmx" placeholder="Max" oninput="dRender()"/></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;"><span onclick="setRentPreset(0,10000)" class="preset-chip">Up to 10K</span><span onclick="setRentPreset(0,25000)" class="preset-chip">Up to 25K</span><span onclick="setRentPreset(0,50000)" class="preset-chip">Up to 50K</span><span onclick="setRentPreset(0,100000)" class="preset-chip">Up to 1L</span><span onclick="setRentPreset(0,500000)" class="preset-chip">Up to 5L</span></div></div>
           <div class="fs"><h4>Property Type</h4><div class="chips" id="fRT"></div></div>
           <div class="fs"><h4>Bedrooms</h4><div class="chips" id="fRB"></div></div>
@@ -463,7 +463,7 @@
           <div class="fs"><h4>More</h4><div class="chips"><div class="ck" id="ckV" onclick="togBool('ver',this)">✓ Verified</div><div class="ck" id="ckR" onclick="togBool('rer',this)">RERA ✓</div></div></div>
         </div>
         <div id="bFilts" style="display:none;">
-          <div class="fs"><h4>Location</h4><div class="fc-wrap"><input type="text" id="fBCity" placeholder="City or locality…" oninput="dRender()" autocomplete="off"/><div class="ac-list" id="ac-fBCity"></div></div></div>
+          <div class="fs"><h4>Location</h4><div class="fc-wrap"><input type="text" id="fBCity" name="city-search-b" placeholder="City or locality…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fBCity"></div></div></div>
           <div class="fs"><h4>Budget (₹)</h4><div class="rr"><input type="number" id="fBmn" placeholder="Min" oninput="dRender()"/><span class="rsep">–</span><input type="number" id="fBmx" placeholder="Max" oninput="dRender()"/></div></div>
           <div class="fs"><h4>Property Type</h4><div class="chips" id="fBT"></div></div>
           <div class="fs"><h4>Bedrooms</h4><div class="chips" id="fBB"></div></div>
@@ -719,7 +719,7 @@
     <div class="fg2">
       <div class="fg s2"><label class="flbl">Property Title *</label><input class="fi" type="text" id="lTl" placeholder="e.g. 3 BHK Apartment, Andheri West"/></div>
       <div class="fg s2"><label class="flbl">Building / Society Name <span style="color:var(--mu);font-weight:400;">(optional)</span></label><input class="fi" type="text" id="lBn" placeholder="e.g. Lodha World One, Prestige Falcon City"/></div>
-      <div class="fg"><label class="flbl">City *</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lCy" placeholder="Mumbai" autocomplete="off"/><div class="ac-list" id="ac-lCy"></div></div></div>
+      <div class="fg"><label class="flbl">City *</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lCy" name="listing-city" placeholder="Mumbai" autocomplete="new-password"/><div class="ac-list" id="ac-lCy"></div></div></div>
       <div class="fg"><label class="flbl">Locality</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lLo" placeholder="Andheri West" autocomplete="off"/><div class="ac-list" id="ac-lLo"></div></div></div>
       <div class="fg"><label class="flbl">Property Type</label><select class="fi" id="lTp"><option>Apartment</option><option>Flat</option><option>House</option><option>Villa</option><option>Plot</option><option>PG / Room</option></select></div>
       <div class="fg"><label class="flbl">Bedrooms</label><select class="fi" id="lBd"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6+</option></select></div>
