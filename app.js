@@ -1208,10 +1208,11 @@ function pCard(l){
     +'<button class="pc-btn-report" onclick="event.stopPropagation();openReport('+l.id+')" aria-label="Report discrimination" title="Report discrimination"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg></button>'
     +'</div>';
 
-  return '<div class="pc" onclick="viewL('+l.id+')">'
+  return '<a class="pc-link" href="'+_listingUrl(l.id)+'" onclick="return _cardClick(event,'+l.id+')" target="_blank" rel="noopener">'
+    +'<div class="pc">'
     +'<div class="pc-img">'
       +'<div class="tbdg '+(isP?'proj':ir?'rent':'buy')+'">'+(isP?'New Project':ir?'For Rent':'For Sale')+'</div>'
-      +'<button class="fave-btn" onclick="event.stopPropagation();togFav('+l.id+',this)" aria-label="Save to favorites" aria-pressed="'+(fv?'true':'false')+'"><svg class="icn icn-sm" aria-hidden="true"><use href="#'+(fv?'i-heart-fill':'i-heart')+'"/></svg></button>'
+      +'<button class="fave-btn" onclick="event.stopPropagation();event.preventDefault();togFav('+l.id+',this)" aria-label="Save to favorites" aria-pressed="'+(fv?'true':'false')+'"><svg class="icn icn-sm" aria-hidden="true"><use href="#'+(fv?'i-heart-fill':'i-heart')+'"/></svg></button>'
       +imgHTML
     +'</div>'
     +'<div class="pc-body">'
@@ -1225,7 +1226,7 @@ function pCard(l){
       +(l.tags.length?'<div class="pc-tags">'+l.tags.slice(0,3).map(function(t){return '<span class="pc-tag">'+esc(t)+'</span>';}).join('')+'</div>':'')
     +'</div>'
     +footerHTML
-  +'</div>';
+  +'</div></a>';
 }
 
 async function cSlide(id,dir){
@@ -1509,7 +1510,8 @@ function _similarCard(l){
   } else {
     price=fmtPriceHTML(l.price);
   }
-  return '<div class="sim-card" onclick="viewL('+l.id+')">'
+  return '<a class="sim-link" href="'+_listingUrl(l.id)+'" target="_blank" rel="noopener">'
+    +'<div class="sim-card">'
     +'<div class="sim-img">'+(img?'<img src="'+img+'" alt="'+escAttr(l.title)+'" loading="lazy"/>':'<div class="sim-no-img"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-home"/></svg></div>')+'</div>'
     +'<div class="sim-body">'
     +'<div class="sim-title">'+esc(l.title)+'</div>'
@@ -1517,7 +1519,98 @@ function _similarCard(l){
     +'<div class="sim-loc"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-pin"/></svg> '+esc(l.loc||l.city)+'</div>'
     +'<div class="sim-meta">'+l.beds+' BHK'+(l.area?' &middot; '+l.area+' sq.ft':'')+'</div>'
     +'<div class="sim-price '+(ir?'rent':'buy')+'">'+price+'</div>'
-    +'</div></div>';
+    +'</div></div></a>';
+}
+
+// ══ PRICE CALCULATOR ══
+// Live preview of: per-sqft on carpet, est. govt charges, total cost to buyer
+function updatePriceCalc(){
+  var price=Number((document.getElementById('lPr')||{}).value)||0;
+  var carpet=Number((document.getElementById('lArC')||{}).value)||0;
+  var built=Number((document.getElementById('lAr')||{}).value)||0;
+  var box=document.getElementById('lPrCalc');
+  if(!box)return;
+  if(!price){box.style.display='none';return;}
+  box.style.display='';
+  var lines=[];
+  lines.push('<strong style="color:var(--ink);">Price breakdown preview</strong>');
+  lines.push('Listed price: <strong>'+fmtPriceHTML(price)+'</strong>');
+  if(carpet)lines.push('Per sq.ft (carpet): <strong>'+fmtPriceHTML(Math.round(price/carpet))+'</strong>');
+  if(built&&built!==carpet)lines.push('Per sq.ft (built-up): <strong>'+fmtPriceHTML(Math.round(price/built))+'</strong>');
+  // Govt charges estimate (Maharashtra typical: 6% stamp + 1% reg + 1% surcharge ≈ ~7%; plus GST 5% for under-construction)
+  var stampAndReg=Math.round(price*0.07);
+  var totalEst=price+stampAndReg;
+  lines.push('Est. govt charges <span style="color:var(--mu);">(stamp duty + registration ≈ 7%)</span>: <strong>'+fmtPriceHTML(stampAndReg)+'</strong>');
+  lines.push('<span style="color:var(--g);font-weight:700;">Estimated total cost: '+fmtPriceHTML(totalEst)+'</span>');
+  lines.push('<span style="font-size:10px;color:var(--mu);">Note: GST (5% for under-construction) and other municipal charges may apply. Please consult a property advisor for exact figures.</span>');
+  box.innerHTML=lines.join('<br/>');
+}
+
+// ══ PRICE COMPARISON ══
+// Build a comparison panel showing price/sqft stats for the current listing's locality
+async function buildPriceComparison(currentL){
+  if(currentL.lf==='rent')return ''; // Only for sale/project
+  var carpetA=currentL.carpetArea||currentL.builtArea||currentL.area||0;
+  var basePrice=currentL.lf==='project'?(currentL.priceMin||currentL.price||0):(currentL.price||0);
+  if(!basePrice||!carpetA)return ''; // Need both to compute per-sqft
+  var thisPSF=Math.round(basePrice/carpetA);
+  try{
+    var allApproved=(await gL()).filter(function(l){
+      if(l.id===currentL.id||l.status!=='approved')return false;
+      if(l.lf==='rent')return false;
+      var a=l.carpetArea||l.builtArea||l.area||0;
+      var p=l.lf==='project'?(l.priceMin||l.price||0):(l.price||0);
+      return a>0&&p>0;
+    });
+    // Same locality first; fall back to city if not enough data
+    var sameLoc=allApproved.filter(function(l){return l.loc&&currentL.loc&&l.loc===currentL.loc;});
+    var sameCity=allApproved.filter(function(l){return l.city===currentL.city;});
+    var pool=sameLoc.length>=3?sameLoc:sameCity;
+    var poolLabel=sameLoc.length>=3?(currentL.loc||'this locality'):(currentL.city||'this city');
+    if(pool.length<3)return ''; // Not enough data to compare
+    // Compute per-sqft for each
+    var psfs=pool.map(function(l){
+      var a=l.carpetArea||l.builtArea||l.area||0;
+      var p=l.lf==='project'?(l.priceMin||l.price||0):(l.price||0);
+      return Math.round(p/a);
+    }).sort(function(a,b){return a-b;});
+    var min=psfs[0], max=psfs[psfs.length-1];
+    var avg=Math.round(psfs.reduce(function(s,v){return s+v;},0)/psfs.length);
+    var median=psfs[Math.floor(psfs.length/2)];
+    // Position of this listing on the scale (0-100%)
+    var pct=max>min?Math.max(0,Math.min(100,Math.round(((thisPSF-min)/(max-min))*100))):50;
+    // Verdict: above/below/at average
+    var diff=thisPSF-avg;
+    var diffPct=avg?Math.round((diff/avg)*100):0;
+    var verdict, verdictColor;
+    if(Math.abs(diffPct)<=5){verdict='Right at the average';verdictColor='var(--t)';}
+    else if(diffPct>0){verdict=diffPct+'% above the average';verdictColor='#c55a00';}
+    else{verdict=Math.abs(diffPct)+'% below the average — good deal';verdictColor='var(--gr)';}
+    // Render
+    return '<div style="margin-bottom:18px;background:#fff;border:1px solid var(--sa);border-radius:10px;padding:16px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;flex-wrap:wrap;gap:6px;">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;">Price Comparison &middot; '+esc(poolLabel)+'</div>'
+      +'<div style="font-size:11px;color:var(--mu);">Based on '+pool.length+' listing'+(pool.length>1?'s':'')+'</div>'
+      +'</div>'
+      +'<div style="font-size:13px;color:'+verdictColor+';font-weight:700;margin-bottom:14px;">This listing is '+verdict+'</div>'
+      // Bar chart
+      +'<div style="position:relative;height:8px;background:linear-gradient(to right,#e4f5ea,var(--cr),#fff5f5);border-radius:50px;margin-bottom:14px;">'
+      +'<div style="position:absolute;left:'+pct+'%;top:-6px;transform:translateX(-50%);width:3px;height:20px;background:var(--ink);border-radius:50px;"></div>'
+      +'<div style="position:absolute;left:'+pct+'%;top:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;font-family:\'DM Sans\',sans-serif;white-space:nowrap;">This: &#8377;'+thisPSF.toLocaleString('en-IN')+'/sq.ft</div>'
+      +'</div>'
+      // Legend with min/avg/max
+      +'<div style="display:flex;justify-content:space-between;margin-top:38px;font-size:11px;font-family:\'DM Sans\',sans-serif;">'
+      +'<div><div style="color:var(--gr);font-weight:700;">Lowest</div><div style="font-size:13px;font-weight:700;color:var(--ink);">&#8377;'+min.toLocaleString('en-IN')+'</div></div>'
+      +'<div style="text-align:center;"><div style="color:var(--mu);font-weight:700;">Average</div><div style="font-size:13px;font-weight:700;color:var(--ink);">&#8377;'+avg.toLocaleString('en-IN')+'</div></div>'
+      +'<div style="text-align:center;"><div style="color:var(--mu);font-weight:700;">Median</div><div style="font-size:13px;font-weight:700;color:var(--ink);">&#8377;'+median.toLocaleString('en-IN')+'</div></div>'
+      +'<div style="text-align:right;"><div style="color:#c55a00;font-weight:700;">Highest</div><div style="font-size:13px;font-weight:700;color:var(--ink);">&#8377;'+max.toLocaleString('en-IN')+'</div></div>'
+      +'</div>'
+      +'<p style="font-size:10px;color:var(--mu);margin-top:10px;line-height:1.5;">Based on listings currently active on Ek Makān. Per sq.ft computed on carpet area where available, else built-up area.</p>'
+      +'</div>';
+  }catch(e){
+    console.error('buildPriceComparison error:',e);
+    return '';
+  }
 }
 
 async function togFav(id,btn){
@@ -1639,6 +1732,31 @@ async function viewL(id){
     priceDisplay=fmtPriceHTML(l.price);
   }
   var priceLbl=isProj?'PRICE RANGE':(ir?'RENT':'PRICE');
+  // Price breakdown panel (buy and projects only)
+  var priceBreakdownHTML='';
+  if(!ir){
+    var basePrice=isProj?(l.priceMin||l.price||0):(l.price||0);
+    if(basePrice>0){
+      var carpetA=l.carpetArea||0, builtA=l.builtArea||l.area||0;
+      var stamp=Math.round(basePrice*0.07);
+      var totalEst=basePrice+stamp;
+      var rows=[];
+      rows.push('<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--sa);"><span style="color:var(--mu);font-size:12px;">Listed price</span><strong style="color:var(--g);">'+fmtPriceHTML(basePrice)+'</strong></div>');
+      if(carpetA){
+        rows.push('<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--sa);"><span style="color:var(--mu);font-size:12px;">Per sq.ft <span style="font-size:10px;">(carpet)</span></span><strong style="font-size:13px;">'+fmtPriceHTML(Math.round(basePrice/carpetA))+'</strong></div>');
+      }
+      if(builtA&&builtA!==carpetA){
+        rows.push('<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--sa);"><span style="color:var(--mu);font-size:12px;">Per sq.ft <span style="font-size:10px;">(built-up)</span></span><strong style="font-size:13px;">'+fmtPriceHTML(Math.round(basePrice/builtA))+'</strong></div>');
+      }
+      rows.push('<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--sa);"><span style="color:var(--mu);font-size:12px;">Govt charges <span style="font-size:10px;">(stamp + reg ≈ 7%)</span></span><strong style="font-size:13px;">+ '+fmtPriceHTML(stamp)+'</strong></div>');
+      rows.push('<div style="display:flex;justify-content:space-between;padding:10px 0 4px;"><span style="font-weight:700;color:var(--ink);">Estimated total</span><strong style="color:var(--g);font-size:16px;">'+fmtPriceHTML(totalEst)+'</strong></div>');
+      priceBreakdownHTML='<div style="margin-bottom:18px;background:var(--cr);border:1px solid var(--sa);border-radius:10px;padding:14px 16px;">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Price Breakdown</div>'
+        +rows.join('')
+        +'<p style="font-size:10.5px;color:var(--mu);margin-top:8px;line-height:1.5;">GST (5% for under-construction), maintenance deposit and other charges may apply. Consult a property advisor for exact figures.</p>'
+        +'</div>';
+    }
+  }
   // Unit types table (for projects)
   var unitsTableHTML='';
   if(isProj&&l.unitTypes&&l.unitTypes.length){
@@ -1711,6 +1829,8 @@ async function viewL(id){
     +(!ir&&!isProj?'<div class="ic"><div class="ll">POSSESSION</div><strong>'+esc(l.poss||'—')+'</strong></div>':'')
     +(!ir&&l.rera?'<div class="ic" style="grid-column:1/-1;"><div class="ll">RERA NO.</div><strong style="color:var(--gr);">'+esc(l.rera)+'</strong></div>':'')
     +'</div>'
+    +priceBreakdownHTML
+    +'<div id="priceCompareSlot"></div>'
     +unitsTableHTML
     +furnDetH
     +amH
@@ -1739,6 +1859,11 @@ async function viewL(id){
   showListingMap(l.city,l.loc,l.title);
   // Render similar properties horizontal scroll
   renderSimilarProperties(l);
+  // Render price comparison panel (async — doesn't block initial render)
+  buildPriceComparison(l).then(function(html){
+    var slot=document.getElementById('priceCompareSlot');
+    if(slot)slot.innerHTML=html;
+  });
 }
 window._vS=function(d){
   var len=window._vI.length;window._vIdx=(window._vIdx+d+len)%len;
@@ -2014,6 +2139,15 @@ var _origCloseM=closeM;
 // ══ SHARE ══
 function _listingUrl(id){
   return window.location.origin+window.location.pathname+'#listing/'+id;
+}
+// Card click handler — let the anchor target="_blank" do its native job
+// (opens in new tab on left-click, supports cmd/ctrl/middle-click natively).
+// We just need to let the default action through. Returning true allows it.
+function _cardClick(e,id){
+  // Allow modifier-clicks, right-click, middle-click — browser handles those
+  // For a plain left-click, the anchor's target="_blank" opens in new tab natively.
+  // We return true to let the browser do its thing.
+  return true;
 }
 
 async function shareWhatsApp(id){

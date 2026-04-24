@@ -795,8 +795,8 @@
       <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Help buyers understand the property better.</p>
       <div class="fg2">
         <div class="fg"><label class="flbl">Bathrooms</label><select class="fi" id="lBt"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
-        <div class="fg"><label class="flbl">Carpet Area (sq.ft) <span style="color:var(--mu);font-weight:400;font-size:11px;">usable space</span></label><input class="fi" type="number" id="lArC" placeholder="950"/></div>
-        <div class="fg"><label class="flbl">Built-up Area (sq.ft) <span style="color:var(--mu);font-weight:400;font-size:11px;">+ walls</span></label><input class="fi" type="number" id="lAr" placeholder="1100"/></div>
+        <div class="fg"><label class="flbl">Carpet Area (sq.ft) <span style="color:var(--mu);font-weight:400;font-size:11px;">usable space</span></label><input class="fi" type="number" id="lArC" placeholder="950" oninput="updatePriceCalc()"/></div>
+        <div class="fg"><label class="flbl">Built-up Area (sq.ft) <span style="color:var(--mu);font-weight:400;font-size:11px;">+ walls</span></label><input class="fi" type="number" id="lAr" placeholder="1100" oninput="updatePriceCalc()"/></div>
         <div class="fg"><label class="flbl">Super Built-up Area (sq.ft) <span style="color:var(--mu);font-weight:400;font-size:11px;">+ common</span></label><input class="fi" type="number" id="lArS" placeholder="1300"/></div>
         <div class="fg"><label class="flbl">Age of Property</label><select class="fi" id="lAge"><option value="">Select</option><option>Under Construction</option><option>New (0-1 years)</option><option>1-5 years</option><option>5-10 years</option><option>10-20 years</option><option>20+ years</option></select></div>
         <div class="fg"><label class="flbl">Floor No.</label><input class="fi" type="number" id="lFlNo" placeholder="3" min="0"/></div>
@@ -822,7 +822,6 @@
         <div class="fg" id="lStW" style="display:none;"><label class="flbl">Sale Type</label><select class="fi" id="lSt"><option>New</option><option>Resale</option></select></div>
         <div class="fg" id="lTrxW" style="display:none;"><label class="flbl">Transaction Type <span class="info-bubble" data-tip="Resale: previously owned property being sold again. New Booking: buying directly from builder, often pre-construction.">i</span></label><select class="fi" id="lTrx"><option value="">Select</option><option>Resale</option><option>New Booking</option><option>First Owner Resale</option></select></div>
         <div class="fg"><label class="flbl">Property Ownership <span class="info-bubble" data-tip="Freehold: full unrestricted ownership. Leasehold: ownership for a fixed term (typically 99 years), then reverts. Co-op Society: ownership of shares in a society that owns the building. Power of Attorney: legal authorisation, not full ownership.">i</span></label><select class="fi" id="lOwn"><option value="">Select</option><option>Freehold</option><option>Leasehold</option><option>Co-operative Society</option><option>Power of Attorney</option></select></div>
-        <div class="fg"><label class="flbl">Water Source <span class="info-bubble" data-tip="Municipal Corporation: piped water from city supply. Borewell/Tank: groundwater stored in tanks. 24x7 Water: continuous supply available. Mixed: combination.">i</span></label><select class="fi" id="lWater"><option value="">Select</option><option>Municipal Corporation</option><option>Borewell / Tank</option><option>24x7 Water</option><option>Mixed</option></select></div>
         <div class="fg"><label class="flbl">Power Backup <span class="info-bubble" data-tip="None: no backup. Partial: common areas only. Full Backup: every unit has uninterrupted power. Generator/Inverter: type of backup source.">i</span></label><select class="fi" id="lPower"><option value="">Select</option><option>None</option><option>Partial (common areas)</option><option>Full Backup</option><option>Generator</option><option>Inverter</option></select></div>
         <div class="fg" id="lReW" style="display:none;"><label class="flbl">RERA Number</label><input class="fi" type="text" id="lRe" placeholder="RERA/MH/2024/001"/></div>
         <div class="fg" id="lProjW" style="display:none;"><label class="flbl">Project Status *</label><select class="fi" id="lProj"><option>New Launch</option><option>Under Construction</option><option>Ready to Move</option><option>Completed</option></select></div>
@@ -841,7 +840,11 @@
       <div class="fg2">
         <div class="fg" id="lRW"><label class="flbl">Monthly Rent (₹) *</label><input class="fi" type="number" id="lRt" placeholder="25000"/></div>
         <div class="fg" id="lDW"><label class="flbl">Deposit (₹)</label><input class="fi" type="number" id="lDp" placeholder="50000"/></div>
-        <div class="fg" id="lPrW" style="display:none;"><label class="flbl">Sale Price (₹) *</label><input class="fi" type="number" id="lPr" placeholder="5000000"/></div>
+        <div class="fg s2" id="lPrW" style="display:none;">
+          <label class="flbl">Sale Price (₹) * <span class="info-bubble" data-tip="Enter the all-inclusive sale price. Government charges (stamp duty, registration ~5-7%) and applicable GST will be calculated separately for the buyer.">i</span></label>
+          <input class="fi" type="number" id="lPr" placeholder="9500000 (e.g. ₹95 Lakh)" oninput="updatePriceCalc()"/>
+          <div id="lPrCalc" style="font-size:11px;color:var(--mu);margin-top:6px;line-height:1.55;display:none;padding:8px 10px;background:var(--cr);border-radius:6px;border:1px dashed var(--sa);"></div>
+        </div>
         <div class="fg" id="lPrMinW" style="display:none;"><label class="flbl">Starting Price (₹) *</label><input class="fi" type="number" id="lPrMin" placeholder="5000000"/></div>
         <div class="fg" id="lPrMaxW" style="display:none;"><label class="flbl">Maximum Price (₹)</label><input class="fi" type="number" id="lPrMax" placeholder="20000000"/></div>
         <div class="fg s2" id="lUnitsW" style="display:none;">
