@@ -607,7 +607,7 @@
     <!-- REGISTER -->
     <div id="rFrm" style="display:none;" data-role="user">
       <p style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">I am a</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
         <div id="rrU" onclick="setRR('user')" class="role-card on">
           <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-home"/></svg></div>
           <div style="font-size:12px;font-weight:700;">Rent or Buy</div>
@@ -622,6 +622,11 @@
           <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-broker"/></svg></div>
           <div style="font-size:12px;font-weight:700;">Broker</div>
           <div style="font-size:10px;color:var(--mu);margin-top:2px;">Agent / Agency</div>
+        </div>
+        <div id="rrBd" onclick="setRR('builder')" class="role-card">
+          <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-sparkle"/></svg></div>
+          <div style="font-size:12px;font-weight:700;">Builder</div>
+          <div style="font-size:10px;color:var(--mu);margin-top:2px;">New projects / launches</div>
         </div>
       </div>
       <div id="rNote" class="al ali" style="font-size:12px;margin-bottom:10px;">Browse, save, and contact listings for renting or buying. Free forever.</div>
@@ -753,8 +758,8 @@
     <!-- STAGE 1: Intent -->
     <div class="wiz-pane on" data-pane="1">
       <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;">What would you like to list?</h3>
-      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Choose whether you want to rent out the property or sell it.</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Choose the type of listing you want to create.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;">
         <button type="button" class="wiz-card on" id="wizCardRent" onclick="setLM('rent')">
           <svg class="icn icn-xl" aria-hidden="true" style="color:var(--t);"><use href="#i-rent"/></svg>
           <div class="wiz-card-t">Rent</div>
@@ -764,6 +769,11 @@
           <svg class="icn icn-xl" aria-hidden="true" style="color:var(--g);"><use href="#i-key"/></svg>
           <div class="wiz-card-t">Sale</div>
           <div class="wiz-card-s">New or resale, with RERA &amp; possession</div>
+        </button>
+        <button type="button" class="wiz-card" id="wizCardProject" onclick="setLM('project')" style="display:none;">
+          <svg class="icn icn-xl" aria-hidden="true" style="color:#c58600;"><use href="#i-sparkle"/></svg>
+          <div class="wiz-card-t">New Project</div>
+          <div class="wiz-card-s">Launch a new or under-construction project</div>
         </button>
       </div>
     </div>
@@ -796,6 +806,8 @@
         <div class="fg" id="lPoW" style="display:none;"><label class="flbl">Possession</label><select class="fi" id="lPo"><option>Ready to Move</option><option>Under Construction</option><option>Within 6 Months</option><option>Within 1 Year</option></select></div>
         <div class="fg" id="lStW" style="display:none;"><label class="flbl">Sale Type</label><select class="fi" id="lSt"><option>New</option><option>Resale</option></select></div>
         <div class="fg" id="lReW" style="display:none;"><label class="flbl">RERA Number</label><input class="fi" type="text" id="lRe" placeholder="RERA/MH/2024/001"/></div>
+        <div class="fg" id="lProjW" style="display:none;"><label class="flbl">Project Status *</label><select class="fi" id="lProj"><option>New Launch</option><option>Under Construction</option><option>Ready to Move</option><option>Completed</option></select></div>
+        <div class="fg" id="lCompW" style="display:none;"><label class="flbl">Expected Completion</label><input class="fi" type="month" id="lComp"/></div>
         <div class="fg"><label class="flbl">Owner / Broker Name *</label><input class="fi" type="text" id="lOw"/></div>
         <div class="fg"><label class="flbl">Contact Number *</label><input class="fi" type="tel" id="lCt"/></div>
         <div class="fg s2"><label class="flbl">Amenities</label><div class="amen-chips" id="lAm" style="margin-top:5px;"></div></div>
@@ -811,6 +823,8 @@
         <div class="fg" id="lRW"><label class="flbl">Monthly Rent (₹) *</label><input class="fi" type="number" id="lRt" placeholder="25000"/></div>
         <div class="fg" id="lDW"><label class="flbl">Deposit (₹)</label><input class="fi" type="number" id="lDp" placeholder="50000"/></div>
         <div class="fg" id="lPrW" style="display:none;"><label class="flbl">Sale Price (₹) *</label><input class="fi" type="number" id="lPr" placeholder="5000000"/></div>
+        <div class="fg" id="lPrMinW" style="display:none;"><label class="flbl">Starting Price (₹) *</label><input class="fi" type="number" id="lPrMin" placeholder="5000000"/></div>
+        <div class="fg" id="lPrMaxW" style="display:none;"><label class="flbl">Maximum Price (₹)</label><input class="fi" type="number" id="lPrMax" placeholder="20000000"/></div>
         <div class="fg s2"><label class="flbl">Description</label><textarea class="fi" id="lDs" placeholder="Describe the property and your openness to all communities…"></textarea></div>
         <div class="fg s2">
           <label class="flbl">Photos (up to 6) — first 2 free, rest unlock after sign-up</label>

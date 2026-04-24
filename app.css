@@ -189,6 +189,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .tbdg{position:absolute;top:10px;left:10px;font-size:10px;font-weight:700;padding:4px 11px;border-radius:50px;z-index:3;letter-spacing:.4px;text-transform:uppercase;}
 .tbdg.rent{background:var(--t);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15);}
 .tbdg.buy{background:var(--g);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15);}
+.tbdg.proj{background:linear-gradient(135deg,#daa520,#c58600);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);}
 /* Heart */
 .fave-btn{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:none;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:5;transition:all .2s;color:#fff;}
 .fave-btn:hover{background:rgba(0,0,0,.7);transform:scale(1.08);}
@@ -201,6 +202,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .pc-badges{display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;max-width:50%;}
 .pc-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;letter-spacing:.2px;}
 .pc-badge.new{background:#fff3e0;color:#c55a00;}
+.pc-badge.new-launch{background:linear-gradient(90deg,#ffedb3,#ffd972);color:#8a6100;}
+.pc-badge.project{background:#fff8e1;color:#a07830;}
 .pc-badge.verified{background:#e4f5ea;color:var(--gr);}
 .pc-badge.rera{background:var(--tl);color:var(--td);}
 .pc-badge .icn{width:11px;height:11px;}
