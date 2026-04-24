@@ -138,9 +138,9 @@ function renderTurnstile(containerId,tokenSetter){
 }
 
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
-function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',floorNo:r.floor_no!=null?r.floor_no:null,totalFloors:r.total_floors||null,facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[],txnType:r.transaction_type||'',ownership:r.ownership||'',water:r.water_source||'',backup:r.power_backup||''};}
+function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',floorNo:r.floor_no!=null?r.floor_no:null,totalFloors:r.total_floors||null,facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[],txnType:r.transaction_type||'',ownership:r.ownership||'',water:r.water_source||'',backup:r.power_backup||'',landmarks:r.landmarks||[]};}
 // Map JS listing → Supabase row
-function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',floor_no:l.floorNo!=null&&l.floorNo!==''?Number(l.floorNo):null,total_floors:l.totalFloors?Number(l.totalFloors):null,facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[],transaction_type:l.txnType||'',ownership:l.ownership||'',water_source:l.water||'',power_backup:l.backup||''};}
+function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',floor_no:l.floorNo!=null&&l.floorNo!==''?Number(l.floorNo):null,total_floors:l.totalFloors?Number(l.totalFloors):null,facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[],transaction_type:l.txnType||'',ownership:l.ownership||'',water_source:l.water||'',power_backup:l.backup||'',landmarks:l.landmarks||[]};}
 function mapInq(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',listingCity:r.listing_city||'',lf:r.listing_for||'rent',contact:'',name:r.inquirer_name||'',phone:r.inquirer_phone||'',email:r.inquirer_email||'',message:r.message||'',uid:r.user_id,sentAt:r.sent_at?(r.sent_at+'').split('T')[0]:''};}
 function mapUsr(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone||'',role:r.role||'user',agency:r.agency||'',lic:r.license_no||'',joinedAt:r.joined_at?(r.joined_at+'').split('T')[0]:'',verified:r.verified||false,trusted:r.is_trusted||false};}
 function mapRpt(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',type:r.report_type||'',desc:r.description||'',reporterName:r.reporter_name||'',reporterContact:r.reporter_contact||'',reporterUid:r.reporter_user_id,status:r.status||'open',submittedAt:r.submitted_at?(r.submitted_at+'').split('T')[0]:''};}
@@ -338,7 +338,7 @@ function showEmpty(elId,icon,title,sub){
 // ══ DATA ACCESS (Supabase) ══
 async function gL(){
   if(_cacheL&&_cacheValid('l'))return _cacheL;
-  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors').order('posted_at',{ascending:false});
+  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks').order('posted_at',{ascending:false});
   if(error){toast('Failed to load listings. Please refresh.','e');_cacheL=[];return[];}
   _cacheL=(data||[]).map(mapL);
   _cacheTime.l=Date.now();
@@ -1613,6 +1613,66 @@ async function buildPriceComparison(currentL){
   }
 }
 
+// ══ LANDMARKS ══
+// Each landmark: {category, name, distance}
+var _landmarks=[];
+var LM_ICONS={
+  hospital:'🏥', school:'🎓', college:'📚', metro:'🚇', bus:'🚌',
+  airport:'✈️', railway:'🚆', mall:'🛍️', market:'🛒', park:'🌳',
+  restaurant:'🍽️', gym:'💪', bank:'🏦', temple:'🛕', office:'🏢', other:'📍'
+};
+var LM_LABELS={
+  hospital:'Hospital', school:'School', college:'College', metro:'Metro',
+  bus:'Bus', airport:'Airport', railway:'Railway', mall:'Mall',
+  market:'Market', park:'Park', restaurant:'Restaurant', gym:'Gym',
+  bank:'Bank/ATM', temple:'Place of Worship', office:'Office Hub', other:'Landmark'
+};
+
+function renderLandmarks(){
+  var list=document.getElementById('lLandmarksList');
+  if(!list)return;
+  list.innerHTML=_landmarks.map(function(lm,i){
+    var ico=LM_ICONS[lm.category]||'📍';
+    return '<span class="lm-chip">'
+      +'<span class="lm-chip-ico">'+ico+'</span>'
+      +esc(lm.name)
+      +(lm.distance?'<span class="lm-chip-dist">'+esc(lm.distance)+'</span>':'')
+      +'<button type="button" class="lm-chip-rm" onclick="removeLandmark('+i+')" aria-label="Remove">&times;</button>'
+    +'</span>';
+  }).join('');
+}
+
+function addLandmark(){
+  var catEl=document.getElementById('lLmCat');
+  var nmEl=document.getElementById('lLmName');
+  var dsEl=document.getElementById('lLmDist');
+  if(!catEl||!nmEl)return;
+  var name=(nmEl.value||'').trim();
+  if(!name){toast('Please enter a landmark name.','e');nmEl.focus();return;}
+  if(name.length>80){toast('Landmark name too long (max 80 chars).','e');return;}
+  if(_landmarks.length>=20){toast('Maximum 20 landmarks.','e');return;}
+  var dist=(dsEl?dsEl.value||'':'').trim();
+  if(dist.length>20)dist=dist.substring(0,20);
+  // De-dupe by name (case-insensitive) within same category
+  var dupe=_landmarks.some(function(lm){
+    return lm.category===catEl.value&&lm.name.toLowerCase()===name.toLowerCase();
+  });
+  if(dupe){toast('Already added.','e');return;}
+  _landmarks.push({category:catEl.value,name:name,distance:dist});
+  renderLandmarks();
+  // Clear fields and refocus
+  nmEl.value='';
+  if(dsEl)dsEl.value='';
+  nmEl.focus();
+}
+
+function removeLandmark(idx){
+  if(idx>=0&&idx<_landmarks.length){
+    _landmarks.splice(idx,1);
+    renderLandmarks();
+  }
+}
+
 async function togFav(id,btn){
   if(!cu){openM('authM');return;}
   var idx=favs.indexOf(id);
@@ -1666,7 +1726,7 @@ async function viewL(id){
   if(!l){
     // Direct fetch by ID — handles deep links before cache is warm
     try{
-      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors').eq('id',id).eq('status','approved').single();
+      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks').eq('id',id).eq('status','approved').single();
       if(data&&!error)l=mapL(data);
     }catch(e){}
   }
@@ -1792,6 +1852,19 @@ async function viewL(id){
       }).join('')
       +'</div></div>';
   }
+  // Landmarks display (read-only chips on detail view)
+  var landmarksH='';
+  if(l.landmarks&&l.landmarks.length){
+    // Sort by category for grouping feel
+    var sorted=l.landmarks.slice().sort(function(a,b){return (a.category||'').localeCompare(b.category||'');});
+    landmarksH='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:var(--t);"><use href="#i-pin"/></svg> Nearby Landmarks</div>'
+      +'<div class="lm-display">'
+      +sorted.map(function(lm){
+        var ico=LM_ICONS[lm.category]||'📍';
+        return '<div class="lm-disp-item"><span>'+ico+'</span><span>'+esc(lm.name)+'</span>'+(lm.distance?'<span class="lm-chip-dist">'+esc(lm.distance)+'</span>':'')+'</div>';
+      }).join('')
+      +'</div></div>';
+  }
   // Floor display: prefer specific floor_no/total_floors, fall back to old range
   var floorDisplay='—';
   if(l.floorNo!=null&&l.totalFloors){
@@ -1833,6 +1906,7 @@ async function viewL(id){
     +'<div id="priceCompareSlot"></div>'
     +unitsTableHTML
     +furnDetH
+    +landmarksH
     +amH
     +'<p style="font-size:13px;line-height:1.75;margin-bottom:13px;">'+esc(l.desc)+'</p>'
     +'<div class="listing-map-wrap" id="listingMapWrap" style="display:none;"><h4><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-pin"/></svg> Location</h4><div class="listing-map" id="listingMap"></div></div>'
@@ -2637,6 +2711,8 @@ async function editListing(id){
   setVal('lOwn',l.ownership||'');
   setVal('lBackup',l.backup||'');
   setWaterFromString(l.water||'');
+  _landmarks=l.landmarks?l.landmarks.slice():[];
+  renderLandmarks();
   setVal('lFn',l.furnish);
   setVal('lAv',l.avail);
   // New fields: separate areas + age + furnishing details
@@ -2721,6 +2797,7 @@ async function doSub(){
     ownership:getVal('lOwn'),
     water:_selWater.join(','),
     backup:getVal('lBackup'),
+    landmarks:_landmarks.slice(),
     furnish:getVal('lFn'),
     avail:lMode==='rent'?getVal('lAv'):'',
     owner:owner,contact:contact,agency:cu?cu.agency||'':'',
@@ -3791,6 +3868,7 @@ function openM(id){
       _unitTypes=[];renderUnits();
       _selFurn=[];renderFurnishingItems();
       _selWater=[];setWaterFromString('');
+      _landmarks=[];renderLandmarks();
       setLM(cu.role==='builder'?'project':'rent');
       var lo=document.getElementById('lOw'),lc=document.getElementById('lCt'),le=document.getElementById('lErr');
       if(lo)lo.value=cu.agency?cu.name+' – '+esc(cu.agency):cu.name;

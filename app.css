@@ -229,6 +229,27 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .sim-link{text-decoration:none;color:inherit;flex:0 0 220px;scroll-snap-align:start;}
 .sim-link:hover,.sim-link:focus{text-decoration:none;color:inherit;}
 
+/* Landmarks: input row + chip list */
+.lm-list{display:flex;flex-wrap:wrap;gap:6px;min-height:4px;}
+.lm-list:empty{display:none;}
+.lm-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 4px 6px 10px;background:var(--tl);border:1px solid rgba(18,90,81,.18);border-radius:50px;font-size:12px;color:var(--td);font-weight:600;font-family:'DM Sans',sans-serif;}
+.lm-chip-ico{font-size:13px;}
+.lm-chip-dist{font-size:10px;color:var(--mu);font-weight:600;background:rgba(255,255,255,.6);padding:1px 6px;border-radius:50px;margin-left:2px;}
+.lm-chip-rm{background:transparent;border:none;color:var(--mu);font-size:14px;cursor:pointer;padding:2px 6px;border-radius:50%;line-height:1;transition:all .15s;}
+.lm-chip-rm:hover{background:rgba(217,83,79,.15);color:var(--red);}
+.lm-add-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.btn-add-lm{background:var(--t);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;transition:background .15s;white-space:nowrap;}
+.btn-add-lm:hover{background:var(--td);}
+@media (max-width:640px){
+  .lm-add-row select,.lm-add-row input{flex:1 1 100%!important;}
+  .btn-add-lm{flex:1 1 100%;}
+}
+
+/* Landmark display on detail view */
+.lm-display{display:flex;flex-wrap:wrap;gap:6px;}
+.lm-disp-item{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--cr);border:1px solid var(--sa);border-radius:50px;font-size:12px;color:var(--ink);font-family:'DM Sans',sans-serif;}
+.lm-disp-item .lm-chip-dist{background:var(--tl);color:var(--td);}
+
 /* Notification panel — spacious, clean, mobile-friendly */
 .notif-row{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid #f0ede6;transition:background .15s;min-height:72px;}
 .notif-row:hover{background:#f7f5f0 !important;}

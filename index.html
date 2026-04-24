@@ -829,6 +829,34 @@
         <div class="fg"><label class="flbl">Owner / Broker Name *</label><input class="fi" type="text" id="lOw"/></div>
         <div class="fg"><label class="flbl">Contact Number *</label><input class="fi" type="tel" id="lCt"/></div>
         <div class="fg s2"><label class="flbl">Amenities</label><div class="amen-chips" id="lAm" style="margin-top:5px;"></div></div>
+        <div class="fg s2">
+          <label class="flbl">Nearby Landmarks <span style="color:var(--mu);font-weight:400;font-size:11px;">add hospitals, schools, malls, metro stations, etc.</span></label>
+          <div id="lLandmarksList" class="lm-list" style="margin-top:6px;"></div>
+          <div class="lm-add-row" style="margin-top:8px;">
+            <select id="lLmCat" class="fi" style="flex:0 0 110px;font-size:12px;padding:8px 10px;">
+              <option value="hospital">🏥 Hospital</option>
+              <option value="school">🎓 School</option>
+              <option value="college">📚 College</option>
+              <option value="metro">🚇 Metro</option>
+              <option value="bus">🚌 Bus Stop</option>
+              <option value="airport">✈️ Airport</option>
+              <option value="railway">🚆 Railway</option>
+              <option value="mall">🛍️ Mall</option>
+              <option value="market">🛒 Market</option>
+              <option value="park">🌳 Park</option>
+              <option value="restaurant">🍽️ Restaurant</option>
+              <option value="gym">💪 Gym</option>
+              <option value="bank">🏦 Bank/ATM</option>
+              <option value="temple">🛕 Place of Worship</option>
+              <option value="office">🏢 Office Hub</option>
+              <option value="other">📍 Other</option>
+            </select>
+            <input id="lLmName" class="fi" type="text" placeholder="e.g. Cooper Hospital" style="flex:1;font-size:12px;padding:8px 10px;" onkeydown="if(event.key==='Enter'){event.preventDefault();addLandmark();}"/>
+            <input id="lLmDist" class="fi" type="text" placeholder="0.5 km" style="flex:0 0 80px;font-size:12px;padding:8px 10px;" onkeydown="if(event.key==='Enter'){event.preventDefault();addLandmark();}"/>
+            <button type="button" onclick="addLandmark()" class="btn-add-lm" aria-label="Add landmark">+ Add</button>
+          </div>
+          <p style="font-size:10.5px;color:var(--mu);margin-top:6px;line-height:1.5;">Tip: type the landmark name, optional distance (e.g. "0.5 km" or "5 min walk") then Enter or click Add.</p>
+        </div>
         <div class="fg s2"><label class="flbl">Inclusion Tags</label><div class="tp" id="lTgs"></div></div>
       </div>
     </div>
