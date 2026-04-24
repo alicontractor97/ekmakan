@@ -334,16 +334,9 @@
           </div>
           <div class="srow srow-sec"><span class="slbl">Budget</span>
             <div style="display:flex;gap:6px;align-items:center;">
-              <input class="sinp" type="text" id="hbbMin" placeholder="Min" style="width:50%;" autocomplete="off"/>
+              <select class="sinp" id="hbbMin" onchange="syncBudget('hbbMin','hbbMax')"><option value="">Min</option></select>
               <span style="color:var(--mu);font-size:12px;">to</span>
-              <input class="sinp" type="text" id="hbbMax" placeholder="Max" style="width:50%;" autocomplete="off"/>
-            </div>
-            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap;">
-              <button type="button" onclick="setBudgetPreset('hbbMin','hbbMax',0,2500000)" style="background:none;border:1px solid var(--sa);border-radius:50px;padding:2px 10px;font-size:10px;color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;">&lt;25L</button>
-              <button type="button" onclick="setBudgetPreset('hbbMin','hbbMax',0,5000000)" style="background:none;border:1px solid var(--sa);border-radius:50px;padding:2px 10px;font-size:10px;color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;">&lt;50L</button>
-              <button type="button" onclick="setBudgetPreset('hbbMin','hbbMax',0,10000000)" style="background:none;border:1px solid var(--sa);border-radius:50px;padding:2px 10px;font-size:10px;color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;">&lt;1Cr</button>
-              <button type="button" onclick="setBudgetPreset('hbbMin','hbbMax',0,25000000)" style="background:none;border:1px solid var(--sa);border-radius:50px;padding:2px 10px;font-size:10px;color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;">&lt;2.5Cr</button>
-              <button type="button" onclick="setBudgetPreset('hbbMin','hbbMax',0,100000000)" style="background:none;border:1px solid var(--sa);border-radius:50px;padding:2px 10px;font-size:10px;color:var(--mu);cursor:pointer;font-family:'DM Sans',sans-serif;">&lt;10Cr</button>
+              <select class="sinp" id="hbbMax" onchange="syncBudget('hbbMin','hbbMax')"><option value="">Max</option></select>
             </div>
           </div>
           <div class="srow srow-sec"><span class="slbl">Beds</span><select class="sinp" id="hbd"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5+</option></select></div>
@@ -481,7 +474,8 @@
       </div>
       <div class="fp-body">
         <div id="rFilts">
-          <div class="fs"><h4>Location</h4><div class="fc-wrap"><input type="text" id="fCity" name="city-search" placeholder="City or locality…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fCity"></div></div></div>
+          <div class="fs"><h4>City</h4><div class="fc-wrap"><input type="text" id="fCity" name="city-search" placeholder="Mumbai, Bengaluru…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fCity"></div></div></div>
+          <div class="fs"><h4>Locality</h4><div class="fc-wrap"><input type="text" id="fLoc" name="loc-search" placeholder="Andheri West, Koramangala…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fLoc"></div></div></div>
           <div class="fs"><h4>Monthly Rent (₹)</h4><div class="rr"><input type="number" id="fRmn" placeholder="Min" oninput="dRender()"/><span class="rsep">–</span><input type="number" id="fRmx" placeholder="Max" oninput="dRender()"/></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;"><span onclick="setRentPreset(0,10000)" class="preset-chip">Up to 10K</span><span onclick="setRentPreset(0,25000)" class="preset-chip">Up to 25K</span><span onclick="setRentPreset(0,50000)" class="preset-chip">Up to 50K</span><span onclick="setRentPreset(0,100000)" class="preset-chip">Up to 1L</span><span onclick="setRentPreset(0,500000)" class="preset-chip">Up to 5L</span></div></div>
           <div class="fs"><h4>Property Type</h4><div class="chips" id="fRT"></div></div>
           <div class="fs"><h4>Bedrooms</h4><div class="chips" id="fRB"></div></div>
@@ -491,8 +485,9 @@
           <div class="fs"><h4>More</h4><div class="chips"><div class="ck" id="ckV" onclick="togBool('ver',this)">✓ Verified</div><div class="ck" id="ckR" onclick="togBool('rer',this)">RERA ✓</div></div></div>
         </div>
         <div id="bFilts" style="display:none;">
-          <div class="fs"><h4>Location</h4><div class="fc-wrap"><input type="text" id="fBCity" name="city-search-b" placeholder="City or locality…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fBCity"></div></div></div>
-          <div class="fs"><h4>Budget (₹)</h4><div class="rr"><input type="number" id="fBmn" placeholder="Min" oninput="dRender()"/><span class="rsep">–</span><input type="number" id="fBmx" placeholder="Max" oninput="dRender()"/></div></div>
+          <div class="fs"><h4>City</h4><div class="fc-wrap"><input type="text" id="fBCity" name="city-search-b" placeholder="Mumbai, Bengaluru…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fBCity"></div></div></div>
+          <div class="fs"><h4>Locality</h4><div class="fc-wrap"><input type="text" id="fBLoc" name="loc-search-b" placeholder="Andheri West, Koramangala…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fBLoc"></div></div></div>
+          <div class="fs"><h4>Budget (₹)</h4><div class="rr"><select id="fBmn" onchange="syncBudget('fBmn','fBmx');dRender()"><option value="">Min</option></select><span class="rsep">–</span><select id="fBmx" onchange="syncBudget('fBmn','fBmx');dRender()"><option value="">Max</option></select></div></div>
           <div class="fs"><h4>Property Type</h4><div class="chips" id="fBT"></div></div>
           <div class="fs"><h4>Bedrooms</h4><div class="chips" id="fBB"></div></div>
           <div class="fs"><h4>Area (sq.ft)</h4><div class="rr"><input type="number" id="fAmn" placeholder="Min" oninput="dRender()"/><span class="rsep">–</span><input type="number" id="fAmx" placeholder="Max" oninput="dRender()"/></div></div>

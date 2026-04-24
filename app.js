@@ -821,7 +821,7 @@ function resetSessionState(){
   // Clear every text/number/select input we use across the app
   var idsToClear=[
     // Browse filter sidebar
-    'fCity','fRmn','fRmx','fAv','fBCity','fBmn','fBmx','fAmn','fAmx',
+    'fCity','fLoc','fRmn','fRmx','fAv','fBCity','fBLoc','fBmn','fBmx','fAmn','fAmx',
     // Search
     'bSearch',
     // Browse sort
@@ -941,16 +941,15 @@ function doHS(){
     // Multi-select types
     var tBoxes=document.querySelectorAll('#hbtMenu input[type="checkbox"]:checked');
     var types=[];tBoxes.forEach(function(cb){types.push(cb.value);});
-    // Min/Max budget
-    var bgMinRaw=document.getElementById('hbbMin').value;
-    var bgMaxRaw=document.getElementById('hbbMax').value;
-    var bgMin=parseBudget(bgMinRaw);
-    var bgMax=parseBudget(bgMaxRaw);
+    // Min/Max budget from dropdown values (exact numbers, -1 = 100Cr+ sentinel)
+    var bgMin=Number(document.getElementById('hbbMin').value)||0;
+    var bgMaxRaw=Number(document.getElementById('hbbMax').value)||0;
+    var bgMax=bgMaxRaw===-1?Infinity:bgMaxRaw;
     var b2=document.getElementById('hbd').value;
     var fc2=document.getElementById('fBCity');if(fc2&&c2)fc2.value=c2;
     if(types.length)fBT=types;
     var fbmn=document.getElementById('fBmn');if(fbmn)fbmn.value=bgMin>0?bgMin:'';
-    var fbx=document.getElementById('fBmx');if(fbx)fbx.value=bgMax>0?bgMax:'';
+    var fbx=document.getElementById('fBmx');if(fbx)fbx.value=bgMax===Infinity?'-1':(bgMax>0?bgMax:'');
     if(b2)fBB=[b2];
   }
   bldF();renderBrowse();
@@ -991,27 +990,55 @@ document.addEventListener('click',function(e){
   document.querySelectorAll('.ms-btn').forEach(function(b){b.classList.remove('open');});
 });
 
-// ══ BUDGET PARSING ══
-// Accepts: 5000000, "50L", "1.5 Cr", "75 lakh", "2cr"
-// Returns numeric rupees (or 0 if unparseable)
-function parseBudget(raw){
-  if(!raw)return 0;
-  var s=String(raw).trim().toLowerCase().replace(/[,\s\u20B9]/g,'');
-  if(!s)return 0;
-  var m=s.match(/^([\d.]+)\s*(cr|crore|crores|l|lakh|lakhs|k|thousand)?$/);
-  if(!m)return Number(s)||0;
-  var n=Number(m[1]);if(isNaN(n))return 0;
-  var unit=m[2]||'';
-  if(unit==='cr'||unit==='crore'||unit==='crores')return Math.round(n*10000000);
-  if(unit==='l'||unit==='lakh'||unit==='lakhs')return Math.round(n*100000);
-  if(unit==='k'||unit==='thousand')return Math.round(n*1000);
-  return Math.round(n);
+// ══ BUDGET DROPDOWNS ══
+// Build budget values per spec:
+//   10L-1Cr step 10L, 1.5Cr-10Cr step 0.5Cr, 15Cr-100Cr step 5Cr, Max also has 100Cr+
+var BUDGET_VALS=(function(){
+  var vals=[];
+  for(var v=1000000;v<=10000000;v+=1000000)vals.push(v);
+  for(var v=15000000;v<=100000000;v+=5000000)vals.push(v);
+  for(var v=150000000;v<=1000000000;v+=50000000)vals.push(v);
+  return vals;
+})();
+function _fmtBudget(v){
+  if(v>=10000000){
+    var cr=v/10000000;
+    return cr===Math.floor(cr)?cr+' Cr':cr.toFixed(1)+' Cr';
+  }
+  return Math.floor(v/100000)+' L';
 }
-function setBudgetPreset(minId,maxId,min,max){
-  var mn=document.getElementById(minId);
-  var mx=document.getElementById(maxId);
-  if(mn)mn.value=min>0?min:'';
-  if(mx)mx.value=max;
+function populateBudgetSelect(id,isMax){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var opts='<option value="">'+(isMax?'Max':'Min')+'</option>';
+  BUDGET_VALS.forEach(function(v){opts+='<option value="'+v+'">\u20B9'+_fmtBudget(v)+'</option>';});
+  if(isMax)opts+='<option value="-1">\u20B9100 Cr+</option>';
+  el.innerHTML=opts;
+}
+// Populate all budget selects on page load
+function initBudgetDropdowns(){
+  populateBudgetSelect('hbbMin',false);
+  populateBudgetSelect('hbbMax',true);
+  populateBudgetSelect('fBmn',false);
+  populateBudgetSelect('fBmx',true);
+}
+// Ensure Min <= Max. If user picks Min > current Max, bump Max. Vice versa.
+function syncBudget(minId,maxId){
+  var mn=document.getElementById(minId),mx=document.getElementById(maxId);
+  if(!mn||!mx)return;
+  var mnV=Number(mn.value)||0, mxV=Number(mx.value)||0;
+  // -1 sentinel = "100Cr+" = Infinity
+  var mxReal=mxV===-1?Infinity:mxV;
+  if(mnV&&mxReal&&mnV>mxReal){
+    // Adjust the one that wasn't just changed? Simplest: if min>max, clear max
+    // But if the user changed min, they want that min — so bump max to match or beyond.
+    // Pick the smallest budget option >= mnV
+    var bumped=false;
+    for(var i=0;i<BUDGET_VALS.length;i++){
+      if(BUDGET_VALS[i]>=mnV){mx.value=BUDGET_VALS[i];bumped=true;break;}
+    }
+    if(!bumped)mx.value='-1'; // 100Cr+
+  }
 }
 
 // ══ HOME ══
@@ -1272,7 +1299,7 @@ function togBool(k,el){
 function clearAllF(){
   fRT=[];fRB=[];fRF=[];fRA=[];fBT=[];fBB=[];fBF=[];fBA=[];fBPo=[];fBST=[];fBFc=[];fBFl=[];fVer=false;fRer=false;
   _projectsOnly=false;
-  ['fCity','fRmn','fRmx','fBCity','fBmn','fBmx','fAmn','fAmx','bSearch'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  ['fCity','fLoc','fRmn','fRmx','fBCity','fBLoc','fBmn','fBmx','fAmn','fAmx','bSearch'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
   var av=document.getElementById('fAv');if(av)av.value='';
   bldF();renderBrowse();
 }
@@ -1309,9 +1336,10 @@ async function renderBrowse(){
     hasAnyFilters=true;
   }
   if(bMode==='rent'){
-    var c=gv('fCity'),mn=Number(gv('fRmn'))||0,mx=Number(gv('fRmx'))||Infinity;
+    var c=gv('fCity'),lo=gv('fLoc'),mn=Number(gv('fRmn'))||0,mx=Number(gv('fRmx'))||Infinity;
     var av=gv('fAv');
-    if(c){ls=ls.filter(function(l){return l.city.toLowerCase().indexOf(c.toLowerCase())>=0||l.loc.toLowerCase().indexOf(c.toLowerCase())>=0;});hasAnyFilters=true;}
+    if(c){ls=ls.filter(function(l){return l.city.toLowerCase().indexOf(c.toLowerCase())>=0;});hasAnyFilters=true;}
+    if(lo){ls=ls.filter(function(l){return l.loc.toLowerCase().indexOf(lo.toLowerCase())>=0;});hasAnyFilters=true;}
     if(mn){ls=ls.filter(function(l){return l.rent>=mn;});hasAnyFilters=true;}
     if(mx!==Infinity){ls=ls.filter(function(l){return l.rent<=mx;});hasAnyFilters=true;}
     if(av){ls=ls.filter(function(l){return l.avail===av;});hasAnyFilters=true;}
@@ -1320,9 +1348,12 @@ async function renderBrowse(){
     if(fRF.length){ls=ls.filter(function(l){return fRF.indexOf(l.furnish)>=0;});hasAnyFilters=true;}
     if(fRA.length){ls=ls.filter(function(l){return fRA.every(function(a){return l.amens&&l.amens.indexOf(a)>=0;});});hasAnyFilters=true;}
   } else {
-    var c2=gv('fBCity'),mn2=Number(gv('fBmn'))||0,mx2=Number(gv('fBmx'))||Infinity;
+    var c2=gv('fBCity'),lo2=gv('fBLoc'),mn2=Number(gv('fBmn'))||0;
+    var mx2raw=Number(gv('fBmx'))||0;
+    var mx2=mx2raw===-1?Infinity:(mx2raw||Infinity);
     var amn=Number(gv('fAmn'))||0,amx=Number(gv('fAmx'))||Infinity;
-    if(c2){ls=ls.filter(function(l){return l.city.toLowerCase().indexOf(c2.toLowerCase())>=0||l.loc.toLowerCase().indexOf(c2.toLowerCase())>=0;});hasAnyFilters=true;}
+    if(c2){ls=ls.filter(function(l){return l.city.toLowerCase().indexOf(c2.toLowerCase())>=0;});hasAnyFilters=true;}
+    if(lo2){ls=ls.filter(function(l){return l.loc.toLowerCase().indexOf(lo2.toLowerCase())>=0;});hasAnyFilters=true;}
     if(mn2){ls=ls.filter(function(l){return l.price>=mn2;});hasAnyFilters=true;}
     if(mx2!==Infinity){ls=ls.filter(function(l){return l.price<=mx2;});hasAnyFilters=true;}
     if(amn){ls=ls.filter(function(l){return l.area>=amn;});hasAnyFilters=true;}
@@ -1366,6 +1397,7 @@ async function renderBrowse(){
   if(sq)chips.push({l:'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-search"/></svg> "'+esc(sq)+'"',x:function(){var e=document.getElementById('bSearch');if(e)e.value='';renderBrowse();}});
   if(bMode==='rent'){
     if(gv('fCity'))chips.push({l:'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-pin"/></svg> '+gv('fCity'),x:function(){var e=document.getElementById('fCity');if(e)e.value='';renderBrowse();}});
+    if(gv('fLoc'))chips.push({l:'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-pin"/></svg> '+gv('fLoc'),x:function(){var e=document.getElementById('fLoc');if(e)e.value='';renderBrowse();}});
     if(gv('fRmn'))chips.push({l:'&#8377;'+Number(gv('fRmn')).toLocaleString('en-IN')+'+ min',x:function(){var e=document.getElementById('fRmn');if(e)e.value='';renderBrowse();}});
     if(gv('fRmx'))chips.push({l:'&#8804;&#8377;'+Number(gv('fRmx')).toLocaleString('en-IN'),x:function(){var e=document.getElementById('fRmx');if(e)e.value='';renderBrowse();}});
     if(gv('fAv'))chips.push({l:'&#9201; '+gv('fAv'),x:function(){var e=document.getElementById('fAv');if(e)e.value='';renderBrowse();}});
@@ -1375,8 +1407,13 @@ async function renderBrowse(){
     fRA.forEach(function(v){chips.push({l:v,x:function(){togAm('fRA',v);}});});
   } else {
     if(gv('fBCity'))chips.push({l:'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-pin"/></svg> '+gv('fBCity'),x:function(){var e=document.getElementById('fBCity');if(e)e.value='';renderBrowse();}});
+    if(gv('fBLoc'))chips.push({l:'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-pin"/></svg> '+gv('fBLoc'),x:function(){var e=document.getElementById('fBLoc');if(e)e.value='';renderBrowse();}});
     if(gv('fBmn'))chips.push({l:fmtPriceHTML(Number(gv('fBmn')))+'+ min',x:function(){var e=document.getElementById('fBmn');if(e)e.value='';renderBrowse();}});
-    if(gv('fBmx'))chips.push({l:'&#8804;'+fmtPriceHTML(Number(gv('fBmx'))),x:function(){var e=document.getElementById('fBmx');if(e)e.value='';renderBrowse();}});
+    if(gv('fBmx')){
+      var mxV=Number(gv('fBmx'));
+      var mxLbl=mxV===-1?'\u20B9100 Cr+':'&#8804;'+fmtPriceHTML(mxV);
+      chips.push({l:mxLbl,x:function(){var e=document.getElementById('fBmx');if(e)e.value='';renderBrowse();}});
+    }
     if(gv('fAmn'))chips.push({l:gv('fAmn')+'+ sq.ft',x:function(){var e=document.getElementById('fAmn');if(e)e.value='';renderBrowse();}});
     fBT.forEach(function(v){chips.push({l:v,x:function(){togCk('fBT',v);}});});
     fBB.forEach(function(v){chips.push({l:v+' BHK',x:function(){togCk('fBB',v);}});});
@@ -2543,6 +2580,134 @@ function _wizValidate(step){
   return true;
 }
 
+// ══ ADMIN EXPORT HELPERS ══
+function _listingToRow(l){
+  return {
+    'ID':l.id,
+    'Title':l.title||'',
+    'Type':l.lf==='project'?'Project':(l.lf==='rent'?'Rent':'Sale'),
+    'Status':l.status||'',
+    'City':l.city||'',
+    'Locality':l.loc||'',
+    'Building':l.building||'',
+    'Property Type':l.type||'',
+    'Bedrooms':l.beds||'',
+    'Bathrooms':l.baths||'',
+    'Area (sq.ft)':l.area||0,
+    'Rent (₹/mo)':l.rent||0,
+    'Deposit (₹)':l.dep||0,
+    'Price (₹)':l.price||0,
+    'Price Min (₹)':l.priceMin||0,
+    'Price Max (₹)':l.priceMax||0,
+    'Project Status':l.projectStatus||'',
+    'RERA':l.rera||'',
+    'Owner Name':l.owner||'',
+    'Agency':l.agency||'',
+    'Contact':l.contact||'',
+    'Verified':l.verified?'Yes':'No',
+    'Rejection Reason':l.rejectionReason||'',
+    'Posted':l.postedAt||'',
+    'User ID':l.uid||''
+  };
+}
+function _userToRow(u){
+  return {
+    'ID':u.id||'',
+    'Name':u.name||'',
+    'Role':u.role||'',
+    'Email':u.email||'',
+    'Phone':u.phone||'',
+    'Agency':u.agency||'',
+    'License (RERA)':u.lic||'',
+    'Joined':u.joinedAt||'',
+    'Verified':u.verified?'Yes':'No',
+    'Trusted':u.trusted?'Yes':'No'
+  };
+}
+function _leadToRow(i,lMap){
+  var l=lMap[i.listingId]||{};
+  return {
+    'Date':i.sentAt||'',
+    'Lead Name':i.name||'',
+    'Lead Phone':i.phone||'',
+    'Lead Email':i.email||'',
+    'Message':i.message||'',
+    'Property Title':l.title||'',
+    'Property City':l.city||'',
+    'Property Locality':l.loc||'',
+    'Listing ID':i.listingId,
+    'Property Type':l.type||'',
+    'Bedrooms':l.beds||'',
+    'Rent/Price':l.lf==='rent'?('Rent: \u20B9'+(l.rent||0)+'/mo'):('Sale: \u20B9'+(l.price||0))
+  };
+}
+function _reportToRow(r){
+  return {
+    'ID':r.id||'',
+    'Listing ID':r.listingId||'',
+    'Reporter':r.reporterName||'',
+    'Reporter Email':r.reporterEmail||'',
+    'Category':r.category||'',
+    'Description':r.description||'',
+    'Status':r.status||'open',
+    'Submitted':r.createdAt||''
+  };
+}
+async function adminExport(kind){
+  var date=new Date().toISOString().split('T')[0];
+  try{
+    if(kind==='al'){
+      var ls=await gL();
+      if(!ls.length){toast('No data to export.','e');return;}
+      downloadCSV('ekmakan-all-listings-'+date+'.csv',ls.map(_listingToRow));
+      toast('Exported '+ls.length+' listings.');
+    } else if(kind==='pd'){
+      var pn=(await gL()).filter(function(l){return l.status==='pending';});
+      if(!pn.length){toast('No pending listings.','e');return;}
+      downloadCSV('ekmakan-pending-listings-'+date+'.csv',pn.map(_listingToRow));
+      toast('Exported '+pn.length+' pending listings.');
+    } else if(kind==='rj'){
+      var rj=(await gL()).filter(function(l){return l.status==='rejected';});
+      if(!rj.length){toast('No rejected listings.','e');return;}
+      downloadCSV('ekmakan-rejected-listings-'+date+'.csv',rj.map(_listingToRow));
+      toast('Exported '+rj.length+' rejected listings.');
+    } else if(kind==='ls'){
+      var bo=(await gU()).filter(function(u){return u.role==='broker'||u.role==='owner';});
+      if(!bo.length){toast('No brokers/owners.','e');return;}
+      downloadCSV('ekmakan-brokers-owners-'+date+'.csv',bo.map(_userToRow));
+      toast('Exported '+bo.length+' brokers & owners.');
+    } else if(kind==='bd'){
+      var bd=(await gU()).filter(function(u){return u.role==='builder';});
+      if(!bd.length){toast('No builders.','e');return;}
+      downloadCSV('ekmakan-builders-'+date+'.csv',bd.map(_userToRow));
+      toast('Exported '+bd.length+' builders.');
+    } else if(kind==='tn'){
+      var tn=(await gU()).filter(function(u){return u.role==='user';});
+      if(!tn.length){toast('No tenants.','e');return;}
+      downloadCSV('ekmakan-tenants-'+date+'.csv',tn.map(_userToRow));
+      toast('Exported '+tn.length+' tenants.');
+    } else if(kind==='ld'){
+      var inqs=await gInq();
+      if(!inqs.length){toast('No leads.','e');return;}
+      var ls=await gL();var lMap={};ls.forEach(function(l){lMap[l.id]=l;});
+      downloadCSV('ekmakan-leads-'+date+'.csv',inqs.map(function(i){return _leadToRow(i,lMap);}));
+      toast('Exported '+inqs.length+' leads.');
+    } else if(kind==='rpt'){
+      var rpts=await gRpts();
+      if(!rpts.length){toast('No reports.','e');return;}
+      downloadCSV('ekmakan-reports-'+date+'.csv',rpts.map(_reportToRow));
+      toast('Exported '+rpts.length+' reports.');
+    }
+  }catch(e){
+    console.error('Admin export error:',e);
+    toast('Export failed: '+(e.message||'unknown error'),'e');
+  }
+}
+// Helper: render consistent "Export to CSV" button for a tab
+function _adminExportBtn(kind){
+  return '<button class="btn btn-o btn-sm" onclick="adminExport(\''+kind+'\')" style="margin-left:auto;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg> Export to CSV</button>';
+}
+
 // ══ TRUSTED USER ══
 async function toggleTrusted(uid,trusted){
   var confirmMsg=trusted
@@ -2586,14 +2751,88 @@ function downloadCSV(filename,rows){
 }
 
 async function exportMyLeads(){
-  if(!cu||(cu.role!=='broker'&&cu.role!=='owner')){toast('Not authorized.','e');return;}
+  if(!cu||(cu.role!=='broker'&&cu.role!=='owner'&&cu.role!=='builder')){toast('Not authorized.','e');return;}
   var myL=(await gL()).filter(function(l){return l.uid===cu.id;});
   var myLIds=myL.map(function(l){return l.id;});
-  var myInqs=(await gInq()).filter(function(i){return myLIds.indexOf(i.listingId)>=0;});
-  if(!myInqs.length){toast('No leads to export yet.','e');return;}
-  // Build a listing lookup for enrichment
-  var lMap={};myL.forEach(function(l){lMap[l.id]=l;});
-  var rows=myInqs.map(function(i){
+  var allInqs=(await gInq()).filter(function(i){return myLIds.indexOf(i.listingId)>=0;});
+  if(!allInqs.length){toast('No leads to export yet.','e');return;}
+  // Open filter dialog
+  openLeadExportDialog(myL,allInqs);
+}
+
+function openLeadExportDialog(myL,allInqs){
+  // Build property options
+  var propOpts='<option value="">All properties</option>'+myL.map(function(l){
+    return '<option value="'+l.id+'">'+esc(l.title)+' — '+esc(l.city)+'</option>';
+  }).join('');
+  // Default date range: all-time (empty fields)
+  var html='<div class="mh"><h2>Export Leads</h2><button class="mc" onclick="closeM(\'leadExpM\')" aria-label="Close dialog"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button></div>'
+    +'<p style="font-size:13px;color:var(--mu);margin-bottom:14px;">Filter your leads before exporting. Leave fields blank to export all leads.</p>'
+    +'<div class="fg2">'
+    +'<div class="fg"><label class="flbl">From Date</label><input class="fi" type="date" id="leadExpFrom"/></div>'
+    +'<div class="fg"><label class="flbl">To Date</label><input class="fi" type="date" id="leadExpTo"/></div>'
+    +'<div class="fg s2"><label class="flbl">Property</label><select class="fi" id="leadExpProp">'+propOpts+'</select></div>'
+    +'</div>'
+    +'<div id="leadExpCount" style="font-size:12px;color:var(--mu);margin-top:10px;padding:10px;background:var(--cr);border-radius:8px;"></div>'
+    +'<div style="display:flex;gap:8px;margin-top:14px;">'
+    +'<button type="button" class="btn btn-o" onclick="closeM(\'leadExpM\')" style="flex:1;">Cancel</button>'
+    +'<button type="button" class="btn btn-bl" onclick="doLeadExport()" style="flex:1;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg> Download CSV</button>'
+    +'</div>';
+  // Create modal if it doesn't exist
+  var m=document.getElementById('leadExpM');
+  if(!m){
+    m=document.createElement('div');
+    m.id='leadExpM';m.className='mo';
+    m.onclick=function(e){ovcM(e,'leadExpM');};
+    var mb=document.createElement('div');
+    mb.className='mb';
+    mb.onclick=function(e){e.stopPropagation();};
+    m.appendChild(mb);
+    document.body.appendChild(m);
+  }
+  m.querySelector('.mb').innerHTML=html;
+  // Stash for doLeadExport
+  window._leadExpMyL=myL;
+  window._leadExpAllInqs=allInqs;
+  // Wire live count update
+  ['leadExpFrom','leadExpTo','leadExpProp'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.addEventListener('change',updateLeadExpCount);
+  });
+  updateLeadExpCount();
+  openM('leadExpM');
+}
+
+function _filterLeadsForExport(){
+  var from=document.getElementById('leadExpFrom');
+  var to=document.getElementById('leadExpTo');
+  var prop=document.getElementById('leadExpProp');
+  var fromDate=from&&from.value?new Date(from.value):null;
+  var toDate=to&&to.value?new Date(to.value+'T23:59:59'):null;
+  var propId=prop&&prop.value?Number(prop.value):null;
+  return window._leadExpAllInqs.filter(function(i){
+    if(propId&&i.listingId!==propId)return false;
+    var d=new Date(i.sentAt);
+    if(fromDate&&d<fromDate)return false;
+    if(toDate&&d>toDate)return false;
+    return true;
+  });
+}
+
+function updateLeadExpCount(){
+  var cnt=document.getElementById('leadExpCount');
+  if(!cnt)return;
+  var filtered=_filterLeadsForExport();
+  cnt.innerHTML=filtered.length===window._leadExpAllInqs.length
+    ?'<strong>'+filtered.length+'</strong> lead'+(filtered.length!==1?'s':'')+' will be exported.'
+    :'<strong>'+filtered.length+'</strong> of '+window._leadExpAllInqs.length+' leads match these filters.';
+}
+
+function doLeadExport(){
+  var filtered=_filterLeadsForExport();
+  if(!filtered.length){toast('No leads match these filters.','e');return;}
+  var lMap={};window._leadExpMyL.forEach(function(l){lMap[l.id]=l;});
+  var rows=filtered.map(function(i){
     var l=lMap[i.listingId]||{};
     return {
       'Date':i.sentAt||'',
@@ -2606,12 +2845,13 @@ async function exportMyLeads(){
       'Property Locality':l.loc||'',
       'Property Type':l.type||'',
       'Bedrooms':l.beds||'',
-      'Rent/Price':l.lf==='rent'?('Rent: ₹'+(l.rent||0)+'/mo'):('Sale: ₹'+(l.price||0)),
+      'Rent/Price':l.lf==='rent'?('Rent: \u20B9'+(l.rent||0)+'/mo'):('Sale: \u20B9'+(l.price||0)),
       'Listing ID':i.listingId
     };
   });
   var date=new Date().toISOString().split('T')[0];
   downloadCSV('ekmakan-leads-'+date+'.csv',rows);
+  closeM('leadExpM');
   toast('Exported '+rows.length+' lead'+(rows.length>1?'s':'')+'.');
 }
 
@@ -2681,14 +2921,14 @@ async function renderAdmin(t){
     var end=Math.min((page+1)*PAGE_SIZE,ls.length);
     var shown=ls.slice(0,end);
     var remaining=ls.length-end;
-    el.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:14px;">All Listings ('+ls.length+')</h2>'
+    el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;"><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;">All Listings ('+ls.length+')</h2>'+_adminExportBtn('al')+'</div>'
       +shown.map(aRow).join('')
       +(remaining>0?'<div class="mk-load-more"><button onclick="_adminPage.al++;renderAdmin(\'al\')">Load More ('+remaining+' remaining)</button><div class="mk-load-more-count">Showing '+end+' of '+ls.length+'</div></div>':'');
   }
 
   // Pending tab — full card with approve/reject
   if(t==='pd'){
-    el.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:14px;">Pending Review ('+pn.length+')</h2>'
+    el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;"><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;">Pending Review ('+pn.length+')</h2>'+_adminExportBtn('pd')+'</div>'
       +(pn.length?pn.map(function(l){
         var thumbH=l.images&&l.images.length
           ?'<img loading="lazy" decoding="async" src="'+l.images[0]+'" alt="'+escAttr(l.title)+'" style="width:80px;height:72px;object-fit:cover;border-radius:9px;flex-shrink:0;cursor:pointer;" onclick="viewL('+l.id+')" title="Click to preview"/>'
@@ -2714,7 +2954,7 @@ async function renderAdmin(t){
 
   // Rejected tab
   if(t==='rj'){
-    el.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:14px;color:var(--red);"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-x"/></svg> Rejected Listings ('+rj.length+')</h2>'
+    el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;"><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;color:var(--red);"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-x"/></svg> Rejected Listings ('+rj.length+')</h2>'+_adminExportBtn('rj')+'</div>'
       +(rj.length?'<div style="display:flex;flex-direction:column;gap:10px;">'+rj.map(aRow).join('')+'</div>':'<div style="background:var(--wh);border-radius:12px;padding:30px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No rejected listings.</div>');
   }
 
@@ -2739,7 +2979,7 @@ async function renderAdmin(t){
               +'<td><span style="font-weight:700;color:var(--t);cursor:pointer;text-decoration:underline;">'+listCount+'</span></td>'
               +'<td>'+trustBtn+'</td></tr>';
           }).join('');
-    el.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:14px;">Brokers & Owners ('+all.length+')</h2>'
+    el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;"><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;">Brokers & Owners ('+all.length+')</h2>'+_adminExportBtn('ls')+'</div>'
       +(all.length
         ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow:hidden;">'
           +'<table class="tbl"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Agency</th><th>RERA</th><th>Joined</th><th>Listings</th><th>Trust</th></tr></thead><tbody>'
@@ -2770,7 +3010,7 @@ async function renderAdmin(t){
               +'<td><span style="font-weight:700;color:#c58600;">'+projCount+'</span></td>'
               +'<td>'+trustBtn+'</td></tr>';
           }).join('');
-    el.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:14px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:#c58600;"><use href="#i-sparkle"/></svg> Builders ('+bld.length+')</h2>'
+    el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;"><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:#c58600;"><use href="#i-sparkle"/></svg> Builders ('+bld.length+')</h2>'+_adminExportBtn('bd')+'</div>'
       +(bld.length
         ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow:hidden;">'
           +'<table class="tbl"><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Phone</th><th>Joined</th><th>Projects</th><th>Trust</th></tr></thead><tbody>'
@@ -2792,7 +3032,7 @@ async function renderAdmin(t){
               +'<td>'+esc(u.email)+'</td><td>'+esc(u.phone)+'</td><td>'+esc(u.joinedAt)+'</td>'
               +'<td><span style="font-weight:700;color:var(--t);cursor:pointer;text-decoration:underline;">'+uInqs.length+'</span></td></tr>';
           }).join('');
-    el.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:14px;">Tenants ('+ten.length+')</h2>'
+    el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;"><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;">Tenants ('+ten.length+')</h2>'+_adminExportBtn('tn')+'</div>'
       +(ten.length
         ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow:hidden;">'
           +'<table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Inquiries</th></tr></thead><tbody>'
@@ -2921,6 +3161,7 @@ async function rReports(){
   var html='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">'
     +'<div><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:2px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-flag"/></svg> Discrimination Reports</h2>'
     +'<p style="font-size:12px;color:var(--mu);">'+open.length+' open &middot; '+resolved.length+' resolved</p></div>'
+    +(rpts.length?_adminExportBtn('rpt'):'')
     +'</div>';
   if(rpts.length===0){
     html+='<div style="background:var(--wh);border-radius:12px;padding:40px;text-align:center;border:1px solid var(--sa);">'
@@ -3387,10 +3628,15 @@ async function deleteListing(id){
 setAT('login');setRR('user');upNav();
 
 // Init city autocomplete for all inputs that need it
+// Populate budget dropdowns (hero buy + browse buy) on first paint
+initBudgetDropdowns();
+
 acInit('hrc','ac-hrc','hrc',{mode:'city'});      // Hero rent - city only
 acInit('hbc','ac-hbc','hbc',{mode:'city'});      // Hero buy - city only
 acInit('fCity','ac-fCity','fCity',{mode:'city'}); // Browse rent city
+acInit('fLoc','ac-fLoc','fLoc',{mode:'locality'}); // Browse rent locality
 acInit('fBCity','ac-fBCity','fBCity',{mode:'city'}); // Browse buy city
+acInit('fBLoc','ac-fBLoc','fBLoc',{mode:'locality'}); // Browse buy locality
 acInit('lCy','ac-lCy','lCy',{mode:'city'});     // Listing form city
 acInit('lLo','ac-lLo','lLo',{mode:'locality'});     // Listing form locality
 
