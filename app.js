@@ -2540,8 +2540,12 @@ function aRow(l){
     :'<div style="font-size:26px;cursor:pointer;" onclick="viewL('+l.id+')">'+(l.lf==='buy'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg>':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg>')+'</div>';
   var pr=l.lf==='rent'?fmtRentHTML(l.rent)+'/mo':fmtPriceHTML(l.price);
   var statusPill='<span class="pill '+(l.status==='approved'?'pill-g':l.status==='pending'?'pill-y':'pill-r')+'"'+(l.status==='rejected'&&l.rejectionReason?' title="Rejection reason: '+escAttr(l.rejectionReason)+'" style="cursor:help;"':'')+'>'+l.status+'</span>';
-  var rejectedNote=l.status==='rejected'&&l.rejectionReason?
-    '<div style="flex-basis:100%;background:#fff5f5;border-left:3px solid var(--red);border-radius:4px;padding:6px 10px;margin-top:8px;font-size:11px;color:#7a2222;line-height:1.4;"><strong>Rejection reason:</strong> '+esc(l.rejectionReason)+'</div>':'';
+  var rejectedNote='';
+  if(l.status==='rejected'&&l.rejectionReason){
+    rejectedNote='<div style="flex-basis:100%;background:#fff5f5;border-left:3px solid var(--red);border-radius:4px;padding:6px 10px;margin-top:8px;font-size:11px;color:#7a2222;line-height:1.4;"><strong>Rejection reason:</strong> '+esc(l.rejectionReason)+'</div>';
+  } else if(l.status==='pending'&&l.rejectionReason){
+    rejectedNote='<div style="flex-basis:100%;background:#fffbe6;border-left:3px solid #e6a800;border-radius:4px;padding:6px 10px;margin-top:8px;font-size:11px;color:#7a5c00;line-height:1.4;"><strong>Previously rejected:</strong> '+esc(l.rejectionReason)+' <span style="color:var(--t);font-weight:700;margin-left:6px;">&mdash; Resubmitted for review</span></div>';
+  }
   return '<div class="li" style="cursor:default;flex-wrap:wrap;">'
     +'<div style="display:flex;align-items:center;gap:12px;width:100%;">'
     +thumbH
