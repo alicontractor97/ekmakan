@@ -795,10 +795,17 @@
       <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Help buyers understand the property better.</p>
       <div class="fg2">
         <div class="fg"><label class="flbl">Bathrooms</label><select class="fi" id="lBt"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
-        <div class="fg"><label class="flbl">Area (sq.ft)</label><input class="fi" type="number" id="lAr" placeholder="1200"/></div>
+        <div class="fg"><label class="flbl">Carpet Area (sq.ft) <span style="color:var(--mu);font-weight:400;font-size:11px;">usable space</span></label><input class="fi" type="number" id="lArC" placeholder="950"/></div>
+        <div class="fg"><label class="flbl">Built-up Area (sq.ft) <span style="color:var(--mu);font-weight:400;font-size:11px;">+ walls</span></label><input class="fi" type="number" id="lAr" placeholder="1100"/></div>
+        <div class="fg"><label class="flbl">Super Built-up Area (sq.ft) <span style="color:var(--mu);font-weight:400;font-size:11px;">+ common</span></label><input class="fi" type="number" id="lArS" placeholder="1300"/></div>
+        <div class="fg"><label class="flbl">Age of Property</label><select class="fi" id="lAge"><option value="">Select</option><option>Under Construction</option><option>New (0-1 years)</option><option>1-5 years</option><option>5-10 years</option><option>10-20 years</option><option>20+ years</option></select></div>
         <div class="fg"><label class="flbl">Floor</label><select class="fi" id="lFl"><option value="">Select</option><option>Ground</option><option>1st</option><option>2nd</option><option>3rd</option><option>4th</option><option>5th-10th</option><option>10th+</option></select></div>
         <div class="fg"><label class="flbl">Facing</label><select class="fi" id="lFc"><option value="">Any</option><option>North</option><option>South</option><option>East</option><option>West</option><option>North-East</option><option>North-West</option><option>South-East</option><option>South-West</option></select></div>
-        <div class="fg"><label class="flbl">Furnishing</label><select class="fi" id="lFn"><option value="">Select</option><option>Unfurnished</option><option>Semi-Furnished</option><option>Fully Furnished</option></select></div>
+        <div class="fg"><label class="flbl">Furnishing</label><select class="fi" id="lFn" onchange="renderFurnishingItems()"><option value="">Select</option><option>Unfurnished</option><option>Semi-Furnished</option><option>Fully Furnished</option></select></div>
+        <div class="fg s2" id="lFnDetailsW" style="display:none;">
+          <label class="flbl">What's Included? <span style="color:var(--mu);font-weight:400;font-size:11px;">tick everything that comes with the property</span></label>
+          <div id="lFnDetails" class="furn-grid" style="margin-top:6px;"></div>
+        </div>
         <div class="fg" id="lAvW"><label class="flbl">Availability</label><select class="fi" id="lAv"><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
         <div class="fg" id="lPoW" style="display:none;"><label class="flbl">Possession</label><select class="fi" id="lPo"><option>Ready to Move</option><option>Under Construction</option><option>Within 6 Months</option><option>Within 1 Year</option></select></div>
         <div class="fg" id="lStW" style="display:none;"><label class="flbl">Sale Type</label><select class="fi" id="lSt"><option>New</option><option>Resale</option></select></div>

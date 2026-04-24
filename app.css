@@ -166,6 +166,19 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .ms-menu label:hover{background:var(--cr);}
 .ms-menu input[type="checkbox"]{accent-color:var(--t);width:15px;height:15px;margin:0;cursor:pointer;}
 
+/* Furnishing chip grid (listing form + detail view) */
+.furn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;}
+.furn-chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--sa);border-radius:8px;cursor:pointer;background:var(--wh);transition:all .15s;user-select:none;font-family:'DM Sans',sans-serif;}
+.furn-chip:hover{border-color:var(--tl);background:var(--cr);}
+.furn-chip.on{border-color:var(--t);background:var(--tl);}
+.furn-icon{font-size:16px;line-height:1;flex-shrink:0;}
+.furn-lbl{font-size:12px;color:var(--ink);font-weight:500;}
+.furn-chip.on .furn-lbl{color:var(--td);font-weight:700;}
+/* Read-only furnishing display (on detail view) */
+.furn-display{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;}
+.furn-disp-item{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--cr);border:1px solid var(--sa);border-radius:8px;font-size:12px;color:var(--ink);font-family:'DM Sans',sans-serif;}
+.furn-disp-item .furn-icon{font-size:14px;}
+
 /* Notification panel — spacious, clean, mobile-friendly */
 .notif-row{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid #f0ede6;transition:background .15s;min-height:72px;}
 .notif-row:hover{background:#f7f5f0 !important;}

@@ -138,9 +138,9 @@ function renderTurnstile(containerId,tokenSetter){
 }
 
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
-function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[]};}
+function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[]};}
 // Map JS listing → Supabase row
-function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[]};}
+function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[]};}
 function mapInq(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',listingCity:r.listing_city||'',lf:r.listing_for||'rent',contact:'',name:r.inquirer_name||'',phone:r.inquirer_phone||'',email:r.inquirer_email||'',message:r.message||'',uid:r.user_id,sentAt:r.sent_at?(r.sent_at+'').split('T')[0]:''};}
 function mapUsr(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone||'',role:r.role||'user',agency:r.agency||'',lic:r.license_no||'',joinedAt:r.joined_at?(r.joined_at+'').split('T')[0]:'',verified:r.verified||false,trusted:r.is_trusted||false};}
 function mapRpt(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',type:r.report_type||'',desc:r.description||'',reporterName:r.reporter_name||'',reporterContact:r.reporter_contact||'',reporterUid:r.reporter_user_id,status:r.status||'open',submittedAt:r.submitted_at?(r.submitted_at+'').split('T')[0]:''};}
@@ -338,7 +338,7 @@ function showEmpty(elId,icon,title,sub){
 // ══ DATA ACCESS (Supabase) ══
 async function gL(){
   if(_cacheL&&_cacheValid('l'))return _cacheL;
-  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types').order('posted_at',{ascending:false});
+  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details').order('posted_at',{ascending:false});
   if(error){toast('Failed to load listings. Please refresh.','e');_cacheL=[];return[];}
   _cacheL=(data||[]).map(mapL);
   _cacheTime.l=Date.now();
@@ -380,9 +380,13 @@ async function go(pg){
   // Hide quick-action strip on browse (filter bar replaces it) and admin
   var qs=document.getElementById('qaStrip');
   if(qs)qs.style.display=pg==='home'?'block':'none';
-  // Update URL hash (skip for home — keep URL clean)
-  if(pg!=='home'&&window.history.replaceState)window.history.replaceState(null,null,'#'+pg);
-  else if(pg==='home'&&window.location.hash&&window.history.replaceState)window.history.replaceState(null,null,window.location.pathname);
+  // Push a history entry so the browser Back button returns to the previous page
+  // (instead of exiting the site). Only push if the hash is actually changing.
+  var targetHash=pg==='home'?'':'#'+pg;
+  var currentHash=window.location.hash||'';
+  if(window.history&&window.history.pushState&&targetHash!==currentHash){
+    window.history.pushState({pg:pg},'',targetHash||window.location.pathname);
+  }
   window.scrollTo(0,0);
   // Force fresh data on admin/dashboard/lister — workflow-critical pages
   if(pg==='admin'||pg==='dashboard'||pg==='lister')_clr();
@@ -1471,7 +1475,7 @@ async function viewL(id){
   if(!l){
     // Direct fetch by ID — handles deep links before cache is warm
     try{
-      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types').eq('id',id).eq('status','approved').single();
+      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details').eq('id',id).eq('status','approved').single();
       if(data&&!error)l=mapL(data);
     }catch(e){}
   }
@@ -1552,13 +1556,34 @@ async function viewL(id){
       }).join('')
       +'</tbody></table></div></div>';
   }
+  // Build area display — use specific values if present, fall back to old area_sqft
+  var areaParts=[];
+  if(l.carpetArea)areaParts.push('<div style="font-size:11px;"><span style="color:var(--mu);">Carpet</span> <strong>'+l.carpetArea+'</strong></div>');
+  if(l.builtArea||l.area){var ba=l.builtArea||l.area;areaParts.push('<div style="font-size:11px;"><span style="color:var(--mu);">Built-up</span> <strong>'+ba+'</strong></div>');}
+  if(l.superArea)areaParts.push('<div style="font-size:11px;"><span style="color:var(--mu);">Super</span> <strong>'+l.superArea+'</strong></div>');
+  var areaHTML=areaParts.length
+    ?'<div class="ic"><div class="ll">AREA (sq.ft)</div>'+(areaParts.length>1?'<div style="display:flex;flex-direction:column;gap:3px;margin-top:2px;">'+areaParts.join('')+'</div>':'<strong>'+(l.carpetArea||l.builtArea||l.superArea||l.area||'—')+' sq.ft</strong>')+'</div>'
+    :'<div class="ic"><div class="ll">AREA</div><strong>'+(l.area||'—')+' sq.ft</strong></div>';
+  // Furnishing details (icon grid, read-only)
+  var furnDetH='';
+  if(l.furnDetails&&l.furnDetails.length){
+    furnDetH='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">What\'s Included</div>'
+      +'<div class="furn-display">'
+      +l.furnDetails.map(function(code){
+        var it=FURN_MAP[code];
+        if(!it)return '';
+        return '<div class="furn-disp-item"><span class="furn-icon">'+it.icon+'</span><span>'+esc(it.label)+'</span></div>';
+      }).join('')
+      +'</div></div>';
+  }
   document.getElementById('vCnt').innerHTML=imgH
     +(tagsH?'<div class="tags-r" style="margin-bottom:12px;">'+tagsH+'</div>':'')
     +'<div class="info-g">'
     +'<div class="ic"><div class="ll">'+priceLbl+'</div><strong style="color:'+(ir?'var(--t)':'var(--g)')+';">'+priceDisplay+'</strong></div>'
     +(ir?'<div class="ic"><div class="ll">DEPOSIT</div><strong>&#8377;'+l.dep.toLocaleString('en-IN')+'</strong></div>':'')
     +'<div class="ic"><div class="ll">TYPE</div><strong>'+esc(l.type)+' &middot; '+l.beds+'BHK &middot; '+l.baths+'B</strong></div>'
-    +'<div class="ic"><div class="ll">AREA</div><strong>'+l.area+' sq.ft</strong></div>'
+    +areaHTML
+    +(l.age?'<div class="ic"><div class="ll">AGE</div><strong>'+esc(l.age)+'</strong></div>':'')
     +(isProj&&l.projectStatus?'<div class="ic"><div class="ll">PROJECT STATUS</div><strong style="color:#c58600;">'+esc(l.projectStatus)+'</strong></div>':'<div class="ic"><div class="ll">FURNISHING</div><strong>'+esc(l.furnish||'—')+'</strong></div>')
     +(isProj&&l.completion?'<div class="ic"><div class="ll">COMPLETION</div><strong>'+new Date(l.completion).toLocaleDateString('en-IN',{month:'long',year:'numeric'})+'</strong></div>':'<div class="ic"><div class="ll">FLOOR</div><strong>'+esc(l.floor||'—')+'</strong></div>')
     +(!isProj?'<div class="ic"><div class="ll">FACING</div><strong>'+esc(l.facing||'—')+'</strong></div>':'')
@@ -1568,6 +1593,7 @@ async function viewL(id){
     +(!ir&&l.rera?'<div class="ic" style="grid-column:1/-1;"><div class="ll">RERA NO.</div><strong style="color:var(--gr);">'+esc(l.rera)+'</strong></div>':'')
     +'</div>'
     +unitsTableHTML
+    +furnDetH
     +amH
     +'<p style="font-size:13px;line-height:1.75;margin-bottom:13px;">'+esc(l.desc)+'</p>'
     +'<div class="listing-map-wrap" id="listingMapWrap" style="display:none;"><h4><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-pin"/></svg> Location</h4><div class="listing-map" id="listingMap"></div></div>'
@@ -1579,8 +1605,11 @@ async function viewL(id){
     +'</div>'
     +'<button onclick="openReport('+l.id+')" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1.5px solid #ffcccc;color:var(--red);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .18s;" onmouseover="this.style.background=\'#fff5f5\'" onmouseout="this.style.background=\'transparent\'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-flag"/></svg> Report Discrimination or Unfair Treatment</button>';
   openM('viewM');
-  // Set URL hash for shareable deep link
-  if(window.history.replaceState)window.history.replaceState(null,null,'#listing/'+id);
+  // Set URL hash for shareable deep link + push history so Back returns to where we came from
+  var targetHash='#listing/'+id;
+  if(window.history&&window.history.pushState&&window.location.hash!==targetHash){
+    window.history.pushState({listing:id},'',targetHash);
+  }
   // Init touch gestures on the image gallery
   _initGalleryTouch();
   // Show map for this listing's location
@@ -1919,6 +1948,18 @@ function handleHashRoute(){
 }
 // Listen for hash changes (back/forward navigation, manual URL entry)
 window.addEventListener('hashchange',function(){handleHashRoute();});
+
+// Handle browser Back/Forward buttons via popstate
+// Without this, Back would exit the site since we're a single-page app
+window.addEventListener('popstate',function(e){
+  // If viewM is open but the hash is no longer #listing/, the user hit Back — close it
+  var viewM=document.getElementById('viewM');
+  if(viewM&&viewM.classList.contains('open')&&window.location.hash.indexOf('#listing/')!==0){
+    viewM.classList.remove('open');
+    if(_listingMap){try{_listingMap.remove();}catch(e){}_listingMap=null;}
+  }
+  handleHashRoute();
+});
 
 
 // ══ NOTIFICATIONS ══
@@ -2302,6 +2343,12 @@ async function editListing(id){
   setVal('lFc',l.facing);
   setVal('lFn',l.furnish);
   setVal('lAv',l.avail);
+  // New fields: separate areas + age + furnishing details
+  setVal('lArC',l.carpetArea||'');
+  setVal('lArS',l.superArea||'');
+  setVal('lAge',l.age||'');
+  _selFurn=l.furnDetails?l.furnDetails.slice():[];
+  renderFurnishingItems();
   // Project-specific
   if(l.completion)setVal('lComp',l.completion.substring(0,7));
   var projEl=document.getElementById('lProj');if(projEl)projEl.value=l.projectStatus||'New Launch';
@@ -2361,6 +2408,11 @@ async function doSub(){
     beds:getVal('lBd')||'2',
     baths:Number(getVal('lBt'))||1,
     area:Number(getVal('lAr'))||0,
+    carpetArea:Number(getVal('lArC'))||0,
+    builtArea:Number(getVal('lAr'))||0,
+    superArea:Number(getVal('lArS'))||0,
+    age:getVal('lAge'),
+    furnDetails:_selFurn.slice(),
     rent:rv,dep:Number(getVal('lDp'))||0,price:isProject?(Number(getVal('lPrMin'))||0):pv,
     stype:saleTypeEl?saleTypeEl.value:'',
     poss:getVal('lPo'),
@@ -2400,7 +2452,7 @@ async function doSub(){
     if(error){toast('Failed to update listing: '+error.message,'e');return;}
     _clr('l');
     closeM('addM');resetAddModal();
-    ['lTl','lBn','lCy','lLo','lAr','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFc','lFn','lComp'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['lTl','lBn','lCy','lLo','lAr','lArC','lArS','lAge','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFc','lFn','lComp'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
     upImgs=[];selTags=[];selAmens=[];
     toast('Listing updated! It will be re-reviewed by admin. <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg>');
     if(cu&&(cu.role==='broker'||cu.role==='owner'||cu.role==='builder'))await renderLister();
@@ -2418,7 +2470,7 @@ async function doSub(){
       return;
     }
     closeM('addM');resetAddModal();
-    ['lTl','lBn','lCy','lLo','lAr','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFc','lFn','lComp'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var lBdSel=document.getElementById('lBd');if(lBdSel)lBdSel.selectedIndex=1;var lBtSel=document.getElementById('lBt');if(lBtSel)lBtSel.selectedIndex=0;
+    ['lTl','lBn','lCy','lLo','lAr','lArC','lArS','lAge','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFc','lFn','lComp'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var lBdSel=document.getElementById('lBd');if(lBdSel)lBdSel.selectedIndex=1;var lBtSel=document.getElementById('lBt');if(lBtSel)lBtSel.selectedIndex=0;
     upImgs=[];selTags=[];selAmens=[];
     toast('Submitted! Admin reviews within 24 hrs. <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg>');
     if(cu&&(cu.role==='broker'||cu.role==='owner'||cu.role==='builder'))await renderLister();
@@ -2577,6 +2629,96 @@ function updateUnit(idx,key,val){
 function removeUnit(idx){
   _unitTypes.splice(idx,1);
   renderUnits();
+}
+
+// ══ FURNISHING CATALOG ══
+// Each item: {code, label, icon (emoji fallback rendered via SVG #i-*)}
+// Comprehensive list covering kitchen, bedroom, living, bathroom, tech, safety
+var FURN_ITEMS=[
+  // Appliances
+  {code:'ac',label:'Air Conditioner',icon:'&#10052;&#65039;'},
+  {code:'fan',label:'Ceiling Fan',icon:'&#128168;'},
+  {code:'heater',label:'Water Heater / Geyser',icon:'&#128293;'},
+  {code:'fridge',label:'Refrigerator',icon:'&#127849;'},
+  {code:'washer',label:'Washing Machine',icon:'&#128250;'},
+  {code:'dryer',label:'Dryer',icon:'&#128168;'},
+  {code:'microwave',label:'Microwave',icon:'&#128250;'},
+  {code:'oven',label:'Oven',icon:'&#128293;'},
+  {code:'dishwasher',label:'Dishwasher',icon:'&#127869;&#65039;'},
+  {code:'tv',label:'Television',icon:'&#128250;'},
+  {code:'water_purifier',label:'Water Purifier',icon:'&#128167;'},
+  // Kitchen
+  {code:'modular_kitchen',label:'Modular Kitchen',icon:'&#127869;&#65039;'},
+  {code:'chimney',label:'Chimney',icon:'&#128291;'},
+  {code:'gas_stove',label:'Gas Stove',icon:'&#128293;'},
+  {code:'induction',label:'Induction Hob',icon:'&#9889;'},
+  // Living / Dining
+  {code:'sofa',label:'Sofa',icon:'&#128719;'},
+  {code:'dining',label:'Dining Table',icon:'&#127869;&#65039;'},
+  {code:'tv_unit',label:'TV Unit',icon:'&#128250;'},
+  {code:'bookshelf',label:'Bookshelf',icon:'&#128218;'},
+  // Bedroom
+  {code:'bed',label:'Bed',icon:'&#128719;'},
+  {code:'mattress',label:'Mattress',icon:'&#128719;'},
+  {code:'wardrobe',label:'Wardrobe',icon:'&#128090;'},
+  {code:'dressing_table',label:'Dressing Table',icon:'&#128128;'},
+  {code:'study_table',label:'Study Table',icon:'&#128187;'},
+  // Bathroom
+  {code:'exhaust_fan',label:'Exhaust Fan',icon:'&#128168;'},
+  {code:'bathtub',label:'Bathtub',icon:'&#128704;'},
+  {code:'shower',label:'Shower',icon:'&#128703;'},
+  // Safety / Tech
+  {code:'wifi',label:'Wi-Fi Router',icon:'&#128246;'},
+  {code:'cctv',label:'CCTV',icon:'&#128065;&#65039;'},
+  {code:'intercom',label:'Intercom',icon:'&#128222;'},
+  {code:'smart_lock',label:'Smart Lock',icon:'&#128274;'},
+  {code:'fire_alarm',label:'Fire Alarm',icon:'&#128680;'},
+  // Window / Soft furnishings
+  {code:'curtains',label:'Curtains',icon:'&#127912;'},
+  {code:'blinds',label:'Window Blinds',icon:'&#127912;'},
+  {code:'rugs',label:'Rugs / Carpets',icon:'&#127912;'},
+  // Exterior
+  {code:'balcony_furn',label:'Balcony Furniture',icon:'&#127795;'},
+  // Utilities
+  {code:'power_backup',label:'Power Backup',icon:'&#128268;'},
+  {code:'inverter',label:'Inverter',icon:'&#128268;'},
+  {code:'gas_pipeline',label:'Gas Pipeline',icon:'&#128293;'}
+];
+// Quick lookup by code for rendering
+var FURN_MAP={};FURN_ITEMS.forEach(function(it){FURN_MAP[it.code]=it;});
+
+// Selected furnishing codes for current listing
+var _selFurn=[];
+
+function renderFurnishingItems(){
+  var sel=document.getElementById('lFn');
+  var wrap=document.getElementById('lFnDetailsW');
+  var grid=document.getElementById('lFnDetails');
+  if(!sel||!wrap||!grid)return;
+  var val=sel.value;
+  // Show details only when Semi or Fully furnished
+  if(val==='Semi-Furnished'||val==='Fully Furnished'){
+    wrap.style.display='';
+    grid.innerHTML=FURN_ITEMS.map(function(it){
+      var on=_selFurn.indexOf(it.code)>=0;
+      return '<label class="furn-chip'+(on?' on':'')+'" onclick="togFurn(\''+it.code+'\')" data-code="'+it.code+'">'
+        +'<span class="furn-icon">'+it.icon+'</span>'
+        +'<span class="furn-lbl">'+esc(it.label)+'</span>'
+        +'</label>';
+    }).join('');
+  } else {
+    wrap.style.display='none';
+    // When Unfurnished or empty, clear selections
+    if(val==='Unfurnished')_selFurn=[];
+  }
+}
+function togFurn(code){
+  var idx=_selFurn.indexOf(code);
+  if(idx>=0)_selFurn.splice(idx,1);
+  else _selFurn.push(code);
+  // Toggle visual state without full re-render
+  var chip=document.querySelector('.furn-chip[data-code="'+code+'"]');
+  if(chip)chip.classList.toggle('on',_selFurn.indexOf(code)>=0);
 }
 
 // ══ LISTING FORM WIZARD ══
@@ -3345,6 +3487,7 @@ function openM(id){
       var wcP=document.getElementById('wizCardProject');
       if(wcP)wcP.style.display=cu.role==='builder'?'':'none';
       _unitTypes=[];renderUnits();
+      _selFurn=[];renderFurnishingItems();
       setLM(cu.role==='builder'?'project':'rent');
       var lo=document.getElementById('lOw'),lc=document.getElementById('lCt'),le=document.getElementById('lErr');
       if(lo)lo.value=cu.agency?cu.name+' – '+esc(cu.agency):cu.name;
@@ -3365,6 +3508,7 @@ function closeM(id){
   if(id==='addM')resetAddModal();
   // Clear listing deep-link hash and destroy map when closing detail view
   if(id==='viewM'){
+    // Clear listing deep-link hash (back button still works via popstate handler)
     if(window.location.hash.indexOf('#listing/')===0){
       if(window.history.replaceState)window.history.replaceState(null,null,window.location.pathname);
     }
@@ -3438,6 +3582,68 @@ var INDIAN_CITIES=[
   {n:'Dongri',s:'Mumbai'},{n:'Bhendi Bazaar',s:'Mumbai'},{n:'Crawford Market',s:'Mumbai'},
   {n:'Kalbadevi',s:'Mumbai'},{n:'Girgaon',s:'Mumbai'},{n:'Opera House',s:'Mumbai'},
   {n:'Kemps Corner',s:'Mumbai'},{n:'Masjid Bunder',s:'Mumbai'},{n:'CST',s:'Mumbai'},
+  // Additional Mumbai localities — comprehensive coverage
+  // Western Suburbs - Andheri/Jogeshwari cluster
+  {n:'Oshiwara',s:'Mumbai'},{n:'Four Bungalows',s:'Mumbai'},{n:'Seven Bungalows',s:'Mumbai'},
+  {n:'D N Nagar',s:'Mumbai'},{n:'Yari Road',s:'Mumbai'},{n:'Amboli',s:'Mumbai'},
+  {n:'Madh Island',s:'Mumbai'},{n:'Madh',s:'Mumbai'},{n:'Marol',s:'Mumbai'},
+  {n:'MIDC Andheri',s:'Mumbai'},{n:'Saki Naka',s:'Mumbai'},{n:'JB Nagar',s:'Mumbai'},
+  {n:'Chakala',s:'Mumbai'},{n:'SEEPZ',s:'Mumbai'},{n:'Mahakali Caves Road',s:'Mumbai'},
+  // Bandra cluster
+  {n:'Pali Hill',s:'Mumbai'},{n:'Pali Naka',s:'Mumbai'},{n:'Bandstand',s:'Mumbai'},
+  {n:'Carter Road',s:'Mumbai'},{n:'Hill Road',s:'Mumbai'},{n:'Linking Road',s:'Mumbai'},
+  {n:'Turner Road',s:'Mumbai'},{n:'Perry Cross Road',s:'Mumbai'},{n:'Ranwar',s:'Mumbai'},
+  {n:'Chuim Village',s:'Mumbai'},{n:'Bandra Kurla Complex',s:'Mumbai'},{n:'BKC',s:'Mumbai'},
+  // Khar/Santacruz cluster  
+  {n:'Pali Village',s:'Mumbai'},{n:'14th Road Khar',s:'Mumbai'},
+  // Goregaon/Malad cluster
+  {n:'Aarey Colony',s:'Mumbai'},{n:'Film City',s:'Mumbai'},
+  {n:'Bangur Nagar',s:'Mumbai'},{n:'Mindspace',s:'Mumbai'},{n:'Evershine Nagar',s:'Mumbai'},
+  {n:'Inorbit Mall Malad',s:'Mumbai'},{n:'Sundar Nagar',s:'Mumbai'},
+  // Kandivali/Borivali cluster
+  {n:'Charkop',s:'Mumbai'},{n:'Thakur Complex',s:'Mumbai'},{n:'Thakur Village',s:'Mumbai'},
+  {n:'Lokhandwala Kandivali',s:'Mumbai'},{n:'Mahavir Nagar',s:'Mumbai'},
+  {n:'IC Colony',s:'Mumbai'},{n:'Gorai',s:'Mumbai'},{n:'Eksar',s:'Mumbai'},
+  {n:'Shimpoli',s:'Mumbai'},{n:'LT Road Borivali',s:'Mumbai'},
+  // South Mumbai - upscale
+  {n:'Altamount Road',s:'Mumbai'},{n:'Carmichael Road',s:'Mumbai'},{n:'Napean Sea Road',s:'Mumbai'},
+  {n:'Hughes Road',s:'Mumbai'},{n:'Cumballa Hill',s:'Mumbai'},{n:'Gamdevi',s:'Mumbai'},
+  {n:'Babulnath',s:'Mumbai'},{n:'August Kranti Marg',s:'Mumbai'},
+  {n:'Warden Road',s:'Mumbai'},{n:'Chowpatty',s:'Mumbai'},{n:'Marine Lines',s:'Mumbai'},
+  // South Mumbai - business / commercial
+  {n:'Ballard Estate',s:'Mumbai'},{n:'Horniman Circle',s:'Mumbai'},{n:'Flora Fountain',s:'Mumbai'},
+  {n:'Kala Ghoda',s:'Mumbai'},{n:'Fort Market',s:'Mumbai'},{n:'D N Road',s:'Mumbai'},
+  {n:'Hutatma Chowk',s:'Mumbai'},{n:'Mint Road',s:'Mumbai'},{n:'Kamala Mills',s:'Mumbai'},
+  {n:'Todi Mills',s:'Mumbai'},{n:'Phoenix Mills',s:'Mumbai'},
+  // South Central - Parel/Lower Parel area
+  {n:'Lalbaug',s:'Mumbai'},{n:'Dadar TT',s:'Mumbai'},{n:'Elphinstone',s:'Mumbai'},
+  {n:'Mahalaxmi',s:'Mumbai'},{n:'Mahalaxmi Racecourse',s:'Mumbai'},{n:'Haji Ali',s:'Mumbai'},
+  {n:'Kalachowki',s:'Mumbai'},{n:'Reay Road',s:'Mumbai'},
+  // Dadar/Matunga
+  {n:'Shivaji Park',s:'Mumbai'},{n:'Hindu Colony',s:'Mumbai'},{n:'Five Gardens',s:'Mumbai'},
+  {n:'King Circle',s:'Mumbai'},{n:'Matunga East',s:'Mumbai'},{n:'Matunga West',s:'Mumbai'},
+  {n:'Ruia College',s:'Mumbai'},
+  // Eastern Suburbs
+  {n:'Kalina',s:'Mumbai'},{n:'Vakola',s:'Mumbai'},{n:'Kurla Nehru Nagar',s:'Mumbai'},
+  {n:'Tilak Nagar',s:'Mumbai'},{n:'Vidya Vihar',s:'Mumbai'},{n:'Bhandup Complex',s:'Mumbai'},
+  {n:'Pant Nagar',s:'Mumbai'},{n:'Hiranandani Powai',s:'Mumbai'},{n:'IIT Powai',s:'Mumbai'},
+  {n:'Mahim West',s:'Mumbai'},{n:'Mahim East',s:'Mumbai'},
+  // Chembur/Govandi
+  {n:'Deonar',s:'Mumbai'},{n:'Shell Colony',s:'Mumbai'},{n:'Tilak Nagar Chembur',s:'Mumbai'},
+  {n:'Sion Trombay Road',s:'Mumbai'},{n:'Bainganwadi',s:'Mumbai'},
+  // Thane area additions
+  {n:'Ghodbunder Road',s:'Mumbai'},{n:'Majiwada',s:'Mumbai'},{n:'Naupada',s:'Mumbai'},
+  {n:'Vartak Nagar',s:'Mumbai'},{n:'Kasarvadavali',s:'Mumbai'},{n:'Hiranandani Thane',s:'Mumbai'},
+  {n:'Waghbil',s:'Mumbai'},{n:'Manpada',s:'Mumbai'},{n:'Pokhran Road',s:'Mumbai'},
+  {n:'Kolshet Road',s:'Mumbai'},{n:'Teen Hath Naka',s:'Mumbai'},
+  // Mira Road / Bhayander / Beyond
+  {n:'Mira Road East',s:'Mumbai'},{n:'Mira Road West',s:'Mumbai'},{n:'Kashigaon',s:'Mumbai'},
+  {n:'Bhayander East',s:'Mumbai'},{n:'Bhayander West',s:'Mumbai'},{n:'Naigaon',s:'Mumbai'},
+  {n:'Vasai East',s:'Mumbai'},{n:'Vasai West',s:'Mumbai'},{n:'Nalasopara',s:'Mumbai'},
+  {n:'Virar East',s:'Mumbai'},{n:'Virar West',s:'Mumbai'},
+  // Old Mumbai South markets / Bhendi Bazaar surrounds
+  {n:'Pydhonie',s:'Mumbai'},{n:'Umarkhadi',s:'Mumbai'},{n:'Wadi Bunder',s:'Mumbai'},
+  {n:'Mohammed Ali Road',s:'Mumbai'},{n:'Null Bazaar',s:'Mumbai'},{n:'Bhuleshwar',s:'Mumbai'},
   {n:'Navi Mumbai',s:'Maharashtra'},
   {n:'Vashi',s:'Navi Mumbai'},{n:'Nerul',s:'Navi Mumbai'},{n:'Belapur',s:'Navi Mumbai'},
   {n:'Kharghar',s:'Navi Mumbai'},{n:'Panvel',s:'Navi Mumbai'},{n:'Seawoods',s:'Navi Mumbai'},
