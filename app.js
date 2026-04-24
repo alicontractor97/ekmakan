@@ -380,11 +380,11 @@ async function go(pg){
   // Hide quick-action strip on browse (filter bar replaces it) and admin
   var qs=document.getElementById('qaStrip');
   if(qs)qs.style.display=pg==='home'?'block':'none';
-  // Push a history entry so the browser Back button returns to the previous page
-  // (instead of exiting the site). Only push if the hash is actually changing.
+  // Push a history entry so the browser Back button returns to the previous page.
+  // Skip this when we're already responding to a Back/Forward event, or the hash isn't changing.
   var targetHash=pg==='home'?'':'#'+pg;
   var currentHash=window.location.hash||'';
-  if(window.history&&window.history.pushState&&targetHash!==currentHash){
+  if(!_navFromHistory&&window.history&&window.history.pushState&&targetHash!==currentHash){
     window.history.pushState({pg:pg},'',targetHash||window.location.pathname);
   }
   window.scrollTo(0,0);
@@ -1605,9 +1605,10 @@ async function viewL(id){
     +'</div>'
     +'<button onclick="openReport('+l.id+')" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1.5px solid #ffcccc;color:var(--red);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .18s;" onmouseover="this.style.background=\'#fff5f5\'" onmouseout="this.style.background=\'transparent\'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-flag"/></svg> Report Discrimination or Unfair Treatment</button>';
   openM('viewM');
-  // Set URL hash for shareable deep link + push history so Back returns to where we came from
+  // Set URL hash for shareable deep link + push history so Back returns to where we came from.
+  // Skip when we're responding to a Back/Forward event.
   var targetHash='#listing/'+id;
-  if(window.history&&window.history.pushState&&window.location.hash!==targetHash){
+  if(!_navFromHistory&&window.history&&window.history.pushState&&window.location.hash!==targetHash){
     window.history.pushState({listing:id},'',targetHash);
   }
   // Init touch gestures on the image gallery
@@ -1926,22 +1927,37 @@ function _fallbackCopy(text){
 
 // ══ URL ROUTING ══
 // Handles hash-based deep links: #listing/42, #browse, #dashboard, etc.
+// Flag to suppress pushState while we're *responding* to a back/forward event.
+// Without this, go() would push a new history entry on top of the one the user
+// just popped — trapping them on the current page.
+var _navFromHistory=false;
+
 function handleHashRoute(){
   var hash=window.location.hash;
-  if(!hash||hash==='#')return false;
   // Skip recovery tokens (handled by Supabase)
   if(hash.indexOf('access_token')>=0||hash.indexOf('type=recovery')>=0)return false;
+  // Empty hash = home page
+  if(!hash||hash==='#'){
+    _navFromHistory=true;
+    go('home');
+    _navFromHistory=false;
+    return true;
+  }
   // Listing deep link: #listing/42
   var listingMatch=hash.match(/^#listing\/(\d+)$/);
   if(listingMatch){
     var lid=Number(listingMatch[1]);
+    _navFromHistory=true;
     viewL(lid);
+    _navFromHistory=false;
     return true;
   }
   // Page deep links: #browse, #dashboard, #lister, #admin
   var pageMatch=hash.match(/^#(home|browse|dashboard|lister|admin)$/);
   if(pageMatch){
+    _navFromHistory=true;
     go(pageMatch[1]);
+    _navFromHistory=false;
     return true;
   }
   return false;
@@ -1950,7 +1966,6 @@ function handleHashRoute(){
 window.addEventListener('hashchange',function(){handleHashRoute();});
 
 // Handle browser Back/Forward buttons via popstate
-// Without this, Back would exit the site since we're a single-page app
 window.addEventListener('popstate',function(e){
   // If viewM is open but the hash is no longer #listing/, the user hit Back — close it
   var viewM=document.getElementById('viewM');
@@ -1958,6 +1973,8 @@ window.addEventListener('popstate',function(e){
     viewM.classList.remove('open');
     if(_listingMap){try{_listingMap.remove();}catch(e){}_listingMap=null;}
   }
+  // popstate usually fires *before* hashchange; hashchange will do the actual routing
+  // But if the hash didn't change (e.g. state transition), we still need to route
   handleHashRoute();
 });
 
