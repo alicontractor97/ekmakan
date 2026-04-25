@@ -62,7 +62,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="app.css?v=20260425-215739"/>
+<link rel="stylesheet" href="app.css?v=20260425-220632"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -945,7 +945,7 @@
         </div>
         <div class="fg" id="lAvW"><label class="flbl">Availability</label><select class="fi" id="lAv"><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
         <div class="fg" id="lPoW" style="display:none;"><label class="flbl">Possession</label><select class="fi" id="lPo"><option>Ready to Move</option><option>Under Construction</option><option>Within 6 Months</option><option>Within 1 Year</option></select></div>
-        <div class="fg" id="lStW" style="display:none;"><label class="flbl">Sale Type</label><select class="fi" id="lSt"><option>New</option><option>Resale</option></select></div>
+        <div class="fg" id="lStW" style="display:none;"><label class="flbl">Sale Type <span class="info-bubble" data-tip="First Owner: bought new from a builder, never lived in / barely used. Resale: previously owned and lived in.">i</span></label><select class="fi" id="lSt"><option>First Owner</option><option>Resale</option></select></div>
         <div class="fg" id="lProjW" style="display:none;"><label class="flbl">Project Status *</label><select class="fi" id="lProj"><option>New Launch</option><option>Under Construction</option><option>Ready to Move</option><option>Completed</option></select></div>
         <div class="fg" id="lCompW" style="display:none;"><label class="flbl">Expected Completion</label><input class="fi" type="month" id="lComp"/></div>
         <div class="fg s2" id="lReW" style="display:none;"><label class="flbl">RERA Number <span id="lReReq" style="color:var(--red);font-weight:700;display:none;">*</span> <span class="info-bubble" data-tip="RERA registration is mandatory for all new construction and resale projects in Mumbai/Maharashtra. Format: P51800012345 or RERA/MH/2024/001. Required for new projects.">i</span></label><input class="fi" type="text" id="lRe" placeholder="P51800012345 or RERA/MH/2024/001"/></div>
@@ -1318,11 +1318,11 @@
   </div>
 </div>
 
-<script src="app.js?v=20260425-215739" defer></script>
+<script src="app.js?v=20260425-220632" defer></script>
 <script>
 // Build version stamp — replaced by build script. Used to detect when a new
 // deploy has landed so we can auto-reload the page for users.
-window.__BUILD_VERSION__ = '20260425-215739';
+window.__BUILD_VERSION__ = '20260425-220632';
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){

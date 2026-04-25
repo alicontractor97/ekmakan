@@ -9,7 +9,7 @@ const PTYB=['Apartment','Flat','House','Villa','Plot'];
 const BEDS=['1','2','3','4','5+'];
 const FURN=['Unfurnished','Semi-Furnished','Fully Furnished'];
 const POSS=['Ready to Move','Under Construction','Within 6 Months','Within 1 Year'];
-const STYP=['New','Resale'];
+const STYP=['First Owner','Resale'];
 const FACE=['North','South','East','West','North-East','North-West'];
 const FLOR=['Ground','1st-2nd','3rd-5th','5th-10th','10th+'];
 
@@ -1246,11 +1246,17 @@ function pCard(l){
 
   // ── Badges (top-right of info area) ──
   var badges=[];
-  if(isP&&l.projectStatus==='New Launch')badges.push('<span class="pc-badge new-launch"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-sparkle"/></svg> New Launch</span>');
-  else if(isP&&l.projectStatus)badges.push('<span class="pc-badge project">'+esc(l.projectStatus)+'</span>');
+  // Builder-listed projects: "New Launch" or fallback project status badge
+  if(isP&&l.projectStatus==='New Launch'){
+    badges.push('<span class="pc-badge new-launch"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-sparkle"/></svg> New Launch</span>');
+  } else if(isP&&l.projectStatus){
+    badges.push('<span class="pc-badge project">'+esc(l.projectStatus)+'</span>');
+  }
   if(l.verified)badges.push('<span class="pc-badge verified"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-check"/></svg> Verified</span>');
   if(!ir&&l.rera)badges.push('<span class="pc-badge rera">RERA</span>');
-  if(!ir&&!isP&&l.stype==='New')badges.push('<span class="pc-badge new">New</span>');
+  // Note: NO "New" badge on regular non-project sale listings, even if sale_type='First Owner'.
+  // Only actual builder-launched projects get a New Launch badge. This prevents
+  // resale flats from being mistaken for fresh builder inventory.
   var badgesHTML=badges.length?'<div class="pc-badges">'+badges.join('')+'</div>':'';
 
   // ── Price block (compact, lakh/crore formatted) ──
@@ -1462,7 +1468,11 @@ async function renderBrowse(){
     if(fBB.length){ls=ls.filter(function(l){return fBB.indexOf(l.beds)>=0;});hasAnyFilters=true;}
     if(fBF.length){ls=ls.filter(function(l){return fBF.indexOf(l.furnish)>=0;});hasAnyFilters=true;}
     if(fBPo.length){ls=ls.filter(function(l){return fBPo.indexOf(l.poss)>=0;});hasAnyFilters=true;}
-    if(fBST.length){ls=ls.filter(function(l){return fBST.indexOf(l.stype)>=0;});hasAnyFilters=true;}
+    if(fBST.length){ls=ls.filter(function(l){
+      // Backwards compat: old listings have sale_type='New' which now displays as 'First Owner'
+      var st=l.stype==='New'?'First Owner':l.stype;
+      return fBST.indexOf(st)>=0;
+    });hasAnyFilters=true;}
     if(fBFc.length){ls=ls.filter(function(l){return fBFc.indexOf(l.facing)>=0;});hasAnyFilters=true;}
     if(fBFl.length){ls=ls.filter(function(l){return fBFl.indexOf(l.floor)>=0;});hasAnyFilters=true;}
     if(fBA.length){ls=ls.filter(function(l){return fBA.every(function(a){return l.amens&&l.amens.indexOf(a)>=0;});});hasAnyFilters=true;}
@@ -2191,7 +2201,7 @@ async function viewL(id){
     +(l.ownership?'<div class="ic"><div class="ll">OWNERSHIP</div><strong>'+esc(l.ownership)+'</strong></div>':'')
     +(waterDisplay?'<div class="ic"><div class="ll">WATER</div><strong style="font-size:12px;">'+esc(waterDisplay)+'</strong></div>':'')
     +(l.backup?'<div class="ic"><div class="ll">POWER BACKUP</div><strong style="font-size:12px;">'+esc(l.backup)+'</strong></div>':'')
-    +(!ir&&!isProj?'<div class="ic"><div class="ll">SALE TYPE</div><strong>'+esc(l.stype||'—')+'</strong></div>':'')
+    +(!ir&&!isProj?'<div class="ic"><div class="ll">SALE TYPE</div><strong>'+esc(l.stype==='New'?'First Owner':(l.stype||'—'))+'</strong></div>':'')
     +(!ir&&!isProj?'<div class="ic"><div class="ll">POSSESSION</div><strong>'+esc(l.poss||'—')+'</strong></div>':'')
     +(!ir&&l.rera?'<div class="ic" style="grid-column:1/-1;"><div class="ll">RERA NO.</div><strong style="color:var(--gr);">'+esc(l.rera)+'</strong></div>':'')
     +'</div>'
