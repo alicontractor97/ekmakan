@@ -7,16 +7,47 @@
   X-XSS-Protection: 1; mode=block
   Content-Security-Policy: frame-ancestors 'none'
 
-# App files: must revalidate with server on every visit
-# This ensures users always get the latest code after a deploy
+# App entry — ABSOLUTELY no caching anywhere (browser, CDN, proxy).
+# This is the only safe default for a single-page app: index.html must always
+# be fresh because it references the versioned bundle paths.
 /index.html
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
 
+/
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+
+# JS and CSS — must revalidate every visit. With ETag/If-None-Match the
+# server returns 304 when unchanged (fast) but always serves new content
+# the moment it changes.
 /app.js
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: no-cache, must-revalidate
+  CDN-Cache-Control: no-store
 
 /app.css
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: no-cache, must-revalidate
+  CDN-Cache-Control: no-store
 
+# Version stamp — the page polls this to detect new deploys, so it must
+# never be cached or update notifications stop working.
+/version.json
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+
+# Service worker — MUST always be fresh, otherwise users are stuck on the
+# old worker which serves the old cached files. Browsers special-case sw.js
+# anyway, but be explicit.
 /sw.js
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+  Service-Worker-Allowed: /
+  CDN-Cache-Control: no-store

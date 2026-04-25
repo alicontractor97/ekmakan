@@ -3,7 +3,9 @@
 // Network-first for same-origin (always fresh code), cache-first for CDN
 // ============================================================================
 
-const CACHE_NAME = 'ekmakan-v2';
+// Bump CACHE_NAME any time the SW logic itself changes. Each change invalidates
+// every previous cache for every user.
+const CACHE_NAME = 'ekmakan-v3';
 
 // CDN assets with versioned URLs / integrity hashes — safe to cache aggressively
 const CDN_HOSTS = [
@@ -23,20 +25,36 @@ const NO_CACHE_PATTERNS = [
 
 // ── INSTALL: activate immediately, don't pre-cache our own files ──
 self.addEventListener('install', (event) => {
+  // Take over from any existing SW immediately, no waiting
   self.skipWaiting();
 });
 
-// ── ACTIVATE: Clean up old caches and take control of all pages ──
+// ── ACTIVATE: Aggressively clean ALL caches (not just non-current) ──
+// This handles users coming from a previous (potentially broken) SW that may
+// have polluted their cache with old app.js/app.css under a different cache name.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
+      .then(() => {
+        // Tell every open tab a fresh SW is in control — they should reload
+        return self.clients.matchAll({ type: 'window' });
+      })
+      .then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: 'SW_ACTIVATED', cache: CACHE_NAME });
+        });
+      })
   );
+});
+
+// Listen for explicit "skip waiting" commands from the page (used after
+// the page detects a new SW is waiting and the user accepts the reload).
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // ── FETCH: Route requests to correct strategy ──
@@ -81,12 +99,14 @@ async function cacheFirst(request) {
 }
 
 // ── STRATEGY: Network-first (for our own code — always fresh) ──
-// Try network first. Save to cache on success. If network fails, fall back to cache.
-// Result: changes you push always show up on next page load, no hard-refresh needed.
+// Try network first with cache: 'no-store' to bypass any HTTP cache layers.
+// Save to SW cache on success. If network fails, fall back to cache.
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
-    const response = await fetch(request, { cache: 'no-store' });
+    // cache: 'reload' tells the browser to bypass the HTTP cache and re-fetch
+    // from the network, which is what we want for app code.
+    const response = await fetch(request, { cache: 'reload' });
     if (response.ok) {
       cache.put(request, response.clone());
     }
