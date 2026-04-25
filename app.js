@@ -2,7 +2,7 @@
 const CIMG=["data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMxYTdhNmUiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwZDMwMzAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI2MCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjIwMCIgeT0iMTEwIiBmb250LXNpemU9IjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj7wn4+Z77iPPC90ZXh0Pjwvc3ZnPg==","data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNjMDlhNGEiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM2MDMwMTAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI2MCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjIwMCIgeT0iMTEwIiBmb250LXNpemU9IjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj7wn5WMPC90ZXh0Pjwvc3ZnPg==","data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMyZTdkNGYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwYTMwMjAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI2MCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjIwMCIgeT0iMTEwIiBmb250LXNpemU9IjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj7wn4y/PC90ZXh0Pjwvc3ZnPg==","data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNkOTUzNGYiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM2YTEwMTAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI2MCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjIwMCIgeT0iMTEwIiBmb250LXNpemU9IjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj7wn4+vPC90ZXh0Pjwvc3ZnPg==","data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMyNTYzZWIiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMwYTFhNjAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI2MCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjIwMCIgeT0iMTEwIiBmb250LXNpemU9IjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj7wn4yKPC90ZXh0Pjwvc3ZnPg==","data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiM2YjRmYTAiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMyYTEwNTAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI2MCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjIwMCIgeT0iMTEwIiBmb250LXNpemU9IjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj7wn4yEPC90ZXh0Pjwvc3ZnPg=="];
 // ══ CONSTANTS ══
 // Admin credentials: now managed via Supabase Auth (no client-side hardcoding).
-const ATAGS=['Pet Friendly','Near Masjid','Veg/Non-veg OK','Near Metro','Gated Community','Near School','Near Hospital','Quiet Locality','Corner Unit'];
+const ATAGS=['LGBTQ+ Friendly','All Communities Welcome','Single Women/Men Friendly','Pet Friendly','Working Professionals Welcome','Diverse Neighborhood'];
 const AMENS=['Lift','Parking','Security','Power Backup','Swimming Pool','Gym','Club House','Play Area','Garden','Gas Pipeline','Intercom','CCTV'];
 const PTYR=['Apartment','Flat','House','Villa','PG / Room'];
 const PTYB=['Apartment','Flat','House','Villa','Plot'];
@@ -482,6 +482,18 @@ function setRR(r){
   }
 }
 
+// Resend the email-verification link for an unconfirmed account
+async function resendVerification(email){
+  if(!email)return;
+  try{
+    var {error}=await sb.auth.resend({type:'signup',email:email});
+    if(error)throw error;
+    toast('Verification email resent. Please check your inbox and spam folder.');
+  }catch(e){
+    toast('Could not resend: '+(e.message||'unknown error'),'e');
+  }
+}
+
 async function doLogin(){
   var ae=document.getElementById('aErr');if(ae)ae.style.display='none';
   var em=document.getElementById('lEm').value.trim();
@@ -556,18 +568,41 @@ function doReg(){
   var btn=document.querySelector('#rFrm button.btn-bl')||null;
   var origBtnText=btn?btn.textContent:'';
   if(btn){btn.disabled=true;btn.textContent='Creating account…';}
+
   var doSignup=async function(){
     try{
       var {data:authData,error:authErr}=await sb.auth.signUp({email:em,password:pw,options:{data:{name:nm,phone:ph,role:role,agency:ag,license_no:lc},captchaToken:_turnstileToken}});
       if(authErr)throw authErr;
       if(!authData.user)throw new Error('Sign-up failed.');
+      // ── Detect "user already exists" silent failure ──
+      // When email confirmation is on AND the email is already registered (or soft-deleted),
+      // Supabase returns a user object but with `identities: []`. No verification email is sent.
+      // We need to surface this clearly so the user knows what to do.
+      if(authData.user&&Array.isArray(authData.user.identities)&&authData.user.identities.length===0){
+        if(btn){btn.disabled=false;btn.textContent=origBtnText;}
+        if(ae){
+          ae.style.display='';
+          ae.innerHTML='<strong style="display:block;margin-bottom:6px;color:var(--red);"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-flag"/></svg> Email already registered</strong>'
+            +'<div style="font-size:13px;line-height:1.5;color:var(--ink);">An account with <strong>'+esc(em)+'</strong> already exists. You have three options:</div>'
+            +'<ul style="margin:8px 0 8px 18px;font-size:12px;line-height:1.7;color:var(--ink);padding-left:0;">'
+            +'<li><button type="button" onclick="document.getElementById(\'lEm\').value=\''+escAttr(em)+'\';showAuthTab(\'login\');" style="background:none;border:none;color:var(--t);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;padding:0;font-weight:600;">Sign in</button> — if you remember your password</li>'
+            +'<li><button type="button" onclick="showAuthTab(\'reset\');document.getElementById(\'rsEm\').value=\''+escAttr(em)+'\';" style="background:none;border:none;color:var(--t);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;padding:0;font-weight:600;">Reset password</button> — if you forgot it</li>'
+            +'<li><button type="button" onclick="resendVerification(\''+escAttr(em)+'\')" style="background:none;border:none;color:var(--t);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;padding:0;font-weight:600;">Resend verification email</button> — if you signed up but never confirmed</li>'
+            +'</ul>'
+            +'<div style="font-size:11px;color:var(--mu);line-height:1.5;margin-top:6px;border-top:1px solid var(--sa);padding-top:8px;">If your account was deleted previously and you still get this message, please email <a href="mailto:support@ekmakan.com" style="color:var(--t);">support@ekmakan.com</a> from this address — we will fully clear it within a few hours.</div>';
+        }
+        // Reset Turnstile (token single-use)
+        _turnstileToken=null;
+        if(typeof renderTurnstile==='function')renderTurnstile('turnstileWrap',function(tk){_turnstileToken=tk;});
+        return;
+      }
       // If email confirmation is enabled, there's no active session yet.
       // The database trigger will create the profile row using metadata.
       // Show the user a "check your inbox" message.
       if(!authData.session){
         if(btn){btn.disabled=false;btn.textContent=origBtnText;}
         closeM('authM');
-        toast('Account created! Please check your email to verify your address, then sign in. <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg>');
+        toast('Account created! Please check your email (and spam folder) to verify your address, then sign in. <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg>');
         return;
       }
       // Session exists — email confirmation is off or auto-confirmed.
@@ -584,8 +619,18 @@ function doReg(){
     }catch(err){
       if(btn){btn.disabled=false;btn.textContent=origBtnText;}
       var msg=err.message||'Sign-up failed.';
-      if(msg.toLowerCase().includes('already registered'))msg='An account with this email already exists. Try signing in.';
-      if(msg.toLowerCase().includes('captcha'))msg='Verification failed. Please try again.';
+      var lc_msg=msg.toLowerCase();
+      if(lc_msg.includes('already registered')||lc_msg.includes('already been registered')||lc_msg.includes('user already')){
+        msg='An account with this email already exists. Try signing in or use password reset.';
+      } else if(lc_msg.includes('captcha')){
+        msg='Verification failed. Please try again.';
+      } else if(lc_msg.includes('rate limit')||lc_msg.includes('too many')){
+        msg='Too many sign-up attempts. Please wait a few minutes before trying again.';
+      } else if(lc_msg.includes('password')&&lc_msg.includes('weak')){
+        msg='Password is too weak. Please use at least 8 characters with a mix of letters and numbers.';
+      } else if(lc_msg.includes('email')&&lc_msg.includes('invalid')){
+        msg='Please enter a valid email address.';
+      }
       if(ae){ae.style.display='';ae.textContent=msg;}
       // Reset Turnstile after failed attempt (tokens are single-use)
       _turnstileToken=null;
@@ -2801,6 +2846,9 @@ function setLM(m){
   ['lPrW','lStW','lPoW','lReW','lTxnW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=(m==='buy'||m==='project')?'':'none';});
   // Project-specific fields
   ['lProjW','lCompW','lPrMinW','lPrMaxW','lUnitsW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='project'?'':'none';});
+  // RERA required only for projects (Mumbai/Maharashtra)
+  var reReq=document.getElementById('lReReq');
+  if(reReq)reReq.style.display=m==='project'?'':'none';
 }
 
 // Toggle water source chip selection
@@ -2927,6 +2975,22 @@ async function doSub(){
   if(lMode==='rent'&&!rv){if(le){le.style.display='';le.textContent='Please enter monthly rent.';}return;}
   if(lMode==='buy'&&!pv){if(le){le.style.display='';le.textContent='Please enter sale price.';}return;}
   if(lMode==='project'&&!Number(getVal('lPrMin'))){if(le){le.style.display='';le.textContent='Please enter project starting price.';}return;}
+  if(lMode==='project'&&(getVal('lRe')||'').trim().length<5){if(le){le.style.display='';le.textContent='RERA registration number is mandatory for new projects in Mumbai/Maharashtra.';}wizGoto(3);return;}
+  // RERA mandatory for new projects (Mumbai/Maharashtra regulation)
+  var reraVal=(getVal('lRe')||'').trim();
+  if(lMode==='project'&&!reraVal){
+    if(le){le.style.display='';le.textContent='RERA registration number is mandatory for all new projects. Please enter the RERA ID.';}
+    var reraField=document.getElementById('lRe');
+    if(reraField){reraField.focus();reraField.scrollIntoView({behavior:'smooth',block:'center'});}
+    // Make sure user is on stage 3 where the field lives
+    if(typeof wizGoto==='function')wizGoto(3);
+    return;
+  }
+  // RERA format sanity check (loose — accepts both old "RERA/MH/.." and new "P51800.." formats)
+  if(reraVal&&reraVal.length<6){
+    if(le){le.style.display='';le.textContent='RERA number looks too short. Please double-check.';}
+    return;
+  }
   if(le)le.style.display='none';
   var saleTypeEl=document.querySelector('#lStW select#lSt');
   var isProject=lMode==='project';
@@ -3336,6 +3400,14 @@ function _wizValidate(step){
     var contact=(document.getElementById('lCt').value||'').trim();
     if(owner.length<2){showErr('Please enter the owner/broker name.');return false;}
     if(contact.replace(/\D/g,'').length<10){showErr('Please enter a valid contact number (10 digits).');return false;}
+    // RERA mandatory for new projects (Mumbai/Maharashtra requirement)
+    if(lMode==='project'){
+      var rera=(document.getElementById('lRe').value||'').trim();
+      if(rera.length<5){
+        showErr('RERA registration number is mandatory for new projects. It is a legal requirement in Mumbai/Maharashtra.');
+        return false;
+      }
+    }
     return true;
   }
   return true;

@@ -823,7 +823,7 @@
         <div class="fg" id="lTrxW" style="display:none;"><label class="flbl">Transaction Type <span class="info-bubble" data-tip="Resale: previously owned property being sold again. New Booking: buying directly from builder, often pre-construction.">i</span></label><select class="fi" id="lTrx"><option value="">Select</option><option>Resale</option><option>New Booking</option><option>First Owner Resale</option></select></div>
         <div class="fg"><label class="flbl">Property Ownership <span class="info-bubble" data-tip="Freehold: full unrestricted ownership. Leasehold: ownership for a fixed term (typically 99 years), then reverts. Co-op Society: ownership of shares in a society that owns the building. Power of Attorney: legal authorisation, not full ownership.">i</span></label><select class="fi" id="lOwn"><option value="">Select</option><option>Freehold</option><option>Leasehold</option><option>Co-operative Society</option><option>Power of Attorney</option></select></div>
         <div class="fg"><label class="flbl">Power Backup <span class="info-bubble" data-tip="None: no backup. Partial: common areas only. Full Backup: every unit has uninterrupted power. Generator/Inverter: type of backup source.">i</span></label><select class="fi" id="lPower"><option value="">Select</option><option>None</option><option>Partial (common areas)</option><option>Full Backup</option><option>Generator</option><option>Inverter</option></select></div>
-        <div class="fg" id="lReW" style="display:none;"><label class="flbl">RERA Number</label><input class="fi" type="text" id="lRe" placeholder="RERA/MH/2024/001"/></div>
+        <div class="fg" id="lReW" style="display:none;"><label class="flbl">RERA Number <span id="lReReq" style="color:var(--red);font-weight:700;display:none;">*</span> <span class="info-bubble" data-tip="RERA registration is mandatory for all new construction and resale projects in Mumbai/Maharashtra. Format: P51800012345 or RERA/MH/2024/001. Required for new projects.">i</span></label><input class="fi" type="text" id="lRe" placeholder="P51800012345 or RERA/MH/2024/001"/></div>
         <div class="fg" id="lProjW" style="display:none;"><label class="flbl">Project Status *</label><select class="fi" id="lProj"><option>New Launch</option><option>Under Construction</option><option>Ready to Move</option><option>Completed</option></select></div>
         <div class="fg" id="lCompW" style="display:none;"><label class="flbl">Expected Completion</label><input class="fi" type="month" id="lComp"/></div>
         <div class="fg"><label class="flbl">Owner / Broker Name *</label><input class="fi" type="text" id="lOw"/></div>
@@ -857,7 +857,10 @@
           </div>
           <p style="font-size:10.5px;color:var(--mu);margin-top:6px;line-height:1.5;">Tip: type the landmark name, optional distance (e.g. "0.5 km" or "5 min walk") then Enter or click Add.</p>
         </div>
-        <div class="fg s2"><label class="flbl">Inclusion Tags</label><div class="tp" id="lTgs"></div></div>
+        <div class="fg s2">
+          <label class="flbl">Inclusivity Tags <span style="color:var(--mu);font-weight:400;font-size:11px;">tick all that apply — these signal who's welcome and reach the right tenants/buyers</span></label>
+          <div class="tp" id="lTgs"></div>
+        </div>
       </div>
     </div>
 
@@ -881,7 +884,7 @@
           <div id="lUnits"></div>
           <button type="button" onclick="addUnit()" style="background:transparent;color:var(--t);border:1.5px dashed var(--t);border-radius:8px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;margin-top:6px;">+ Add Unit Configuration</button>
         </div>
-        <div class="fg s2"><label class="flbl">Description</label><textarea class="fi" id="lDs" placeholder="Describe the property and your openness to all communities…"></textarea></div>
+        <div class="fg s2"><label class="flbl">Description</label><textarea class="fi" id="lDs" placeholder="Describe the property in your own words — layout, natural light, view, recent renovations, parking, society features, proximity to transport, what makes it stand out. Keep it factual and specific."></textarea></div>
         <div class="fg s2">
           <label class="flbl">Photos (up to 15) — first 2 free for visitors, rest unlock after sign-up</label>
           <div class="dz" id="dz" onclick="document.getElementById('imgIn').click()" ondragover="dzOv(event)" ondragleave="dzLv()" ondrop="dzDp(event)">
