@@ -852,8 +852,18 @@ function resetSessionState(){
   fVer=false;fRer=false;
   // Browse/hero modes back to default
   bMode='rent';hMode='rent';lMode='rent';
-  // Listing form and inquiry state
+  // Listing form and inquiry state — clear ALL of it
   upImgs=[];selTags=[];selAmens=[];actL=null;
+  if(typeof _selFurn!=='undefined')_selFurn=[];
+  if(typeof _selWater!=='undefined')_selWater=[];
+  if(typeof _landmarks!=='undefined')_landmarks=[];
+  if(typeof _unitTypes!=='undefined')_unitTypes=[];
+  if(typeof _uploadingVideo!=='undefined')_uploadingVideo=null;
+  if(typeof _existingVideoUrl!=='undefined')_existingVideoUrl='';
+  if(typeof _formLat!=='undefined')_formLat=null;
+  if(typeof _formLng!=='undefined')_formLng=null;
+  if(typeof _formMap!=='undefined'&&_formMap){try{_formMap.remove();}catch(e){}_formMap=null;}
+  if(typeof _formMarker!=='undefined')_formMarker=null;
   // Lister filter + search
   _listerFilter='all';_listerSearch='';
   // Admin tab
@@ -864,11 +874,19 @@ function resetSessionState(){
   _browseShown=0;_browseFiltered=[];
   _adminPage={al:0,pd:0,rj:0,ls:0,bd:0,tn:0,ld:0};
   _editingListingId=null;
+  // Wizard state
+  if(typeof _wizStep!=='undefined')_wizStep=1;
+  // Detail view tracking
+  if(typeof _currentDetailId!=='undefined')_currentDetailId=null;
   // Reset Turnstile CAPTCHA
   _turnstileToken=null;
-  // Favorites: clear in-memory and remove any persisted favorites tied to previous user
+  // Favorites: clear in-memory (loaded from Supabase on next login)
   favs=[];
-  // Favorites cleared in memory (loaded from Supabase on next login)
+  // Notifications: clear in-memory
+  if(typeof _notifs!=='undefined')_notifs=[];
+  if(typeof _notifOpen!=='undefined')_notifOpen=false;
+  // CRITICAL: invalidate ALL data caches so the next user doesn't see the previous user's cached data
+  if(typeof _clr==='function')_clr();
   // Clear every text/number/select input we use across the app
   var idsToClear=[
     // Browse filter sidebar
@@ -881,8 +899,12 @@ function resetSessionState(){
     'hrc','hrt','hrb',
     // Hero buy search
     'hbc','hbbMin','hbbMax','hbd',
-    // Listing form (addM)
-    'lTl','lBn','lCy','lLo','lAr','lRt','lDp','lPr','lRe','lOw','lCt','lDs','lFl','lFc','lFn','lTp','lBd','lBt','lAv',
+    // Listing form (addM) — comprehensive list including ALL recent additions
+    'lTl','lBn','lCy','lLo','lAddr','lPin','lAr','lArC','lArS','lAge',
+    'lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs',
+    'lFl','lFlNo','lFlTot','lFc','lFn','lTp','lBd','lBt','lAv','lComp',
+    'lTxn','lOwn','lBackup','lLmCat','lLmName','lLmDist',
+    'lLocateStatus',
     // Login + register
     'lEm','lPw','rNm','rEm','rPh','rPw','rAn','rLn',
     // Password reset/update
@@ -896,7 +918,7 @@ function resetSessionState(){
     // Contact page
     'ctName','ctEmail','ctSubject','ctMessage',
     // Leads date filters
-    'ldf','ldt','ldft'
+    'ldf','ldt','ldft','lSrch'
   ];
   idsToClear.forEach(function(id){
     var e=document.getElementById(id);
@@ -904,6 +926,17 @@ function resetSessionState(){
     if(e.tagName==='SELECT'){e.selectedIndex=0;}
     else{e.value='';}
   });
+  // Clear listing image preview, landmarks list, water chips, furnishing chips, video preview
+  var iPv=document.getElementById('iPv');if(iPv)iPv.innerHTML='';
+  var vidPv=document.getElementById('vidPv');if(vidPv)vidPv.innerHTML='';
+  var lmList=document.getElementById('lLandmarksList');if(lmList)lmList.innerHTML='';
+  var fnDet=document.getElementById('lFnDetails');if(fnDet)fnDet.innerHTML='';
+  var fnDetW=document.getElementById('lFnDetailsW');if(fnDetW)fnDetW.style.display='none';
+  document.querySelectorAll('#lWaterChips label[data-w]').forEach(function(l){l.classList.remove('on');});
+  // Clear the locate map
+  var locMapWrap=document.getElementById('lLocateMapWrap');if(locMapWrap)locMapWrap.style.display='none';
+  // Reset wizard to step 1
+  if(typeof wizGoto==='function')wizGoto(1);
   // Reset the max-rent stepper to its "No limit" default
   var hrr=document.getElementById('hrr');
   var hrrLbl=document.getElementById('hrrLbl');
@@ -913,6 +946,11 @@ function resetSessionState(){
   document.querySelectorAll('.ac-list').forEach(function(l){l.className='ac-list';l.innerHTML='';});
   // Close any open modals
   document.querySelectorAll('.mo.open').forEach(function(m){m.classList.remove('open');});
+  // Clear ALL session storage (any in-flight signup state, OAuth state, etc.)
+  // localStorage is left intact — that's where Supabase keeps the auth session,
+  // but signOut() already clears the auth row. Anything else we put there would
+  // need explicit handling.
+  try{sessionStorage.clear();}catch(e){}
   // Rebuild filter chips UI to reflect cleared state
   if(typeof bldF==='function')bldF();
   // If we were on the browse page, refresh the grid so it reflects cleared state
@@ -1835,6 +1873,20 @@ function _resetFormMap(){
   var st=document.getElementById('lLocateStatus');if(st)st.innerHTML='';
 }
 
+function setMediaTab(which){
+  document.querySelectorAll('.media-tab').forEach(function(t){
+    t.classList.toggle('on',t.dataset.mtab===which);
+  });
+  document.querySelectorAll('.media-pane').forEach(function(p){
+    var on=p.dataset.mpane===which;
+    p.classList.toggle('on',on);
+    // Pause any video in the pane being hidden
+    if(!on){
+      p.querySelectorAll('video').forEach(function(v){try{v.pause();}catch(e){}});
+    }
+  });
+}
+
 async function togFav(id,btn){
   if(!cu){openM('authM');return;}
   var idx=favs.indexOf(id);
@@ -1899,31 +1951,56 @@ async function viewL(id){
   }
   var ir=l.lf==='rent';
   document.getElementById('vTit').innerHTML=esc(l.title)+(l.building?'<div style="font-size:13px;font-weight:500;color:var(--mu);margin-top:4px;font-family:\'DM Sans\',sans-serif;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:var(--t);"><use href="#i-broker"/></svg> '+esc(l.building)+'</div>':'');
-  var imgH='<div style="height:160px;background:linear-gradient(135deg,var(--tl),var(--sa));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:60px;margin-bottom:14px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg></div>';
-  if(l.images&&l.images.length>0){
-    var disp=cu?l.images:l.images.slice(0,2);
+  // Unified Photos + Video gallery
+  var hasImages=l.images&&l.images.length>0;
+  var hasVideo=!!l.videoUrl;
+  var canSeeFullMedia=cu||true; // public can see first 2 photos; videos are gated below
+  var imgH='';
+  if(!hasImages&&!hasVideo){
+    imgH='<div style="height:160px;background:linear-gradient(135deg,var(--tl),var(--sa));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:60px;margin-bottom:14px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg></div>';
+  } else {
+    // Photo set (with sign-up gating for >2 photos)
+    var disp=hasImages?(cu?l.images:l.images.slice(0,2)):[];
     window._vI=disp;window._vIdx=0;
-    imgH='<div class="dv-img" id="dvImgWrap" style="--dv-bg:url('+JSON.stringify(disp[0])+');">'
-      +'<img src="'+disp[0]+'" id="vImg" alt="'+escAttr(l.title)+'"/>'
-      +(disp.length>1?'<button class="arr l" onclick="_vS(-1)" aria-label="Previous photo"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-chevron-left"/></svg></button><button class="arr r" onclick="_vS(1)" aria-label="Next photo"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>':'')
-      +'</div>'
-      +'<div class="dv-img-counter" id="vImgCounter">'+(disp.length>1?'1 / '+disp.length:'')+'</div>';
-    if(!cu&&l.images.length>2){
-      imgH+='<div class="lock-box"><div style="font-size:30px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-lock"/></svg></div>'
-        +'<p>'+( l.images.length-2)+' more photo'+(l.images.length-2>1?'s':'')+' unlock after free sign-up.</p>'
-        +'<button class="btn btn-sm" onclick="openM(\'authM\')">Sign Up Free — Instant</button></div>';
-    }
-  }
-  // Walk-through video — shown to signed-in users only (same gating as photos beyond first 2)
-  if(l.videoUrl){
-    if(cu){
-      imgH+='<div style="margin-top:8px;margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:var(--t);"><use href="#i-eye"/></svg> Walk-through Video</div>'
-        +'<video src="'+escAttr(l.videoUrl)+'" controls preload="metadata" playsinline style="width:100%;max-height:420px;background:#000;border-radius:12px;"></video>'
+    // Tab strip — only show if BOTH photos AND video exist
+    var tabsH='';
+    if(hasImages&&hasVideo){
+      tabsH='<div class="media-tabs">'
+        +'<button type="button" class="media-tab on" data-mtab="photos" onclick="setMediaTab(\'photos\')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg> Photos ('+l.images.length+')</button>'
+        +'<button type="button" class="media-tab" data-mtab="video" onclick="setMediaTab(\'video\')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg> Video</button>'
         +'</div>';
-    } else {
-      imgH+='<div class="lock-box" style="margin-top:8px;"><div style="font-size:30px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-eye"/></svg></div>'
-        +'<p>Walk-through video unlocks after free sign-up.</p>'
-        +'<button class="btn btn-sm" onclick="openM(\'authM\')">Sign Up Free</button></div>';
+    }
+    imgH=tabsH;
+    // Photos pane
+    if(hasImages){
+      imgH+='<div class="media-pane on" data-mpane="photos">'
+        +'<div class="dv-img" id="dvImgWrap" style="--dv-bg:url('+JSON.stringify(disp[0])+');">'
+        +'<img src="'+disp[0]+'" id="vImg" alt="'+escAttr(l.title)+'"/>'
+        +(disp.length>1?'<button class="arr l" onclick="_vS(-1)" aria-label="Previous photo"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-chevron-left"/></svg></button><button class="arr r" onclick="_vS(1)" aria-label="Next photo"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>':'')
+        +'</div>'
+        +'<div class="dv-img-counter" id="vImgCounter">'+(disp.length>1?'1 / '+disp.length:'')+'</div>';
+      if(!cu&&l.images.length>2){
+        imgH+='<div class="lock-box"><div style="font-size:30px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-lock"/></svg></div>'
+          +'<p>'+(l.images.length-2)+' more photo'+(l.images.length-2>1?'s':'')+(hasVideo?' and walk-through video':'')+' unlock after free sign-up.</p>'
+          +'<button class="btn btn-sm" onclick="openM(\'authM\')">Sign Up Free — Instant</button></div>';
+      }
+      imgH+='</div>';
+    }
+    // Video pane (signed-in users only)
+    if(hasVideo){
+      var paneCls='media-pane'+(!hasImages?' on':''); // if no photos, video pane is default
+      if(cu){
+        imgH+='<div class="'+paneCls+'" data-mpane="video">'
+          +'<video src="'+escAttr(l.videoUrl)+'" controls preload="metadata" playsinline style="width:100%;max-height:420px;background:#000;border-radius:12px;display:block;"></video>'
+          +'</div>';
+      } else if(!hasImages){
+        // Only video (no photos) and not signed in — show lock
+        imgH+='<div class="'+paneCls+'" data-mpane="video"><div class="lock-box"><div style="font-size:30px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-eye"/></svg></div>'
+          +'<p>Walk-through video unlocks after free sign-up.</p>'
+          +'<button class="btn btn-sm" onclick="openM(\'authM\')">Sign Up Free</button></div></div>';
+      }
+      // Note: when there are images AND user is logged out, they see the photos lock-box
+      // and don't get a separate video lock — the photo lock-box message mentions the video too
     }
   }
   // Contact details visibility:
@@ -2701,7 +2778,43 @@ async function doInq(){
 // ══ IMAGE UPLOAD ══
 function dzOv(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.add('drag');}
 function dzLv(){var d=document.getElementById('dz');if(d)d.classList.remove('drag');}
-function dzDp(e){e.preventDefault();dzLv();hImgsArr(Array.from(e.dataTransfer.files));}
+function dzDp(e){
+  e.preventDefault();dzLv();
+  var files=Array.from(e.dataTransfer.files);
+  // Split into images and videos so each goes to the right pipeline
+  var imgs=files.filter(function(f){return f.type.startsWith('image/');});
+  var vids=files.filter(function(f){return f.type.startsWith('video/');});
+  if(imgs.length)hImgsArr(imgs);
+  // Only accept the first video — listing supports one walk-through video
+  if(vids.length){
+    if(vids.length>1)toast('Only one video per listing — used the first one.');
+    hVideoFile(vids[0]);
+  }
+  if(!imgs.length&&!vids.length)toast('Please drop image or video files.','e');
+}
+// When the user clicks the unified dropzone, prompt them to pick photos OR video
+function openMediaPicker(){
+  // Mobile-friendly: show a tiny inline chooser
+  var existing=document.getElementById('mediaPickPop');
+  if(existing){existing.remove();return;}
+  var dz=document.getElementById('dz');
+  if(!dz)return;
+  var pop=document.createElement('div');
+  pop.id='mediaPickPop';
+  pop.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.18);padding:10px;display:flex;gap:8px;z-index:5;font-family:DM Sans,sans-serif;';
+  pop.innerHTML='<button type="button" id="mpPhotos" style="background:var(--t);color:#fff;border:none;padding:9px 14px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">📷 Photos</button>'
+    +'<button type="button" id="mpVideo" style="background:transparent;border:1.5px solid var(--t);color:var(--t);padding:9px 14px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">🎬 Video</button>';
+  dz.style.position='relative';
+  dz.appendChild(pop);
+  document.getElementById('mpPhotos').onclick=function(e){e.stopPropagation();pop.remove();document.getElementById('imgIn').click();};
+  document.getElementById('mpVideo').onclick=function(e){e.stopPropagation();pop.remove();document.getElementById('vidIn').click();};
+  // Close on outside click
+  setTimeout(function(){
+    document.addEventListener('click',function close(ev){
+      if(pop&&!pop.contains(ev.target)){pop.remove();document.removeEventListener('click',close);}
+    });
+  },50);
+}
 // ══ IMAGE & VIDEO UPLOAD ══
 var MAX_IMAGES=15;
 var MAX_VIDEO_MB=50;
@@ -2910,6 +3023,9 @@ var _existingVideoUrl=''; // URL preserved across edit mode
 function hVideo(e){
   var f=e.target.files&&e.target.files[0];
   e.target.value='';
+  hVideoFile(f);
+}
+function hVideoFile(f){
   if(!f)return;
   if(!f.type.startsWith('video/')){toast('Please select a video file.','e');return;}
   var sizeMB=f.size/(1024*1024);
@@ -3157,7 +3273,7 @@ async function doSub(){
   if(lMode==='rent'&&!rv){if(le){le.style.display='';le.textContent='Please enter monthly rent.';}return;}
   if(lMode==='buy'&&!pv){if(le){le.style.display='';le.textContent='Please enter sale price.';}return;}
   if(lMode==='project'&&!Number(getVal('lPrMin'))){if(le){le.style.display='';le.textContent='Please enter project starting price.';}return;}
-  if(lMode==='project'&&(getVal('lRe')||'').trim().length<5){if(le){le.style.display='';le.textContent='RERA registration number is mandatory for new projects in Mumbai/Maharashtra.';}wizGoto(3);return;}
+  if(lMode==='project'&&(getVal('lRe')||'').trim().length<5){if(le){le.style.display='';le.textContent='RERA registration number is mandatory for new projects in Mumbai/Maharashtra.';}wizGoto(5);return;}
   // RERA mandatory for new projects (Mumbai/Maharashtra regulation)
   var reraVal=(getVal('lRe')||'').trim();
   if(lMode==='project'&&!reraVal){
@@ -3165,7 +3281,7 @@ async function doSub(){
     var reraField=document.getElementById('lRe');
     if(reraField){reraField.focus();reraField.scrollIntoView({behavior:'smooth',block:'center'});}
     // Make sure user is on stage 3 where the field lives
-    if(typeof wizGoto==='function')wizGoto(3);
+    if(typeof wizGoto==='function')wizGoto(5);
     return;
   }
   // RERA format sanity check (loose — accepts both old "RERA/MH/.." and new "P51800.." formats)
@@ -3617,7 +3733,7 @@ function togFurn(code){
 
 // ══ LISTING FORM WIZARD ══
 var _wizStep=1;
-var _wizTotal=4;
+var _wizTotal=6;
 
 function wizGoto(step){
   step=Math.max(1,Math.min(_wizTotal,step));
@@ -3679,10 +3795,31 @@ function _wizValidate(step){
     return true;
   }
   if(step===3){
-    var owner=(document.getElementById('lOw').value||'').trim();
-    var contact=(document.getElementById('lCt').value||'').trim();
-    if(owner.length<2){showErr('Please enter the owner/broker name.');return false;}
-    if(contact.replace(/\D/g,'').length<10){showErr('Please enter a valid contact number (10 digits).');return false;}
+    // Specs — all optional. Just sanity-check floor numbers if entered.
+    var fn=document.getElementById('lFlNo').value;
+    var ft=document.getElementById('lFlTot').value;
+    if(fn&&ft&&Number(fn)>Number(ft)){
+      showErr('Floor number cannot be higher than total floors in the building.');
+      return false;
+    }
+    return true;
+  }
+  if(step===4){
+    // Features — entirely optional
+    return true;
+  }
+  if(step===5){
+    // Pricing — require non-zero price for the chosen mode
+    if(lMode==='rent'){
+      var rt=Number((document.getElementById('lRt').value||'').trim());
+      if(!rt){showErr('Please enter the monthly rent.');return false;}
+    } else if(lMode==='buy'){
+      var pr=Number((document.getElementById('lPr').value||'').trim());
+      if(!pr){showErr('Please enter the sale price.');return false;}
+    } else if(lMode==='project'){
+      var pmin=Number((document.getElementById('lPrMin').value||'').trim());
+      if(!pmin){showErr('Please enter the project starting price.');return false;}
+    }
     // RERA mandatory for new projects (Mumbai/Maharashtra requirement)
     if(lMode==='project'){
       var rera=(document.getElementById('lRe').value||'').trim();
@@ -3691,6 +3828,17 @@ function _wizValidate(step){
         return false;
       }
     }
+    return true;
+  }
+  if(step===6){
+    // Final stage — owner name + contact + at least one photo required
+    var owner=(document.getElementById('lOw').value||'').trim();
+    var contact=(document.getElementById('lCt').value||'').trim();
+    if(owner.length<2){showErr('Please enter the owner/broker name.');return false;}
+    if(contact.replace(/\D/g,'').length<10){showErr('Please enter a valid contact number (10 digits).');return false;}
+    // Photos: require at least 1 (excluding placeholders)
+    var realImgs=upImgs.filter(function(im){return im&&im!=='__PENDING__';});
+    if(!realImgs.length){showErr('Please add at least one photo of the property.');return false;}
     return true;
   }
   return true;
