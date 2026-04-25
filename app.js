@@ -138,9 +138,9 @@ function renderTurnstile(containerId,tokenSetter){
 }
 
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
-function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',floorNo:r.floor_no!=null?r.floor_no:null,totalFloors:r.total_floors||null,facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[],txnType:r.transaction_type||'',ownership:r.ownership||'',water:r.water_source||'',backup:r.power_backup||'',landmarks:r.landmarks||[],videoUrl:r.video_url||''};}
+function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',floorNo:r.floor_no!=null?r.floor_no:null,totalFloors:r.total_floors||null,facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[],txnType:r.transaction_type||'',ownership:r.ownership||'',water:r.water_source||'',backup:r.power_backup||'',landmarks:r.landmarks||[],videoUrl:r.video_url||'',pincode:r.pincode||'',streetAddress:r.street_address||'',lat:r.latitude!=null?r.latitude:null,lng:r.longitude!=null?r.longitude:null};}
 // Map JS listing → Supabase row
-function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',floor_no:l.floorNo!=null&&l.floorNo!==''?Number(l.floorNo):null,total_floors:l.totalFloors?Number(l.totalFloors):null,facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[],transaction_type:l.txnType||'',ownership:l.ownership||'',water_source:l.water||'',power_backup:l.backup||'',landmarks:l.landmarks||[],video_url:l.videoUrl||''};}
+function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',floor_no:l.floorNo!=null&&l.floorNo!==''?Number(l.floorNo):null,total_floors:l.totalFloors?Number(l.totalFloors):null,facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[],transaction_type:l.txnType||'',ownership:l.ownership||'',water_source:l.water||'',power_backup:l.backup||'',landmarks:l.landmarks||[],video_url:l.videoUrl||'',pincode:l.pincode||'',street_address:l.streetAddress||'',latitude:l.lat!=null&&l.lat!==''?Number(l.lat):null,longitude:l.lng!=null&&l.lng!==''?Number(l.lng):null};}
 function mapInq(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',listingCity:r.listing_city||'',lf:r.listing_for||'rent',contact:'',name:r.inquirer_name||'',phone:r.inquirer_phone||'',email:r.inquirer_email||'',message:r.message||'',uid:r.user_id,sentAt:r.sent_at?(r.sent_at+'').split('T')[0]:''};}
 function mapUsr(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone||'',role:r.role||'user',agency:r.agency||'',lic:r.license_no||'',joinedAt:r.joined_at?(r.joined_at+'').split('T')[0]:'',verified:r.verified||false,trusted:r.is_trusted||false};}
 function mapRpt(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',type:r.report_type||'',desc:r.description||'',reporterName:r.reporter_name||'',reporterContact:r.reporter_contact||'',reporterUid:r.reporter_user_id,status:r.status||'open',submittedAt:r.submitted_at?(r.submitted_at+'').split('T')[0]:''};}
@@ -338,7 +338,7 @@ function showEmpty(elId,icon,title,sub){
 // ══ DATA ACCESS (Supabase) ══
 async function gL(){
   if(_cacheL&&_cacheValid('l'))return _cacheL;
-  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks,video_url').order('posted_at',{ascending:false});
+  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks,video_url,pincode,street_address,latitude,longitude').order('posted_at',{ascending:false});
   if(error){toast('Failed to load listings. Please refresh.','e');_cacheL=[];return[];}
   _cacheL=(data||[]).map(mapL);
   _cacheTime.l=Date.now();
@@ -1720,6 +1720,121 @@ function removeLandmark(idx){
   }
 }
 
+// ══ PRECISE LOCATION (listing form) ══
+// Builds the best possible address string from form fields and geocodes it.
+// Lister can drag the pin to fine-tune the exact spot.
+var _formMap=null;
+var _formMarker=null;
+var _formLat=null;
+var _formLng=null;
+
+function _buildGeocodeQuery(){
+  var building=(document.getElementById('lBn')||{}).value||'';
+  var street=(document.getElementById('lAddr')||{}).value||'';
+  var locality=(document.getElementById('lLo')||{}).value||'';
+  var city=(document.getElementById('lCy')||{}).value||'';
+  var pin=(document.getElementById('lPin')||{}).value||'';
+  var parts=[];
+  if(building.trim())parts.push(building.trim());
+  if(street.trim())parts.push(street.trim());
+  if(locality.trim())parts.push(locality.trim());
+  if(city.trim())parts.push(city.trim());
+  if(pin.trim())parts.push(pin.trim());
+  parts.push('India');
+  return {full:parts.join(', '),hasPin:!!pin.trim(),hasBuilding:!!building.trim()};
+}
+
+async function _geocodeOnce(query){
+  try{
+    var r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(query)+'&limit=1&countrycodes=in&addressdetails=1',{headers:{'Accept':'application/json'}});
+    var data=await r.json();
+    if(data&&data.length){
+      return {lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon),displayName:data[0].display_name||'',type:data[0].type||'',addressClass:data[0].class||''};
+    }
+  }catch(e){console.error('geocode fail',e);}
+  return null;
+}
+
+async function confirmListingLocation(){
+  var btn=document.getElementById('lLocateBtn');
+  var status=document.getElementById('lLocateStatus');
+  if(!btn||!status)return;
+  var q=_buildGeocodeQuery();
+  if(q.full.length<10){
+    status.innerHTML='<span style="color:var(--red);">Enter at least the city before locating.</span>';
+    return;
+  }
+  btn.disabled=true;
+  var origTxt=btn.innerHTML;
+  btn.innerHTML='<svg class="icn icn-sm" aria-hidden="true"><use href="#i-pin"/></svg> Locating…';
+  status.innerHTML='<span style="color:var(--mu);">Searching for the precise address…</span>';
+  // Try the most specific query first; fall back progressively
+  var attempts=[];
+  attempts.push(q.full);
+  // Without building name (sometimes confuses geocoder)
+  if(q.hasBuilding){
+    var withoutBuilding=q.full.split(', ').slice(1).join(', ');
+    attempts.push(withoutBuilding);
+  }
+  // Just locality + city + pin
+  var locality=(document.getElementById('lLo')||{}).value||'';
+  var city=(document.getElementById('lCy')||{}).value||'';
+  var pin=(document.getElementById('lPin')||{}).value||'';
+  if(locality&&city)attempts.push(locality+', '+city+(pin?', '+pin:'')+', India');
+  // Just pincode (pincode-level fallback)
+  if(pin)attempts.push(pin+', India');
+  // Just city
+  if(city)attempts.push(city+', India');
+  var result=null;
+  var matchedQuery='';
+  for(var i=0;i<attempts.length;i++){
+    result=await _geocodeOnce(attempts[i]);
+    if(result){matchedQuery=attempts[i];break;}
+  }
+  btn.disabled=false;
+  btn.innerHTML=origTxt;
+  if(!result){
+    status.innerHTML='<span style="color:var(--red);">Could not find that address. Please check the city/pincode and try again.</span>';
+    return;
+  }
+  _formLat=result.lat;
+  _formLng=result.lng;
+  // Render the map with a draggable marker
+  var wrap=document.getElementById('lLocateMapWrap');
+  if(wrap)wrap.style.display='';
+  setTimeout(function(){
+    if(!window.L){
+      status.innerHTML='<span style="color:var(--red);">Map library not loaded. Try again.</span>';
+      return;
+    }
+    if(_formMap){try{_formMap.remove();}catch(e){}_formMap=null;}
+    _formMap=L.map('lLocateMap',{scrollWheelZoom:false,zoomControl:true}).setView([_formLat,_formLng],17);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(_formMap);
+    _formMarker=L.marker([_formLat,_formLng],{draggable:true}).addTo(_formMap);
+    _formMarker.on('dragend',function(e){
+      var p=e.target.getLatLng();
+      _formLat=p.lat;_formLng=p.lng;
+      var st=document.getElementById('lLocateStatus');
+      if(st)st.innerHTML='<span style="color:var(--gr);">Pin updated. Coordinates saved.</span>';
+    });
+    setTimeout(function(){_formMap.invalidateSize();},300);
+  },120);
+  // Friendly status
+  var precision='locality-level';
+  if(result.type==='house'||result.addressClass==='building')precision='building-level';
+  else if(matchedQuery.indexOf(pin)>=0&&pin)precision='pincode-level';
+  status.innerHTML='<span style="color:var(--gr);">Located ('+precision+'). Drag the pin if it\'s not exactly on your building.</span>'
+    +'<div style="font-size:10.5px;color:var(--mu);margin-top:3px;line-height:1.45;">'+esc(result.displayName||matchedQuery)+'</div>';
+}
+
+function _resetFormMap(){
+  _formLat=null;_formLng=null;
+  if(_formMap){try{_formMap.remove();}catch(e){}_formMap=null;}
+  _formMarker=null;
+  var wrap=document.getElementById('lLocateMapWrap');if(wrap)wrap.style.display='none';
+  var st=document.getElementById('lLocateStatus');if(st)st.innerHTML='';
+}
+
 async function togFav(id,btn){
   if(!cu){openM('authM');return;}
   var idx=favs.indexOf(id);
@@ -1773,7 +1888,7 @@ async function viewL(id){
   if(!l){
     // Direct fetch by ID — handles deep links before cache is warm
     try{
-      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks,video_url').eq('id',id).eq('status','approved').single();
+      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks,video_url,pincode,street_address,latitude,longitude').eq('id',id).eq('status','approved').single();
       if(data&&!error)l=mapL(data);
     }catch(e){}
   }
@@ -1989,7 +2104,7 @@ async function viewL(id){
   // Init touch gestures on the image gallery
   _initGalleryTouch();
   // Show map for this listing's location
-  showListingMap(l.city,l.loc,l.title);
+  showListingMap(l);
   // Render similar properties horizontal scroll
   renderSimilarProperties(l);
   // Render price comparison panel (async — doesn't block initial render)
@@ -2210,59 +2325,96 @@ function _onTouchEnd(e){
 // then renders a Leaflet map with a marker. No API key needed.
 var _listingMap=null;
 
-async function showListingMap(city,locality,title){
+async function showListingMap(l){
   var wrap=document.getElementById('listingMapWrap');
   var mapEl=document.getElementById('listingMap');
   if(!wrap||!mapEl)return;
-  // Don't show map if no city
-  if(!city){wrap.style.display='none';return;}
-  // Build geocoding query — locality + city + India for best results
-  var query=((locality?locality+', ':'')+city+', India').trim();
-  try{
-    var resp=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(query)+'&limit=1&countrycodes=in',{
-      headers:{'Accept':'application/json'}
-    });
-    var results=await resp.json();
-    if(!results||!results.length){
-      // Retry with just city if locality didn't match
-      if(locality){
-        resp=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(city+', India')+'&limit=1&countrycodes=in',{
-          headers:{'Accept':'application/json'}
-        });
-        results=await resp.json();
-      }
+  if(!l||!l.city){wrap.style.display='none';return;}
+  var lat=null, lng=null, accuracy='locality';
+  // Best case: saved coordinates from the lister's pin-drop
+  if(l.lat!=null&&l.lng!=null&&!isNaN(Number(l.lat))&&!isNaN(Number(l.lng))){
+    lat=Number(l.lat);lng=Number(l.lng);accuracy='exact';
+  } else {
+    // Build the most specific geocode query we can with what we have
+    var attempts=[];
+    var parts=[];
+    if(l.building)parts.push(l.building);
+    if(l.streetAddress)parts.push(l.streetAddress);
+    if(l.loc)parts.push(l.loc);
+    parts.push(l.city);
+    if(l.pincode)parts.push(l.pincode);
+    parts.push('India');
+    attempts.push(parts.join(', '));
+    // Without building (sometimes confuses the geocoder)
+    if(l.building){
+      var p2=[];
+      if(l.streetAddress)p2.push(l.streetAddress);
+      if(l.loc)p2.push(l.loc);
+      p2.push(l.city);
+      if(l.pincode)p2.push(l.pincode);
+      p2.push('India');
+      attempts.push(p2.join(', '));
     }
-    if(!results||!results.length){wrap.style.display='none';return;}
-    var lat=parseFloat(results[0].lat);
-    var lng=parseFloat(results[0].lon);
-    // Show the map container
-    wrap.style.display='';
-    // Destroy previous map instance if exists
-    if(_listingMap){try{_listingMap.remove();}catch(e){}_listingMap=null;}
-    // Wait for Leaflet to be available
-    if(!window.L){wrap.style.display='none';return;}
-    // Small delay for DOM to be ready
-    setTimeout(function(){
-      _listingMap=L.map('listingMap',{
-        scrollWheelZoom:false,
-        zoomControl:true,
-        dragging:true,
-        attributionControl:true
-      }).setView([lat,lng],14);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-        maxZoom:19,
-        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
-      }).addTo(_listingMap);
-      // Custom marker with listing title
-      L.marker([lat,lng]).addTo(_listingMap)
-        .bindPopup('<strong>'+esc(title)+'</strong><br/>'+esc((locality?locality+', ':'')+city))
-        .openPopup();
-      // Fix Leaflet rendering issue in modals (tiles not loading fully)
-      setTimeout(function(){_listingMap.invalidateSize();},300);
-    },100);
-  }catch(e){
-    wrap.style.display='none';
+    // Locality + city + pin
+    if(l.loc)attempts.push(l.loc+', '+l.city+(l.pincode?', '+l.pincode:'')+', India');
+    // Pincode alone
+    if(l.pincode)attempts.push(l.pincode+', India');
+    // City alone
+    attempts.push(l.city+', India');
+    try{
+      var matchedAt=-1;
+      for(var i=0;i<attempts.length;i++){
+        var resp=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(attempts[i])+'&limit=1&countrycodes=in',{headers:{'Accept':'application/json'}});
+        var results=await resp.json();
+        if(results&&results.length){
+          lat=parseFloat(results[0].lat);
+          lng=parseFloat(results[0].lon);
+          matchedAt=i;
+          break;
+        }
+      }
+      if(matchedAt<0){wrap.style.display='none';return;}
+      // Determine accuracy from which attempt matched
+      if(matchedAt===0&&l.building)accuracy='building-attempt';
+      else if(l.pincode&&matchedAt<=2)accuracy='pincode';
+      else accuracy='locality';
+    }catch(e){
+      wrap.style.display='none';return;
+    }
   }
+  // Show map container
+  wrap.style.display='';
+  if(_listingMap){try{_listingMap.remove();}catch(e){}_listingMap=null;}
+  if(!window.L){wrap.style.display='none';return;}
+  // Higher zoom for exact pins, lower for fallbacks
+  var zoom=accuracy==='exact'?18:accuracy==='pincode'?16:14;
+  setTimeout(function(){
+    _listingMap=L.map('listingMap',{
+      scrollWheelZoom:false,
+      zoomControl:true,
+      dragging:true,
+      attributionControl:true
+    }).setView([lat,lng],zoom);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+    }).addTo(_listingMap);
+    var popupHTML='<strong>'+esc(l.title)+'</strong><br/>'
+      +(l.building?esc(l.building)+'<br/>':'')
+      +esc((l.loc?l.loc+', ':'')+l.city)
+      +(l.pincode?' &middot; '+esc(l.pincode):'');
+    L.marker([lat,lng]).addTo(_listingMap)
+      .bindPopup(popupHTML)
+      .openPopup();
+    setTimeout(function(){_listingMap.invalidateSize();},300);
+    // Add accuracy badge for transparency
+    var accuracyLabel=accuracy==='exact'?'Pinned by lister':accuracy==='pincode'?'Pincode-level':accuracy==='building-attempt'?'Address-matched':'Locality-level';
+    var accColor=accuracy==='exact'?'var(--gr)':'var(--mu)';
+    var note=document.createElement('div');
+    note.style.cssText='position:absolute;bottom:6px;left:6px;background:rgba(255,255,255,.92);padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;color:'+accColor+';z-index:400;font-family:DM Sans,sans-serif;';
+    note.textContent=accuracyLabel;
+    mapEl.appendChild(note);
+  },100);
 }
 
 // Clean up map when modal closes
@@ -2915,6 +3067,34 @@ async function editListing(id){
   setWaterFromString(l.water||'');
   _landmarks=l.landmarks?l.landmarks.slice():[];
   renderLandmarks();
+  // Precise location prefill
+  setVal('lPin',l.pincode||'');
+  setVal('lAddr',l.streetAddress||'');
+  _formLat=l.lat!=null?Number(l.lat):null;
+  _formLng=l.lng!=null?Number(l.lng):null;
+  // If we have coords, render the map immediately so the lister sees the saved pin
+  if(_formLat!=null&&_formLng!=null){
+    var wrap=document.getElementById('lLocateMapWrap');
+    if(wrap)wrap.style.display='';
+    setTimeout(function(){
+      if(!window.L)return;
+      if(_formMap){try{_formMap.remove();}catch(e){}_formMap=null;}
+      _formMap=L.map('lLocateMap',{scrollWheelZoom:false,zoomControl:true}).setView([_formLat,_formLng],17);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(_formMap);
+      _formMarker=L.marker([_formLat,_formLng],{draggable:true}).addTo(_formMap);
+      _formMarker.on('dragend',function(e){
+        var p=e.target.getLatLng();
+        _formLat=p.lat;_formLng=p.lng;
+        var st=document.getElementById('lLocateStatus');
+        if(st)st.innerHTML='<span style="color:var(--gr);">Pin updated. Coordinates saved.</span>';
+      });
+      setTimeout(function(){_formMap.invalidateSize();},300);
+      var st=document.getElementById('lLocateStatus');
+      if(st)st.innerHTML='<span style="color:var(--gr);">Saved location loaded. Drag the pin to fine-tune.</span>';
+    },200);
+  } else {
+    _resetFormMap();
+  }
   setVal('lFn',l.furnish);
   setVal('lAv',l.avail);
   // New fields: separate areas + age + furnishing details
@@ -3020,6 +3200,10 @@ async function doSub(){
     water:_selWater.join(','),
     backup:getVal('lBackup'),
     landmarks:_landmarks.slice(),
+    pincode:getVal('lPin'),
+    streetAddress:getVal('lAddr'),
+    lat:_formLat,
+    lng:_formLng,
     furnish:getVal('lFn'),
     avail:lMode==='rent'?getVal('lAv'):'',
     owner:owner,contact:contact,agency:cu?cu.agency||'':'',
@@ -3067,7 +3251,7 @@ async function doSub(){
     if(error){toast('Failed to update listing: '+error.message,'e');return;}
     _clr('l');
     closeM('addM');resetAddModal();
-    ['lTl','lBn','lCy','lLo','lAr','lArC','lArS','lAge','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFlNo','lFlTot','lFc','lFn','lComp','lTxn','lOwn','lBackup'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['lTl','lBn','lCy','lLo','lAr','lArC','lArS','lAge','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFlNo','lFlTot','lFc','lFn','lComp','lTxn','lOwn','lBackup','lPin','lAddr'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
     upImgs=[];selTags=[];selAmens=[];
     toast('Listing updated! It will be re-reviewed by admin. <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg>');
     if(cu&&(cu.role==='broker'||cu.role==='owner'||cu.role==='builder'))await renderLister();
@@ -3085,7 +3269,7 @@ async function doSub(){
       return;
     }
     closeM('addM');resetAddModal();
-    ['lTl','lBn','lCy','lLo','lAr','lArC','lArS','lAge','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFlNo','lFlTot','lFc','lFn','lComp','lTxn','lOwn','lBackup'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var lBdSel=document.getElementById('lBd');if(lBdSel)lBdSel.selectedIndex=1;var lBtSel=document.getElementById('lBt');if(lBtSel)lBtSel.selectedIndex=0;
+    ['lTl','lBn','lCy','lLo','lAr','lArC','lArS','lAge','lRt','lDp','lPr','lPrMin','lPrMax','lRe','lOw','lCt','lDs','lFl','lFlNo','lFlTot','lFc','lFn','lComp','lTxn','lOwn','lBackup','lPin','lAddr'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});var lBdSel=document.getElementById('lBd');if(lBdSel)lBdSel.selectedIndex=1;var lBtSel=document.getElementById('lBt');if(lBtSel)lBtSel.selectedIndex=0;
     upImgs=[];selTags=[];selAmens=[];
     toast('Submitted! Admin reviews within 24 hrs. <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg>');
     if(cu&&(cu.role==='broker'||cu.role==='owner'||cu.role==='builder'))await renderLister();
@@ -3488,8 +3672,10 @@ function _wizValidate(step){
   if(step===2){
     var title=(document.getElementById('lTl').value||'').trim();
     var city=(document.getElementById('lCy').value||'').trim();
+    var pin=(document.getElementById('lPin').value||'').trim();
     if(title.length<3){showErr('Please enter a property title (at least 3 characters).');return false;}
     if(city.length<2){showErr('Please enter a city.');return false;}
+    if(pin&&!/^[0-9]{6}$/.test(pin)){showErr('PIN code must be 6 digits.');return false;}
     return true;
   }
   if(step===3){
@@ -4504,6 +4690,7 @@ function openM(id){
       _selWater=[];setWaterFromString('');
       _landmarks=[];renderLandmarks();
       _uploadingVideo=null;_existingVideoUrl='';renderVideoPreview();
+      _resetFormMap();
       setLM(cu.role==='builder'?'project':'rent');
       var lo=document.getElementById('lOw'),lc=document.getElementById('lCt'),le=document.getElementById('lErr');
       if(lo)lo.value=cu.agency?cu.name+' – '+esc(cu.agency):cu.name;

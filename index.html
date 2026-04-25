@@ -784,6 +784,21 @@
         <div class="fg s2"><label class="flbl">Building / Society Name <span style="color:var(--mu);font-weight:400;">(optional)</span></label><input class="fi" type="text" id="lBn" placeholder="e.g. Lodha World One, Prestige Falcon City"/></div>
         <div class="fg"><label class="flbl">City *</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lCy" name="listing-city" placeholder="Mumbai" autocomplete="new-password"/><div class="ac-list" id="ac-lCy"></div></div></div>
         <div class="fg"><label class="flbl">Locality</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lLo" placeholder="Andheri West" autocomplete="off"/><div class="ac-list" id="ac-lLo"></div></div></div>
+        <div class="fg"><label class="flbl">Street / Road <span style="color:var(--mu);font-weight:400;font-size:11px;">(optional, for map accuracy)</span></label><input class="fi" type="text" id="lAddr" placeholder="e.g. Linking Road"/></div>
+        <div class="fg"><label class="flbl">PIN Code <span class="info-bubble" data-tip="6-digit PIN code. This dramatically improves map accuracy — without it, the map only shows the general locality.">i</span></label><input class="fi" type="text" id="lPin" placeholder="400053" maxlength="6" inputmode="numeric" pattern="[0-9]{6}"/></div>
+        <div class="fg s2">
+          <button type="button" id="lLocateBtn" onclick="confirmListingLocation()" style="background:var(--t);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;justify-content:center;width:auto;">
+            <svg class="icn icn-sm" aria-hidden="true"><use href="#i-pin"/></svg>
+            Locate &amp; pin on map
+          </button>
+          <div id="lLocateStatus" style="font-size:11px;color:var(--mu);margin-top:6px;line-height:1.5;"></div>
+          <div id="lLocateMapWrap" style="display:none;margin-top:10px;border-radius:10px;overflow:hidden;border:1px solid var(--sa);">
+            <div id="lLocateMap" style="height:280px;width:100%;"></div>
+            <div style="padding:8px 12px;background:var(--cr);font-size:11px;color:var(--mu);line-height:1.55;">
+              <strong style="color:var(--ink);">Tip:</strong> drag the pin if it's not exactly on your building. The pinned position is what buyers will see.
+            </div>
+          </div>
+        </div>
         <div class="fg"><label class="flbl">Property Type *</label><select class="fi" id="lTp"><option>Apartment</option><option>Builder Floor</option><option>Independent House</option><option>Villa</option><option>1 RK / Studio</option><option>Plot</option><option>Farm House</option><option>Serviced Apartment</option><option>PG / Room</option><option>Other</option></select></div>
         <div class="fg"><label class="flbl">Bedrooms *</label><select class="fi" id="lBd"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6+</option></select></div>
       </div>
