@@ -1308,7 +1308,7 @@ function pCard(l){
       +locHTML
       +specsHTML
       +'<div class="pc-price-row">'+priceHTML+'</div>'
-      +(l.tags.length?'<div class="pc-tags">'+l.tags.slice(0,3).map(function(t){return '<span class="pc-tag">'+esc(t)+'</span>';}).join('')+'</div>':'')
+      +'<div class="pc-tags">'+(l.tags.length?l.tags.slice(0,3).map(function(t){return '<span class="pc-tag">'+esc(t)+'</span>';}).join(''):'')+'</div>'
     +'</div>'
     +footerHTML
   +'</div></a>';

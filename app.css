@@ -222,10 +222,11 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .sim-price.buy{color:var(--g);}
 
 /* Property card anchor wrapper — opens in new tab natively */
-.pc-link{display:block;text-decoration:none;color:inherit;cursor:pointer;}
+.pc-link{display:flex;flex-direction:column;text-decoration:none;color:inherit;cursor:pointer;height:100%;}
 .pc-link:hover{text-decoration:none;color:inherit;}
 .pc-link:focus{outline:none;}
 .pc-link:focus-visible{outline:2px solid var(--t);outline-offset:2px;border-radius:12px;}
+.pc-link>.pc{flex:1;display:flex;flex-direction:column;}
 .sim-link{text-decoration:none;color:inherit;flex:0 0 220px;scroll-snap-align:start;}
 .sim-link:hover,.sim-link:focus{text-decoration:none;color:inherit;}
 
@@ -347,23 +348,23 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .pc-badge.verified{background:#e4f5ea;color:var(--gr);}
 .pc-badge.rera{background:var(--tl);color:var(--td);}
 .pc-badge .icn{width:11px;height:11px;}
-/* Location row (building + locality + city) */
-.pc-loc{font-size:12px;color:var(--mu);display:flex;align-items:flex-start;gap:4px;line-height:1.4;overflow:hidden;}
-.pc-loc .icn{width:13px;height:13px;flex-shrink:0;margin-top:2px;color:var(--t);}
+/* Location row (building + locality + city) — clamp to 2 lines for consistent card height */
+.pc-loc{font-size:12px;color:var(--mu);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;min-height:calc(12px * 1.4 * 2);}
+.pc-loc .icn{width:13px;height:13px;flex-shrink:0;margin-right:3px;color:var(--t);vertical-align:-2px;}
 .pc-loc strong{color:var(--ink);font-weight:600;}
-/* Specs row (BHK · sqft · type · furnishing) */
-.pc-specs{font-size:12px;color:var(--ink);line-height:1.5;display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+/* Specs row (BHK · sqft · type · furnishing) — clamp to 1 line */
+.pc-specs{font-size:12px;color:var(--ink);line-height:1.5;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .pc-specs strong{color:var(--ink);font-weight:700;}
 .pc-specs .pc-dot{color:var(--mu);opacity:.6;font-weight:700;}
-/* Price row — the big focal point */
-.pc-price-row{display:flex;align-items:baseline;gap:10px;padding-top:4px;border-top:1px dashed var(--sa);margin-top:auto;flex-wrap:wrap;}
-.pc-price{font-family:'DM Sans',sans-serif;font-size:20px;font-weight:800;color:var(--t);line-height:1.1;}
+/* Price row — the big focal point. Single line, no wrap. */
+.pc-price-row{display:flex;align-items:baseline;gap:10px;padding-top:8px;border-top:1px dashed var(--sa);margin-top:auto;flex-wrap:nowrap;overflow:hidden;}
+.pc-price{font-family:'DM Sans',sans-serif;font-size:20px;font-weight:800;color:var(--t);line-height:1.1;white-space:nowrap;}
 .pc-price.buy{color:var(--g);}
 .pc-price-unit{font-size:12px;font-weight:600;color:var(--mu);margin-left:2px;}
-.pc-deposit{font-size:11px;color:var(--mu);font-weight:500;}
-/* Tags */
-.pc-tags{display:flex;gap:5px;flex-wrap:wrap;}
-.pc-tag{font-size:10px;padding:2px 8px;border-radius:50px;background:var(--cr);color:var(--td);font-weight:600;border:1px solid var(--sa);}
+.pc-deposit{font-size:11px;color:var(--mu);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Tags — single line, ellipsis-clamped, fixed height */
+.pc-tags{display:flex;gap:5px;flex-wrap:nowrap;overflow:hidden;height:22px;align-items:center;}
+.pc-tag{font-size:10px;padding:2px 8px;border-radius:50px;background:var(--cr);color:var(--td);font-weight:600;border:1px solid var(--sa);flex-shrink:0;white-space:nowrap;}
 /* Footer actions */
 .pc-footer{display:flex;border-top:1px solid var(--sa);}
 .pc-btn-sec,.pc-btn-pri,.pc-btn-report{padding:11px 8px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s;}
