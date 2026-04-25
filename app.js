@@ -4877,10 +4877,27 @@ function toast(msg,type){
 }
 
 // ══ QUICK ACTION HELPERS ══
-function qaNewProjects(){_projectsOnly=true;bldF();setBMode('buy');go('browse');}
-function qaPG(){fRT=['PG / Room'];bldF();setBMode('rent');go('browse');}
-function qaRERA(){fRer=true;bldF();setBMode('buy');go('browse');}
-function qaVerified(){fVer=true;bldF();setBMode('rent');go('browse');}
+// Reset all browse filters back to defaults — used by QA buttons so that
+// each click produces a clean, focused result (no filter stacking from prior clicks).
+function _resetBrowseFilters(){
+  fRT=[];fRB=[];fRF=[];fRA=[];
+  fBT=[];fBB=[];fBF=[];fBA=[];fBPo=[];fBST=[];fBFc=[];fBFl=[];
+  fVer=false;fRer=false;
+  _projectsOnly=false;
+  _browseShown=0;_browseFiltered=[];
+  // Clear filter sidebar input fields too
+  ['fCity','fLoc','fRmn','fRmx','fAv','fBCity','fBLoc','fBmn','fBmx','fAmn','fAmx','bSearch'].forEach(function(id){
+    var e=document.getElementById(id);
+    if(!e)return;
+    if(e.tagName==='SELECT')e.selectedIndex=0;
+    else e.value='';
+  });
+}
+
+function qaNewProjects(){_resetBrowseFilters();_projectsOnly=true;bldF();setBMode('buy');go('browse');}
+function qaPG(){_resetBrowseFilters();fRT=['PG / Room'];bldF();setBMode('rent');go('browse');}
+function qaRERA(){_resetBrowseFilters();fRer=true;bldF();setBMode('buy');go('browse');}
+function qaVerified(){_resetBrowseFilters();fVer=true;bldF();setBMode('rent');go('browse');}
 
 function toggleSMore(mode){
   var btn=document.getElementById('smore-'+mode);

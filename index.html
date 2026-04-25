@@ -62,7 +62,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="app.css?v=20260425-170420"/>
+<link rel="stylesheet" href="app.css?v=20260425-171715"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -82,6 +82,13 @@
     <symbol id="i-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
       <path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
       <path d="M19 14v3M17.5 15.5h3"/>
+    </symbol>
+    <symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="2" width="7" height="20" rx="0.5"/>
+      <rect x="13" y="7" width="7" height="15" rx="0.5"/>
+      <path d="M6.5 6h2M6.5 9h2M6.5 12h2M6.5 15h2M6.5 18h2"/>
+      <path d="M15.5 11h2M15.5 14h2M15.5 17h2"/>
+      <path d="M4 22h17"/>
     </symbol>
     <symbol id="i-bed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 18v-7a2 2 0 0 1 2-2h7v7M3 18h18v-5a2 2 0 0 0-2-2H12"/>
@@ -243,16 +250,16 @@
 <!-- QUICK ACTION STRIP - scrollable icon row like 99acres -->
 <div id="qaStrip" style="background:#fff;border-bottom:1px solid var(--sa);overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
   <div style="display:flex;width:100%;justify-content:space-between;padding:0;max-width:1400px;margin:0 auto;">
-    <button class="qa-btn" onclick="setBMode('buy');go('browse')" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;" onmouseover="this.style.borderBottomColor='var(--t)';this.querySelector('.qa-icn').style.color='var(--td)'" onmouseout="this.style.borderBottomColor='transparent';this.querySelector('.qa-icn').style.color='var(--t)'">
+    <button class="qa-btn" onclick="_resetBrowseFilters();setBMode('buy');go('browse')" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;" onmouseover="this.style.borderBottomColor='var(--t)';this.querySelector('.qa-icn').style.color='var(--td)'" onmouseout="this.style.borderBottomColor='transparent';this.querySelector('.qa-icn').style.color='var(--t)'">
       <svg class="icn icn-lg qa-icn" aria-hidden="true"><use href="#i-buy"/></svg>
       <span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;letter-spacing:.2px;">Buy</span>
     </button>
-    <button class="qa-btn" onclick="setBMode('rent');go('browse')" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;" onmouseover="this.style.borderBottomColor='var(--t)';this.querySelector('.qa-icn').style.color='var(--td)'" onmouseout="this.style.borderBottomColor='transparent';this.querySelector('.qa-icn').style.color='var(--t)'">
+    <button class="qa-btn" onclick="_resetBrowseFilters();setBMode('rent');go('browse')" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;" onmouseover="this.style.borderBottomColor='var(--t)';this.querySelector('.qa-icn').style.color='var(--td)'" onmouseout="this.style.borderBottomColor='transparent';this.querySelector('.qa-icn').style.color='var(--t)'">
       <svg class="icn icn-lg qa-icn" aria-hidden="true"><use href="#i-rent"/></svg>
       <span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;letter-spacing:.2px;">Rent</span>
     </button>
     <button class="qa-btn" onclick="qaNewProjects()" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;" onmouseover="this.style.borderBottomColor='var(--t)';this.querySelector('.qa-icn').style.color='var(--td)'" onmouseout="this.style.borderBottomColor='transparent';this.querySelector('.qa-icn').style.color='var(--t)'">
-      <svg class="icn icn-lg qa-icn" aria-hidden="true"><use href="#i-sparkle"/></svg>
+      <svg class="icn icn-lg qa-icn" aria-hidden="true"><use href="#i-building"/></svg>
       <span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;letter-spacing:.2px;">New Projects</span>
     </button>
     <button class="qa-btn" onclick="qaPG()" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;" onmouseover="this.style.borderBottomColor='var(--t)';this.querySelector('.qa-icn').style.color='var(--td)'" onmouseout="this.style.borderBottomColor='transparent';this.querySelector('.qa-icn').style.color='var(--t)'">
@@ -266,14 +273,6 @@
     <button class="qa-btn" onclick="openM('authM');setAT('reg');setRR('broker')" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;" onmouseover="this.style.borderBottomColor='var(--t)';this.querySelector('.qa-icn').style.color='var(--td)'" onmouseout="this.style.borderBottomColor='transparent';this.querySelector('.qa-icn').style.color='var(--t)'">
       <svg class="icn icn-lg qa-icn" aria-hidden="true"><use href="#i-broker"/></svg>
       <span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;letter-spacing:.2px;">Join as Broker</span>
-    </button>
-    <button class="qa-btn" onclick="qaRERA()" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;" onmouseover="this.style.borderBottomColor='var(--gr)';this.querySelector('.qa-icn').style.color='var(--gr)'" onmouseout="this.style.borderBottomColor='transparent';this.querySelector('.qa-icn').style.color='var(--gr)'">
-      <svg class="icn icn-lg qa-icn" aria-hidden="true" style="color:var(--gr);"><use href="#i-rera"/></svg>
-      <span style="font-size:12px;font-weight:600;color:var(--gr);font-family:'DM Sans',sans-serif;letter-spacing:.2px;">RERA Listed</span>
-    </button>
-    <button class="qa-btn" onclick="qaVerified()" style="display:flex;flex:1;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;" onmouseover="this.style.borderBottomColor='var(--t)';this.querySelector('.qa-icn').style.color='var(--td)'" onmouseout="this.style.borderBottomColor='transparent';this.querySelector('.qa-icn').style.color='var(--t)'">
-      <svg class="icn icn-lg qa-icn" aria-hidden="true"><use href="#i-shield-check"/></svg>
-      <span style="font-size:12px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif;letter-spacing:.2px;">Verified</span>
     </button>
   </div>
 </div>
@@ -419,9 +418,9 @@
     <div class="sec-tag">Stories</div>
     <h2>What families say</h2>
     <div class="test-grid">
-      <div class="test"><q>After being rejected 6 times for my religion, Ek Makān was the first place I found a home without a single awkward question.</q><div class="test-av"><div class="av-circle" style="background:var(--tl);">👨</div><div><div class="av-name">Arshad Hussain</div><div class="av-loc">Mumbai · Renter</div></div></div></div>
-      <div class="test"><q>I listed here because I believe everyone deserves a home. The platform made it so easy and my tenants have been wonderful.</q><div class="test-av"><div class="av-circle" style="background:var(--gl);">👩</div><div><div class="av-name">Kavitha Reddy</div><div class="av-loc">Hyderabad · Owner</div></div></div></div>
-      <div class="test"><q>I found a RERA-registered 3BHK near a masjid with a gym in under 10 minutes. This platform understands what we actually need.</q><div class="test-av"><div class="av-circle" style="background:#f0eaf8;">👨</div><div><div class="av-name">Salman Shaikh</div><div class="av-loc">Bengaluru · Buyer</div></div></div></div>
+      <div class="test"><q>I had been turned down repeatedly by other listings for personal reasons that had nothing to do with my ability to pay. On Ek Makān, I found a home in days — without a single awkward conversation.</q><div class="test-av"><div class="av-name-only">Arshad Hussain</div><div class="av-loc">Mumbai · Renter</div></div></div>
+      <div class="test"><q>I listed here because I believe everyone deserves a home. The platform made it so easy and my tenants have been wonderful.</q><div class="test-av"><div class="av-name-only">Kavitha Reddy</div><div class="av-loc">Hyderabad · Owner</div></div></div>
+      <div class="test"><q>I found a RERA-registered 3 BHK with the amenities I needed in under 10 minutes. This platform understands what we actually look for.</q><div class="test-av"><div class="av-name-only">Salman Shaikh</div><div class="av-loc">Bengaluru · Buyer</div></div></div>
     </div>
   </div>
 
@@ -430,10 +429,9 @@
     <div class="sec-tag">Join Ek Makān</div>
     <h2>Renter, buyer, owner, or broker?</h2>
     <div class="join-grid">
-      <div class="jc" onclick="openM('authM');setAT('reg');setRR('user')"><div class="ji"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-home"/></svg></div><h3>Looking for a Home</h3><p>Rent or buy. Browse, filter, save, and contact listings anonymously. Free forever.</p><button class="btn btn-sm btn-w">Sign Up — Rent or Buy</button></div>
-      <div class="jc" onclick="openM('authM');setAT('reg');setRR('owner')"><div class="ji"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-owner"/></svg></div><h3>Property Owner</h3><p>List directly — no broker needed. Reach verified renters and buyers.</p><button class="btn btn-sm btn-g">List as Owner</button></div>
-      <div class="jc" onclick="openM('authM');setAT('reg');setRR('broker')"><div class="ji"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-broker"/></svg></div><h3>Broker / Agent</h3><p>Manage listings with photos, dashboard and lead tracking.</p><button class="btn btn-sm btn-p" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);">Register as Broker</button></div>
-      <div class="jc" onclick="setBMode('buy');go('browse')"><div class="ji"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-key"/></svg></div><h3>Buying a Property?</h3><p>Advanced buy filters: RERA, possession, facing direction, floor preference and more.</p><button class="btn btn-sm" style="background:var(--g);">Browse for Sale</button></div>
+      <div class="jc" onclick="openM('authM');setAT('reg');setRR('user')"><div class="ji"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-home"/></svg></div><h3>Looking for a Home</h3><p>Rent or buy. Browse, filter, save and contact listings — all in one place. Free forever.</p><button class="btn btn-sm">Sign Up — Free</button></div>
+      <div class="jc" onclick="openM('authM');setAT('reg');setRR('owner')"><div class="ji"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-owner"/></svg></div><h3>Property Owner</h3><p>List directly — no broker needed. Reach renters and buyers actively searching in your area.</p><button class="btn btn-sm">List as Owner</button></div>
+      <div class="jc" onclick="openM('authM');setAT('reg');setRR('broker')"><div class="ji"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-broker"/></svg></div><h3>Broker / Agent</h3><p>Manage your inventory, track leads with our dashboard, and grow your business.</p><button class="btn btn-sm">Register as Broker</button></div>
     </div>
   </div>
 
@@ -957,7 +955,7 @@
 <footer>
   <div style="display:flex;flex-direction:column;gap:6px;">
     <div class="fl"><span>Ek</span> Makān</div>
-    <div style="font-size:12px;color:rgba(255,255,255,.4);max-width:320px;line-height:1.6;">India’s first inclusive property platform — connecting all communities with verified, religion-neutral homes.</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.4);max-width:340px;line-height:1.6;">India's inclusive property platform — open to everyone, with transparent listings and zero hidden discrimination.</div>
   </div>
   <div style="display:flex;gap:40px;flex-wrap:wrap;">
     <div>
@@ -1013,7 +1011,7 @@
       </div>
       <div style="font-size:14px;line-height:1.8;color:var(--ink);">
         <p style="font-size:16px;font-family:'Playfair Display',serif;color:var(--td);margin-bottom:16px;line-height:1.5;">We started Ek Makān because finding a home in India shouldn't depend on your background.</p>
-        <p style="margin-bottom:14px;">Across India's cities, countless families face silent rejection when searching for a place to live — turned away by landlords or brokers based on who they are, not what kind of tenants or buyers they would be. This isn't just unfair. It is a quiet crisis that affects millions of families every year.</p>
+        <p style="margin-bottom:14px;">Across India's cities, countless families struggle to find a home not because they cannot pay, but because of who they are. Listings advertised as available are quietly withdrawn, calls are dodged, and tours mysteriously fall through. Ek Makān was built to put an end to this — what you see on our platform is what you get, with no hidden filters between you and the home.</p>
         <p style="margin-bottom:14px;">Ek Makān was built to change that. We are India's first property platform built on a single founding principle: every family deserves a home, and every home should be open to every family.</p>
         <h3 style="font-family:'Playfair Display',serif;font-size:18px;color:var(--td);margin:24px 0 10px;">What makes us different</h3>
         <p style="margin-bottom:14px;">Every listing on Ek Makān comes from an owner or broker who has explicitly agreed to our Inclusion Charter — a commitment that their property is open to all prospective residents without discrimination of any kind. This isn't just a checkbox. It is a verified promise.</p>
@@ -1274,11 +1272,11 @@
   </div>
 </div>
 
-<script src="app.js?v=20260425-170420" defer></script>
+<script src="app.js?v=20260425-171715" defer></script>
 <script>
 // Build version stamp — replaced by build script. Used to detect when a new
 // deploy has landed so we can auto-reload the page for users.
-window.__BUILD_VERSION__ = '20260425-170420';
+window.__BUILD_VERSION__ = '20260425-171715';
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){

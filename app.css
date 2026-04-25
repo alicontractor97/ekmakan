@@ -398,13 +398,21 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .test-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;}
 .test{background:var(--wh);border-radius:13px;padding:20px;border:1px solid var(--sa);}
 .test q{display:block;font-size:13px;line-height:1.7;margin-bottom:14px;color:var(--ink);font-style:italic;}
-.test-av{display:flex;align-items:center;gap:10px;}
-.av-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.av-name{font-size:13px;font-weight:700;}
+.test-av{display:flex;flex-direction:column;gap:2px;}
+.av-name-only{font-size:13.5px;font-weight:700;color:var(--ink);font-family:'DM Sans',sans-serif;}
 .av-loc{font-size:11px;color:var(--mu);}
+/* legacy classes — kept so any leftover usage doesn't break */
+.av-circle{display:none;}
+.av-name{font-size:13px;font-weight:700;}
 
-/* JOIN CARDS */
-.join-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;}
+/* JOIN CARDS — uniform height, uniform background, uniform button width */
+.join-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;align-items:stretch;}
+.jc{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:flex-start;text-align:left;}
+.jc h3{flex:0 0 auto;}
+.jc p{flex:1 1 auto;}
+.jc .btn{width:100%;margin-top:auto;background:rgba(255,255,255,.18)!important;border:1px solid rgba(255,255,255,.32)!important;color:#fff!important;}
+.jc .btn:hover{background:rgba(255,255,255,.28)!important;}
+.jc .ji{color:rgba(255,255,255,.85);}
 .jc{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:22px;cursor:pointer;transition:background .2s;}
 .jc:hover{background:rgba(255,255,255,.13);}
 .jc .ji{font-size:28px;margin-bottom:10px;}
