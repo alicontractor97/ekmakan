@@ -1439,7 +1439,7 @@ async function renderBrowse(){
     var c=gv('fCity'),lo=gv('fLoc'),mn=Number(gv('fRmn'))||0,mx=Number(gv('fRmx'))||Infinity;
     var av=gv('fAv');
     if(c){ls=ls.filter(function(l){return l.city.toLowerCase().indexOf(c.toLowerCase())>=0;});hasAnyFilters=true;}
-    if(lo){ls=ls.filter(function(l){return l.loc.toLowerCase().indexOf(lo.toLowerCase())>=0;});hasAnyFilters=true;}
+    if(lo){ls=ls.filter(function(l){return _matchLocality(l.loc,lo);});hasAnyFilters=true;}
     if(mn){ls=ls.filter(function(l){return l.rent>=mn;});hasAnyFilters=true;}
     if(mx!==Infinity){ls=ls.filter(function(l){return l.rent<=mx;});hasAnyFilters=true;}
     if(av){ls=ls.filter(function(l){return l.avail===av;});hasAnyFilters=true;}
@@ -1453,7 +1453,7 @@ async function renderBrowse(){
     var mx2=mx2raw===-1?Infinity:(mx2raw||Infinity);
     var amn=Number(gv('fAmn'))||0,amx=Number(gv('fAmx'))||Infinity;
     if(c2){ls=ls.filter(function(l){return l.city.toLowerCase().indexOf(c2.toLowerCase())>=0;});hasAnyFilters=true;}
-    if(lo2){ls=ls.filter(function(l){return l.loc.toLowerCase().indexOf(lo2.toLowerCase())>=0;});hasAnyFilters=true;}
+    if(lo2){ls=ls.filter(function(l){return _matchLocality(l.loc,lo2);});hasAnyFilters=true;}
     if(mn2){ls=ls.filter(function(l){return l.price>=mn2;});hasAnyFilters=true;}
     if(mx2!==Infinity){ls=ls.filter(function(l){return l.price<=mx2;});hasAnyFilters=true;}
     if(amn){ls=ls.filter(function(l){return l.area>=amn;});hasAnyFilters=true;}
@@ -4921,6 +4921,41 @@ function toast(msg,type){
 // ══ QUICK ACTION HELPERS ══
 // Reset all browse filters back to defaults — used by QA buttons so that
 // each click produces a clean, focused result (no filter stacking from prior clicks).
+// Locality match — every token in the query must appear as a whole word in the listing's locality.
+// "Andheri" matches both "Andheri East" and "Andheri West".
+// "Andheri East" matches ONLY "Andheri East" (not "Andheri West").
+// Handles directional shorthand: "E" → "east", "W" → "west", "Andheri-East" → "Andheri East".
+function _matchLocality(listingLoc, query){
+  if(!query)return true;
+  if(!listingLoc)return false;
+  function normalize(s){
+    return String(s)
+      .toLowerCase()
+      // Replace dashes/punctuation with spaces so "Andheri-East" matches "Andheri East"
+      .replace(/[\-\/.,()]+/g,' ')
+      // Collapse whitespace
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+  function expandTokens(tokens){
+    var dirMap={'e':'east','w':'west','n':'north','s':'south','ne':'northeast','nw':'northwest','se':'southeast','sw':'southwest'};
+    return tokens.map(function(t){return dirMap[t]||t;});
+  }
+  var locNorm=normalize(listingLoc);
+  var locTokens=expandTokens(locNorm.split(' ').filter(Boolean));
+  var qNorm=normalize(query);
+  var qTokens=expandTokens(qNorm.split(' ').filter(Boolean));
+  if(!qTokens.length)return true;
+  // Every query token must match a locality token (substring of a single token, not across)
+  return qTokens.every(function(qt){
+    return locTokens.some(function(lt){
+      return lt.indexOf(qt)>=0;
+    });
+  });
+}
+
+// Reset all browse filters back to defaults — used by QA buttons so that
+// each click produces a clean, focused result (no filter stacking from prior clicks).
 function _resetBrowseFilters(){
   fRT=[];fRB=[];fRF=[];fRA=[];
   fBT=[];fBB=[];fBF=[];fBA=[];fBPo=[];fBST=[];fBFc=[];fBFl=[];
@@ -5055,6 +5090,67 @@ var INDIAN_CITIES=[
   // Old Mumbai South markets / Bhendi Bazaar surrounds
   {n:'Pydhonie',s:'Mumbai'},{n:'Umarkhadi',s:'Mumbai'},{n:'Wadi Bunder',s:'Mumbai'},
   {n:'Mohammed Ali Road',s:'Mumbai'},{n:'Null Bazaar',s:'Mumbai'},{n:'Bhuleshwar',s:'Mumbai'},
+  // ── Additional gaps — round 3 ──
+  // Bare-name parents (so autocomplete suggests them; matcher logic covers East/West)
+  {n:'Andheri',s:'Mumbai'},{n:'Bandra',s:'Mumbai'},{n:'Khar',s:'Mumbai'},
+  {n:'Santacruz',s:'Mumbai'},{n:'Vile Parle',s:'Mumbai'},{n:'Juhu',s:'Mumbai'},
+  {n:'Dadar',s:'Mumbai'},{n:'Mahim',s:'Mumbai'},{n:'Sion',s:'Mumbai'},
+  {n:'Worli',s:'Mumbai'},{n:'Lower Parel',s:'Mumbai'},{n:'Prabhadevi',s:'Mumbai'},
+  {n:'Parel',s:'Mumbai'},{n:'Wadala',s:'Mumbai'},{n:'Sewri',s:'Mumbai'},
+  {n:'Bhandup',s:'Mumbai'},{n:'Vikhroli',s:'Mumbai'},{n:'Mulund',s:'Mumbai'},
+  {n:'Goregaon',s:'Mumbai'},{n:'Malad',s:'Mumbai'},{n:'Kandivali',s:'Mumbai'},
+  {n:'Borivali',s:'Mumbai'},{n:'Dahisar',s:'Mumbai'},{n:'Ghatkopar',s:'Mumbai'},
+  {n:'Vidyavihar',s:'Mumbai'},{n:'Kurla',s:'Mumbai'},{n:'Chembur',s:'Mumbai'},
+  // Powai sub-localities
+  {n:'Hiranandani Gardens',s:'Mumbai'},{n:'Powai Lake',s:'Mumbai'},{n:'L&T Crossing Powai',s:'Mumbai'},
+  // Andheri sub-localities
+  {n:'Lokhandwala Andheri',s:'Mumbai'},{n:'Lokhandwala Complex',s:'Mumbai'},
+  {n:'Andheri Kurla Road',s:'Mumbai'},{n:'Marol Naka',s:'Mumbai'},
+  {n:'Versova Beach',s:'Mumbai'},{n:'JVPD Scheme',s:'Mumbai'},{n:'JVPD',s:'Mumbai'},
+  {n:'Juhu Tara',s:'Mumbai'},{n:'Juhu Tara Road',s:'Mumbai'},{n:'Juhu Beach',s:'Mumbai'},
+  {n:'Khar Road',s:'Mumbai'},{n:'Khar Danda',s:'Mumbai'},
+  {n:'Asalpha',s:'Mumbai'},
+  // Chembur micro-localities
+  {n:'Chembur East',s:'Mumbai'},{n:'Chembur West',s:'Mumbai'},
+  {n:'Diamond Garden',s:'Mumbai'},{n:'Acharya Garden',s:'Mumbai'},
+  // South-central
+  {n:'Antop Hill',s:'Mumbai'},{n:'Cotton Green',s:'Mumbai'},{n:'Currey Road',s:'Mumbai'},
+  {n:'Chinchpokli',s:'Mumbai'},{n:'Lower Parel West',s:'Mumbai'},{n:'NM Joshi Marg',s:'Mumbai'},
+  // Eastern Suburbs additions
+  {n:'Kanjurmarg',s:'Mumbai'},{n:'Kanjurmarg West',s:'Mumbai'},{n:'Kanjurmarg East',s:'Mumbai'},
+  {n:'Nahur',s:'Mumbai'},{n:'Nahur West',s:'Mumbai'},{n:'Nahur East',s:'Mumbai'},
+  // Dahisar split
+  {n:'Dahisar West',s:'Mumbai'},{n:'Dahisar East',s:'Mumbai'},
+  {n:'Borivali East',s:'Mumbai'},{n:'Borivali West',s:'Mumbai'},
+  {n:'Kandivali East',s:'Mumbai'},{n:'Kandivali West',s:'Mumbai'},
+  {n:'Malad East',s:'Mumbai'},{n:'Malad West',s:'Mumbai'},
+  {n:'Goregaon East',s:'Mumbai'},{n:'Goregaon West',s:'Mumbai'},
+  // Town/Old Mumbai
+  {n:'Cuffe Parade',s:'Mumbai'},{n:'Colaba',s:'Mumbai'},{n:'Fort',s:'Mumbai'},
+  {n:'Churchgate',s:'Mumbai'},{n:'Nariman Point',s:'Mumbai'},
+  // Mumbai Metropolitan Region (within Mumbai but technically Thane/Raigad — many treat as Mumbai)
+  {n:'Kalwa',s:'Mumbai'},{n:'Mumbra',s:'Mumbai'},{n:'Diva',s:'Mumbai'},
+  {n:'Dombivli',s:'Mumbai'},{n:'Dombivli East',s:'Mumbai'},{n:'Dombivli West',s:'Mumbai'},
+  {n:'Kalyan',s:'Mumbai'},{n:'Kalyan East',s:'Mumbai'},{n:'Kalyan West',s:'Mumbai'},
+  {n:'Ulhasnagar',s:'Mumbai'},{n:'Ambernath',s:'Mumbai'},{n:'Badlapur',s:'Mumbai'},
+  {n:'Karjat',s:'Mumbai'},{n:'Asangaon',s:'Mumbai'},{n:'Khopoli',s:'Mumbai'},
+  // Coastal suburbs
+  {n:'Madh Beach',s:'Mumbai'},{n:'Manori',s:'Mumbai'},{n:'Erangal',s:'Mumbai'},
+  {n:'Akse Beach',s:'Mumbai'},{n:'Aksa',s:'Mumbai'},
+  // IT corridor / business hubs
+  {n:'Mindspace Malad',s:'Mumbai'},{n:'Nirlon Knowledge Park',s:'Mumbai'},
+  {n:'Mumbai BKC',s:'Mumbai'},{n:'One BKC',s:'Mumbai'},
+  {n:'Lower Parel BFC',s:'Mumbai'},{n:'Indiabulls Finance Centre',s:'Mumbai'},
+  // Worli / Prabhadevi micro-localities
+  {n:'Worli Sea Face',s:'Mumbai'},{n:'Worli Naka',s:'Mumbai'},{n:'Pochkhanwala Road',s:'Mumbai'},
+  {n:'Annie Besant Road',s:'Mumbai'},{n:'Curzon Road',s:'Mumbai'},
+  // Bandra / BKC micro-localities
+  {n:'Bandra Reclamation',s:'Mumbai'},{n:'Mount Mary',s:'Mumbai'},{n:'St Andrews Road',s:'Mumbai'},
+  {n:'33rd Road Bandra',s:'Mumbai'},{n:'Almeida Park',s:'Mumbai'},
+  // Town / South Mumbai micro-localities not already listed
+  {n:'Jamshedji Tata Road',s:'Mumbai'},{n:'JJ Road',s:'Mumbai'},{n:'Sandhurst Road',s:'Mumbai'},
+  {n:'Madhav Baug',s:'Mumbai'},{n:'V P Road',s:'Mumbai'},{n:'Khetwadi',s:'Mumbai'},
+  {n:'Bhuleshwar Market',s:'Mumbai'},{n:'C P Tank',s:'Mumbai'},{n:'Princess Street',s:'Mumbai'},
   {n:'Navi Mumbai',s:'Maharashtra'},
   {n:'Vashi',s:'Navi Mumbai'},{n:'Nerul',s:'Navi Mumbai'},{n:'Belapur',s:'Navi Mumbai'},
   {n:'Kharghar',s:'Navi Mumbai'},{n:'Panvel',s:'Navi Mumbai'},{n:'Seawoods',s:'Navi Mumbai'},
