@@ -62,7 +62,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="app.css?v=20260425-172330"/>
+<link rel="stylesheet" href="app.css?v=20260425-214224"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -243,7 +243,7 @@
     <button class="btn-nav-login" id="nLg" onclick="openM('authM');setAT('login')">Login</button>
     <button class="btn-nav-signup" id="nRg" onclick="openM('authM');setAT('reg')">Sign Up</button>
     <button class="btn-nav-logout" id="nLo" style="display:none;" onclick="doLogout()">Logout</button>
-    <button class="btn-nav-post" id="nPost" onclick="openM('addM')">Post Property <span class="free-tag">FREE</span></button>
+    <button class="btn-nav-post" id="nPost" onclick="postPropertyClick()">Post Property <span class="free-tag">FREE</span></button>
   </div>
 </nav>
 
@@ -557,6 +557,52 @@
   <div id="aC"></div>
 </div>
 <!-- MODALS -->
+<!-- Post-Property Role Chooser — appears when an unauthenticated visitor clicks "Post Property" -->
+<div id="postChooseM" class="mo" onclick="ovcM(event,'postChooseM')">
+  <div class="mb" style="max-width:520px;">
+    <div class="mh">
+      <h2 style="font-family:'Playfair Display',serif;font-size:22px;line-height:1.3;">Post a Property</h2>
+      <button class="mc" onclick="closeM('postChooseM')" aria-label="Close"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button>
+    </div>
+    <div style="padding:8px 28px 26px;">
+      <p style="color:var(--mu);font-size:13.5px;line-height:1.55;margin-bottom:18px;">Tell us a bit about yourself — we'll set up your account with the right tools for your role.</p>
+      <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+        <button type="button" onclick="postPropertyAs('owner')" class="post-role-card" style="text-align:left;background:var(--wh);border:1.5px solid var(--sa);border-radius:12px;padding:16px 18px;cursor:pointer;display:flex;gap:14px;align-items:center;font-family:'DM Sans',sans-serif;transition:all .18s;">
+          <div style="width:42px;height:42px;border-radius:10px;background:var(--tl);color:var(--td);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg class="icn icn-lg" aria-hidden="true"><use href="#i-owner"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px;">I'm the Owner</div>
+            <div style="font-size:12px;color:var(--mu);line-height:1.45;">Listing my own property — flat, house, plot, or land. No commission to anyone.</div>
+          </div>
+          <svg class="icn icn-sm" aria-hidden="true" style="color:var(--mu);"><use href="#i-chevron-right"/></svg>
+        </button>
+        <button type="button" onclick="postPropertyAs('broker')" class="post-role-card" style="text-align:left;background:var(--wh);border:1.5px solid var(--sa);border-radius:12px;padding:16px 18px;cursor:pointer;display:flex;gap:14px;align-items:center;font-family:'DM Sans',sans-serif;transition:all .18s;">
+          <div style="width:42px;height:42px;border-radius:10px;background:#f0eaf8;color:#6a4ba8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg class="icn icn-lg" aria-hidden="true"><use href="#i-broker"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px;">I'm a Broker / Agent</div>
+            <div style="font-size:12px;color:var(--mu);line-height:1.45;">I represent multiple properties — get a dashboard, lead tracking, and CSV exports.</div>
+          </div>
+          <svg class="icn icn-sm" aria-hidden="true" style="color:var(--mu);"><use href="#i-chevron-right"/></svg>
+        </button>
+        <button type="button" onclick="postPropertyAs('builder')" class="post-role-card" style="text-align:left;background:var(--wh);border:1.5px solid var(--sa);border-radius:12px;padding:16px 18px;cursor:pointer;display:flex;gap:14px;align-items:center;font-family:'DM Sans',sans-serif;transition:all .18s;">
+          <div style="width:42px;height:42px;border-radius:10px;background:rgba(218,165,32,.15);color:#c58600;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg class="icn icn-lg" aria-hidden="true"><use href="#i-building"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px;">I'm a Builder / Developer</div>
+            <div style="font-size:12px;color:var(--mu);line-height:1.45;">Launching a new project or selling units — get project pages with unit configurations.</div>
+          </div>
+          <svg class="icn icn-sm" aria-hidden="true" style="color:var(--mu);"><use href="#i-chevron-right"/></svg>
+        </button>
+      </div>
+      <p style="font-size:11.5px;color:var(--mu);margin-top:14px;line-height:1.5;text-align:center;">Already have an account? <a href="#" onclick="event.preventDefault();closeM('postChooseM');openM('authM');setAT('login');" style="color:var(--t);font-weight:700;text-decoration:none;">Sign in</a></p>
+    </div>
+  </div>
+</div>
+
 <div id="authM" class="mo" onclick="ovcM(event,'authM')">
   <div class="mb" style="max-width:460px;">
     <div class="mh">
@@ -963,8 +1009,8 @@
       <div style="display:flex;flex-direction:column;gap:7px;">
         <span onclick="setBMode('rent');go('browse')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Browse Rentals</span>
         <span onclick="setBMode('buy');go('browse')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Properties for Sale</span>
-        <span onclick="openM('addM')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Post a Property</span>
-        <span onclick="openM('authM');setAT('reg')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Register as Broker</span>
+        <span onclick="postPropertyClick()" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Post a Property</span>
+        <span onclick="openM('authM');setAT('reg');setRR('broker')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Register as Broker</span>
       </div>
     </div>
     <div>
@@ -1272,11 +1318,11 @@
   </div>
 </div>
 
-<script src="app.js?v=20260425-172330" defer></script>
+<script src="app.js?v=20260425-214224" defer></script>
 <script>
 // Build version stamp — replaced by build script. Used to detect when a new
 // deploy has landed so we can auto-reload the page for users.
-window.__BUILD_VERSION__ = '20260425-172330';
+window.__BUILD_VERSION__ = '20260425-214224';
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){

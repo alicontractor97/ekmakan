@@ -1015,6 +1015,9 @@ function stepRent(dir){
   lbl.textContent=fmtRent(next);
 }
 function doHS(){
+  // Reset all browse filters first so the hero search produces a clean result
+  // (without inheriting filters from prior QA-strip clicks or browse state)
+  _resetBrowseFilters();
   bMode=hMode;go('browse');
   if(hMode==='rent'){
     var c=document.getElementById('hrc').value;
@@ -1155,6 +1158,7 @@ async function renderHome(){
     :'<div class="mk-empty"><div class="mk-empty-icon"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg></div><div class="mk-empty-title">No properties for sale yet</div><div class="mk-empty-sub">Be the first to <span onclick="openM(\'addM\')" style="color:var(--t);cursor:pointer;font-weight:700;">list a property for sale</span>!</div></div>';
 }
 function goCityBrowse(name){
+  _resetBrowseFilters();
   var fc=document.getElementById('fCity');if(fc)fc.value=name;
   setBMode('rent');go('browse');
 }
@@ -1397,11 +1401,17 @@ function clearAllF(){
 function gv(id){var e=document.getElementById(id);return e?e.value||'':""; }
 
 async function renderBrowse(){
-  // Show loading spinner immediately
+  // Show loading spinner immediately on every render — gives clear feedback
+  // when filters change, page navigation happens, or fresh data is fetched.
+  // Without this, old cards stay visible until the new render completes,
+  // which made users think filters weren't applying.
   var grid=document.getElementById('bGrid');
   var bc=document.getElementById('bCount');
-  if(grid&&!_cacheL)grid.innerHTML='<div class="mk-spinner" style="grid-column:1/-1;"><span class="mk-spinner-text">Loading listings…</span></div>';
-  if(bc&&!_cacheL)bc.textContent='Loading…';
+  if(grid)grid.innerHTML='<div class="mk-spinner" style="grid-column:1/-1;"><span class="mk-spinner-text">Loading listings…</span></div>';
+  if(bc)bc.textContent='Loading…';
+  // Tiny delay yields the browser a paint frame so the spinner actually shows
+  // before we synchronously rebuild the grid (which can hog the main thread).
+  await new Promise(function(r){requestAnimationFrame(function(){r();});});
   var allApproved=(await gL()).filter(function(l){return l.status==='approved';});
   // If "New Projects" mode is on, show only project listings; otherwise filter out projects from rent/buy
   var ls;
@@ -1885,6 +1895,38 @@ function setMediaTab(which){
       p.querySelectorAll('video').forEach(function(v){try{v.pause();}catch(e){}});
     }
   });
+}
+
+// ══ POST PROPERTY FLOW ══
+// Decides what happens when user clicks "Post Property" in the nav, footer or join card.
+// - Logged-in lister (owner/broker/builder) → opens addM directly
+// - Logged-in renter/buyer (role='user') → prompts them to upgrade their role
+// - Not signed in → role chooser modal (Owner / Broker / Builder)
+function postPropertyClick(){
+  if(!cu){
+    openM('postChooseM');
+    return;
+  }
+  if(cu.role==='owner'||cu.role==='broker'||cu.role==='builder'||cu.role==='admin'){
+    openM('addM');
+    return;
+  }
+  // Renter/buyer trying to post — show the chooser so they can pick the right role
+  openM('postChooseM');
+}
+
+// Called from the role chooser cards. Routes to register flow with the role pre-selected.
+function postPropertyAs(role){
+  closeM('postChooseM');
+  // Open auth modal in register mode with the chosen role
+  openM('authM');
+  setAT('reg');
+  setRR(role);
+  // Focus the first field for fast typing
+  setTimeout(function(){
+    var nm=document.getElementById('rNm');
+    if(nm)nm.focus();
+  },150);
 }
 
 async function togFav(id,btn){
@@ -5158,7 +5200,7 @@ function acPick(inputId, listId, targetField, val){
 
 
 // ══ CONTACT FORM ══
-var _ce = atob('YWxpY29udHJhY3RvcmM5N0BnbWFpbC5jb20=');
+var _ce = atob('YWNvbnRyYWN0b3JAcmFhZnRlY2guY29t');
 function submitContact(e){
   e.preventDefault();
   var btn = document.getElementById('ctSubmit');

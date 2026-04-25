@@ -260,6 +260,11 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .media-pane{display:none;}
 .media-pane.on{display:block;}
 
+/* Post-property role chooser cards */
+.post-role-card{outline:none;}
+.post-role-card:hover{border-color:var(--t)!important;background:var(--cr)!important;transform:translateX(2px);}
+.post-role-card:focus-visible{border-color:var(--t)!important;box-shadow:0 0 0 3px rgba(18,90,81,.15);}
+
 /* Lister portal — clickable stat boxes */
 .lister-stat-box{outline:none;}
 .lister-stat-box:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.07);}
