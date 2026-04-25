@@ -883,14 +883,24 @@
         </div>
         <div class="fg s2"><label class="flbl">Description</label><textarea class="fi" id="lDs" placeholder="Describe the property and your openness to all communities…"></textarea></div>
         <div class="fg s2">
-          <label class="flbl">Photos (up to 6) — first 2 free, rest unlock after sign-up</label>
+          <label class="flbl">Photos (up to 15) — first 2 free for visitors, rest unlock after sign-up</label>
           <div class="dz" id="dz" onclick="document.getElementById('imgIn').click()" ondragover="dzOv(event)" ondragleave="dzLv()" ondrop="dzDp(event)">
             <div style="margin-bottom:8px;color:var(--t);"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-eye"/></svg></div>
             <p style="font-size:13px;color:var(--mu);">Click or drag &amp; drop photos here</p>
-            <p style="font-size:11px;color:var(--mu);margin-top:2px;">JPG, PNG, WebP · Auto-compressed for fast loading</p>
+            <p style="font-size:11px;color:var(--mu);margin-top:2px;">JPG, PNG, WebP &middot; Up to 15 photos &middot; Auto-compressed for fast loading</p>
           </div>
           <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="hImgs(event)"/>
           <div class="img-pv" id="iPv"></div>
+        </div>
+        <div class="fg s2">
+          <label class="flbl">Walk-through Video <span style="color:var(--mu);font-weight:400;font-size:11px;">(optional, max 50 MB)</span></label>
+          <div class="dz dz-video" onclick="document.getElementById('vidIn').click()">
+            <div style="margin-bottom:6px;color:var(--t);"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-eye"/></svg></div>
+            <p style="font-size:13px;color:var(--mu);">Click to add a property video</p>
+            <p style="font-size:11px;color:var(--mu);margin-top:2px;">MP4 / WebM / MOV &middot; A 30-60s walk-through is ideal</p>
+          </div>
+          <input type="file" id="vidIn" accept="video/*" style="display:none" onchange="hVideo(event)"/>
+          <div id="vidPv" style="margin-top:10px;"></div>
         </div>
       </div>
       <div class="al alw" style="margin-top:10px;font-size:12px;">Listing reviewed by admin before going live — usually within 24 hrs.</div>

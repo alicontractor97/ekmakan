@@ -138,9 +138,9 @@ function renderTurnstile(containerId,tokenSetter){
 }
 
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
-function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',floorNo:r.floor_no!=null?r.floor_no:null,totalFloors:r.total_floors||null,facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[],txnType:r.transaction_type||'',ownership:r.ownership||'',water:r.water_source||'',backup:r.power_backup||'',landmarks:r.landmarks||[]};}
+function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',floorNo:r.floor_no!=null?r.floor_no:null,totalFloors:r.total_floors||null,facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[],txnType:r.transaction_type||'',ownership:r.ownership||'',water:r.water_source||'',backup:r.power_backup||'',landmarks:r.landmarks||[],videoUrl:r.video_url||''};}
 // Map JS listing → Supabase row
-function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',floor_no:l.floorNo!=null&&l.floorNo!==''?Number(l.floorNo):null,total_floors:l.totalFloors?Number(l.totalFloors):null,facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[],transaction_type:l.txnType||'',ownership:l.ownership||'',water_source:l.water||'',power_backup:l.backup||'',landmarks:l.landmarks||[]};}
+function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',floor_no:l.floorNo!=null&&l.floorNo!==''?Number(l.floorNo):null,total_floors:l.totalFloors?Number(l.totalFloors):null,facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[],transaction_type:l.txnType||'',ownership:l.ownership||'',water_source:l.water||'',power_backup:l.backup||'',landmarks:l.landmarks||[],video_url:l.videoUrl||''};}
 function mapInq(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',listingCity:r.listing_city||'',lf:r.listing_for||'rent',contact:'',name:r.inquirer_name||'',phone:r.inquirer_phone||'',email:r.inquirer_email||'',message:r.message||'',uid:r.user_id,sentAt:r.sent_at?(r.sent_at+'').split('T')[0]:''};}
 function mapUsr(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone||'',role:r.role||'user',agency:r.agency||'',lic:r.license_no||'',joinedAt:r.joined_at?(r.joined_at+'').split('T')[0]:'',verified:r.verified||false,trusted:r.is_trusted||false};}
 function mapRpt(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',type:r.report_type||'',desc:r.description||'',reporterName:r.reporter_name||'',reporterContact:r.reporter_contact||'',reporterUid:r.reporter_user_id,status:r.status||'open',submittedAt:r.submitted_at?(r.submitted_at+'').split('T')[0]:''};}
@@ -338,7 +338,7 @@ function showEmpty(elId,icon,title,sub){
 // ══ DATA ACCESS (Supabase) ══
 async function gL(){
   if(_cacheL&&_cacheValid('l'))return _cacheL;
-  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks').order('posted_at',{ascending:false});
+  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks,video_url').order('posted_at',{ascending:false});
   if(error){toast('Failed to load listings. Please refresh.','e');_cacheL=[];return[];}
   _cacheL=(data||[]).map(mapL);
   _cacheTime.l=Date.now();
@@ -1726,7 +1726,7 @@ async function viewL(id){
   if(!l){
     // Direct fetch by ID — handles deep links before cache is warm
     try{
-      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks').eq('id',id).eq('status','approved').single();
+      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks,video_url').eq('id',id).eq('status','approved').single();
       if(data&&!error)l=mapL(data);
     }catch(e){}
   }
@@ -1750,6 +1750,18 @@ async function viewL(id){
       imgH+='<div class="lock-box"><div style="font-size:30px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-lock"/></svg></div>'
         +'<p>'+( l.images.length-2)+' more photo'+(l.images.length-2>1?'s':'')+' unlock after free sign-up.</p>'
         +'<button class="btn btn-sm" onclick="openM(\'authM\')">Sign Up Free — Instant</button></div>';
+    }
+  }
+  // Walk-through video — shown to signed-in users only (same gating as photos beyond first 2)
+  if(l.videoUrl){
+    if(cu){
+      imgH+='<div style="margin-top:8px;margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:var(--t);"><use href="#i-eye"/></svg> Walk-through Video</div>'
+        +'<video src="'+escAttr(l.videoUrl)+'" controls preload="metadata" playsinline style="width:100%;max-height:420px;background:#000;border-radius:12px;"></video>'
+        +'</div>';
+    } else {
+      imgH+='<div class="lock-box" style="margin-top:8px;"><div style="font-size:30px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-eye"/></svg></div>'
+        +'<p>Walk-through video unlocks after free sign-up.</p>'
+        +'<button class="btn btn-sm" onclick="openM(\'authM\')">Sign Up Free</button></div>';
     }
   }
   // Contact details visibility:
@@ -2491,18 +2503,40 @@ async function doInq(){
 function dzOv(e){e.preventDefault();var d=document.getElementById('dz');if(d)d.classList.add('drag');}
 function dzLv(){var d=document.getElementById('dz');if(d)d.classList.remove('drag');}
 function dzDp(e){e.preventDefault();dzLv();hImgsArr(Array.from(e.dataTransfer.files));}
+// ══ IMAGE & VIDEO UPLOAD ══
+var MAX_IMAGES=15;
+var MAX_VIDEO_MB=50;
+
 function hImgs(e){hImgsArr(Array.from(e.target.files));e.target.value='';}
 function hImgsArr(files){
-  var toProcess=files.slice(0,6-upImgs.length);
+  var slotsLeft=MAX_IMAGES-upImgs.length;
+  if(slotsLeft<=0){toast('Max '+MAX_IMAGES+' photos per listing.','e');return;}
+  var toProcess=files.slice(0,slotsLeft);
+  if(files.length>slotsLeft)toast('Added the first '+slotsLeft+' photos. Max '+MAX_IMAGES+' total.');
   if(!toProcess.length)return;
-  toProcess.forEach(function(f){
-    if(!f.type.startsWith('image/')){toast('Images only.','e');return;}
-    if(f.size>10*1024*1024){toast('Max 10MB per image.','e');return;}
+  // Filter and validate
+  var valid=toProcess.filter(function(f){
+    if(!f.type.startsWith('image/')){toast('"'+f.name+'" is not an image.','e');return false;}
+    if(f.size>15*1024*1024){toast('"'+f.name+'" exceeds 15MB.','e');return false;}
+    return true;
+  });
+  if(!valid.length)return;
+  // Show pending placeholders right away — feels instant
+  valid.forEach(function(){upImgs.push('__PENDING__');});
+  rPv();
+  // Compress in parallel — much faster than serial
+  var startIdx=upImgs.length-valid.length;
+  valid.forEach(function(f,localIdx){
+    var globalIdx=startIdx+localIdx;
     compressImage(f).then(function(dataUrl){
-      upImgs.push(dataUrl);
+      upImgs[globalIdx]=dataUrl;
       rPv();
     }).catch(function(err){
-      toast('Failed to process image: '+(err.message||'unknown error'),'e');
+      console.error('compress fail',err);
+      // Remove the placeholder for this failed image
+      upImgs.splice(globalIdx,1);
+      rPv();
+      toast('"'+f.name+'" failed to process.','e');
     });
   });
 }
@@ -2592,43 +2626,161 @@ function dataUrlToBlob(dataUrl){
 }
 
 async function uploadListingImages(images){
-  if(!images||!images.length||!cu)return images;
-  var uploaded=[];
-  for(var i=0;i<images.length;i++){
-    var img=images[i];
-    // If it's already a URL (from edit mode), keep it as-is
-    if(img.indexOf('data:')!==0){uploaded.push(img);continue;}
-    try{
-      var blob=dataUrlToBlob(img);
-      var ext=blob.type==='image/webp'?'webp':blob.type==='image/png'?'png':'jpg';
-      var path=cu.id+'/'+Date.now()+'_'+i+'.'+ext;
-      var {data,error}=await sb.storage.from('listing-images').upload(path,blob,{
-        cacheControl:'3600',
-        contentType:blob.type,
-        upsert:false
-      });
-      if(error){
-        toast('Image '+(i+1)+' upload failed: '+error.message,'e');
-        // Fall back to keeping the base64 (works but not ideal)
-        uploaded.push(img);
-        continue;
+  if(!images||!images.length||!cu)return [];
+  // Pre-pass: separate already-uploaded URLs from new base64 entries
+  // Skip any leftover pending placeholders (shouldn't reach here but be safe)
+  var clean=images.filter(function(im){return im&&im!=='__PENDING__';});
+  var tasks=[];
+  var resultMap=new Array(clean.length);
+  for(var i=0;i<clean.length;i++){
+    var im=clean[i];
+    if(im.indexOf('data:')!==0){resultMap[i]=im;continue;} // Already a URL
+    tasks.push({idx:i,dataUrl:im});
+  }
+  if(!tasks.length)return resultMap;
+  // Show progress toast
+  var totalCount=tasks.length;
+  var doneCount=0;
+  function tick(){
+    doneCount++;
+    if(doneCount<totalCount)toast('Uploading photos '+doneCount+' / '+totalCount+'…');
+  }
+  // Concurrent upload helper with one retry on transient errors
+  async function uploadOne(task){
+    var attempts=0, lastErr=null;
+    while(attempts<2){
+      attempts++;
+      try{
+        var blob=dataUrlToBlob(task.dataUrl);
+        var ext=blob.type==='image/webp'?'webp':blob.type==='image/png'?'png':'jpg';
+        var path=cu.id+'/'+Date.now()+'_'+task.idx+'_'+Math.random().toString(36).substring(2,7)+'.'+ext;
+        var res=await sb.storage.from('listing-images').upload(path,blob,{
+          cacheControl:'3600',
+          contentType:blob.type,
+          upsert:false
+        });
+        if(res.error)throw res.error;
+        var urlRes=sb.storage.from('listing-images').getPublicUrl(path);
+        return urlRes.data.publicUrl;
+      }catch(e){
+        lastErr=e;
+        if(attempts<2){
+          // Brief wait before retry
+          await new Promise(function(r){setTimeout(r,500);});
+        }
       }
-      // Get public URL
-      var {data:urlData}=sb.storage.from('listing-images').getPublicUrl(path);
-      uploaded.push(urlData.publicUrl);
-    }catch(e){
-      toast('Image '+(i+1)+' upload failed.','e');
-      uploaded.push(img);
+    }
+    throw lastErr||new Error('upload failed');
+  }
+  // Run with a concurrency cap of 4 so we don't overload mobile networks
+  var CONCURRENCY=4;
+  var failed=0;
+  var nextTaskIdx=0;
+  async function worker(){
+    while(true){
+      var myTask=null;
+      if(nextTaskIdx<tasks.length){myTask=tasks[nextTaskIdx++];}
+      if(!myTask)break;
+      try{
+        var url=await uploadOne(myTask);
+        resultMap[myTask.idx]=url;
+      }catch(e){
+        failed++;
+        console.error('upload fail for image '+(myTask.idx+1),e);
+        // Mark as failed — we'll filter these out
+        resultMap[myTask.idx]=null;
+      }
+      tick();
     }
   }
-  return uploaded;
+  var workers=[];
+  for(var w=0;w<CONCURRENCY;w++)workers.push(worker());
+  await Promise.all(workers);
+  // Filter out nulls (failed uploads) and report any failures clearly
+  var finalUrls=resultMap.filter(function(u){return u;});
+  if(failed>0){
+    toast(failed+' photo'+(failed>1?'s':'')+' failed to upload. The successful ones were saved.','e');
+  }
+  return finalUrls;
+}
+
+// ══ VIDEO UPLOAD ══
+var _uploadingVideo=null; // currently selected file pending upload at submit time
+var _existingVideoUrl=''; // URL preserved across edit mode
+
+function hVideo(e){
+  var f=e.target.files&&e.target.files[0];
+  e.target.value='';
+  if(!f)return;
+  if(!f.type.startsWith('video/')){toast('Please select a video file.','e');return;}
+  var sizeMB=f.size/(1024*1024);
+  if(sizeMB>MAX_VIDEO_MB){toast('Video too large ('+sizeMB.toFixed(1)+'MB). Max '+MAX_VIDEO_MB+'MB.','e');return;}
+  _uploadingVideo=f;
+  _existingVideoUrl=''; // Replacing any existing video
+  renderVideoPreview();
+}
+function clearVideo(){
+  _uploadingVideo=null;
+  _existingVideoUrl='';
+  renderVideoPreview();
+}
+function renderVideoPreview(){
+  var box=document.getElementById('vidPv');
+  if(!box)return;
+  if(_uploadingVideo){
+    var url=URL.createObjectURL(_uploadingVideo);
+    var sizeMB=(_uploadingVideo.size/(1024*1024)).toFixed(1);
+    box.innerHTML='<div class="vid-pv-card"><video src="'+url+'" controls preload="metadata" style="width:100%;border-radius:8px;background:#000;"></video>'
+      +'<div class="vid-pv-meta"><strong>'+esc(_uploadingVideo.name)+'</strong> &middot; '+sizeMB+' MB <span style="color:var(--mu);font-size:11px;">(will upload on submit)</span></div>'
+      +'<button type="button" onclick="clearVideo()" class="vid-pv-rm">&times; Remove</button></div>';
+  } else if(_existingVideoUrl){
+    box.innerHTML='<div class="vid-pv-card"><video src="'+_existingVideoUrl+'" controls preload="metadata" style="width:100%;border-radius:8px;background:#000;"></video>'
+      +'<div class="vid-pv-meta"><strong>Current video</strong> <span style="color:var(--mu);font-size:11px;">(uploaded earlier)</span></div>'
+      +'<button type="button" onclick="clearVideo()" class="vid-pv-rm">&times; Remove</button></div>';
+  } else {
+    box.innerHTML='';
+  }
+}
+async function uploadListingVideo(){
+  // Returns the final video URL (existing or newly uploaded), or '' if cleared/none
+  if(!_uploadingVideo)return _existingVideoUrl||'';
+  if(!cu)return '';
+  try{
+    var f=_uploadingVideo;
+    var ext=(f.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'').substring(0,5)||'mp4';
+    var path=cu.id+'/'+Date.now()+'_'+Math.random().toString(36).substring(2,7)+'.'+ext;
+    toast('Uploading video…');
+    var res=await sb.storage.from('listing-videos').upload(path,f,{
+      cacheControl:'3600',
+      contentType:f.type,
+      upsert:false
+    });
+    if(res.error)throw res.error;
+    var urlRes=sb.storage.from('listing-videos').getPublicUrl(path);
+    return urlRes.data.publicUrl;
+  }catch(e){
+    console.error('video upload fail',e);
+    toast('Video upload failed: '+(e.message||'unknown error'),'e');
+    return _existingVideoUrl||''; // Keep existing if any
+  }
 }
 
 function rPv(){
   var pv=document.getElementById('iPv');if(!pv)return;
   pv.innerHTML=upImgs.map(function(s,i){
+    if(s==='__PENDING__'){
+      return '<div class="ip ip-pending"><div class="ip-spinner"></div><div class="ip-pending-lbl">Processing…</div></div>';
+    }
     return '<div class="ip"><img src="'+s+'" alt="Uploaded photo '+(i+1)+'"/><button onclick="rmImg('+i+')" aria-label="Remove photo '+(i+1)+'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-x"/></svg></button>'+(i<2?'<div class="free-lbl">Free</div>':'')+'</div>';
   }).join('');
+  // Show count
+  var dz=document.getElementById('dz');
+  if(dz){
+    var realCount=upImgs.filter(function(s){return s!=='__PENDING__';}).length;
+    var pendCount=upImgs.length-realCount;
+    var lblP=dz.querySelector('p:first-of-type');
+    if(lblP)lblP.textContent=upImgs.length>0?(realCount+(pendCount?' (+'+pendCount+' processing)':'')+' / '+MAX_IMAGES+' photos'):'Click or drag & drop photos here';
+  }
 }
 function rmImg(i){upImgs.splice(i,1);rPv();}
 
@@ -2741,6 +2893,10 @@ async function editListing(id){
   // Pre-fill images
   upImgs=l.images?l.images.slice():[];
   if(typeof rPv==='function')rPv();
+  // Pre-fill video
+  _uploadingVideo=null;
+  _existingVideoUrl=l.videoUrl||'';
+  renderVideoPreview();
   // Open the modal
   openM('addM');
 }
@@ -2804,6 +2960,7 @@ async function doSub(){
     desc:getVal('lDs'),
     amens:selAmens.slice(),tags:selTags.slice(),
     images:upImgs.slice(),
+    videoUrl:_existingVideoUrl||'',
     // Project-specific fields
     isProject:isProject,
     projectStatus:isProject?getVal('lProj'):'',
@@ -2813,13 +2970,26 @@ async function doSub(){
     unitTypes:isProject?_unitTypes.slice():[]
   };
 
-  // Upload images to Supabase Storage (converts base64 → public URLs)
+  // Filter out any pending placeholders before submitting (compression still in flight)
+  var pendingCount=listingData.images.filter(function(im){return im==='__PENDING__';}).length;
+  if(pendingCount>0){
+    toast('Please wait — '+pendingCount+' photo'+(pendingCount>1?'s':'')+' still processing.','e');
+    return;
+  }
+  // Upload images and video to Supabase Storage
   var uploadBtn=document.getElementById('addMBtn');
   var origBtnTxt=uploadBtn?uploadBtn.textContent:'';
-  if(uploadBtn&&listingData.images.some(function(img){return img.indexOf('data:')===0;})){
-    uploadBtn.disabled=true;uploadBtn.textContent='Uploading images…';
+  var hasNewMedia=listingData.images.some(function(img){return img&&img.indexOf('data:')===0;})||_uploadingVideo;
+  if(uploadBtn&&hasNewMedia){
+    uploadBtn.disabled=true;uploadBtn.textContent='Uploading…';
   }
-  listingData.images=await uploadListingImages(listingData.images);
+  // Upload images and video in parallel — saves a lot of time on slow connections
+  var uploadResults=await Promise.all([
+    uploadListingImages(listingData.images),
+    uploadListingVideo()
+  ]);
+  listingData.images=uploadResults[0];
+  listingData.videoUrl=uploadResults[1];
   if(uploadBtn){uploadBtn.disabled=false;uploadBtn.textContent=origBtnTxt;}
 
   if(_editingListingId){
@@ -3869,6 +4039,7 @@ function openM(id){
       _selFurn=[];renderFurnishingItems();
       _selWater=[];setWaterFromString('');
       _landmarks=[];renderLandmarks();
+      _uploadingVideo=null;_existingVideoUrl='';renderVideoPreview();
       setLM(cu.role==='builder'?'project':'rent');
       var lo=document.getElementById('lOw'),lc=document.getElementById('lCt'),le=document.getElementById('lErr');
       if(lo)lo.value=cu.agency?cu.name+' – '+esc(cu.agency):cu.name;

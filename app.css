@@ -250,6 +250,20 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .lm-disp-item{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--cr);border:1px solid var(--sa);border-radius:50px;font-size:12px;color:var(--ink);font-family:'DM Sans',sans-serif;}
 .lm-disp-item .lm-chip-dist{background:var(--tl);color:var(--td);}
 
+/* Pending image placeholder (during compression) */
+.ip-pending{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--tl),var(--cr));}
+.ip-pending .ip-spinner{width:24px;height:24px;border:3px solid rgba(18,90,81,.2);border-top-color:var(--t);border-radius:50%;animation:ip-spin .9s linear infinite;}
+.ip-pending-lbl{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:9px;color:var(--mu);font-weight:600;font-family:'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:.4px;}
+@keyframes ip-spin{to{transform:rotate(360deg);}}
+
+/* Video upload area */
+.dz-video{border-style:dashed;}
+.vid-pv-card{position:relative;background:var(--cr);border:1px solid var(--sa);border-radius:10px;padding:10px;}
+.vid-pv-card video{max-height:280px;}
+.vid-pv-meta{font-size:12px;color:var(--ink);margin-top:8px;font-family:'DM Sans',sans-serif;}
+.vid-pv-rm{margin-top:8px;background:transparent;border:1px solid var(--sa);color:var(--red);padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.vid-pv-rm:hover{background:#fff5f5;border-color:var(--red);}
+
 /* Notification panel — spacious, clean, mobile-friendly */
 .notif-row{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid #f0ede6;transition:background .15s;min-height:72px;}
 .notif-row:hover{background:#f7f5f0 !important;}
