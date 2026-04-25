@@ -854,6 +854,8 @@ function resetSessionState(){
   bMode='rent';hMode='rent';lMode='rent';
   // Listing form and inquiry state
   upImgs=[];selTags=[];selAmens=[];actL=null;
+  // Lister filter + search
+  _listerFilter='all';_listerSearch='';
   // Admin tab
   curAT='ov';
   // Image carousel positions
@@ -3134,15 +3136,46 @@ async function renderDash(){
 }
 
 // ══ LISTER ══
+// Lister filter + search helpers
+function setListerFilter(filter){
+  // Clicking the same filter clears it
+  if(_listerFilter===filter&&filter!=='all')_listerFilter='all';
+  else _listerFilter=filter;
+  renderLister();
+}
+var _listerSearchT=null;
+function onListerSearch(v){
+  _listerSearch=(v||'').trim();
+  // Debounce so we don't re-render on every keystroke
+  clearTimeout(_listerSearchT);
+  _listerSearchT=setTimeout(function(){renderLister();},220);
+}
+function clearListerSearch(){
+  _listerSearch='';
+  var el=document.getElementById('lSrch');if(el)el.value='';
+  renderLister();
+}
+
+// State for lister filters
+var _listerFilter='all'; // 'all' | 'approved' | 'pending' | 'rejected' | 'leads'
+var _listerSearch='';
+
 async function renderLister(){
-  if(!cu||(cu.role!=='broker'&&cu.role!=='owner'))return;
-  var ib=cu.role==='broker';
+  if(!cu||(cu.role!=='broker'&&cu.role!=='owner'&&cu.role!=='builder'))return;
+  var ib=cu.role==='broker', isBuilder=cu.role==='builder';
   var lt=document.getElementById('lTit'),lb=document.getElementById('lBdg'),lg=document.getElementById('lGrt');
-  if(lt)lt.textContent=ib?'Broker Portal':'Owner Portal';
-  if(lb)lb.innerHTML=ib?'<span class="brk-b"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-broker"/></svg> Broker</span>':'<span class="own-b"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-owner"/></svg> Owner</span>';
+  if(lt)lt.textContent=isBuilder?'Builder Portal':(ib?'Broker Portal':'Owner Portal');
+  if(lb){
+    if(isBuilder)lb.innerHTML='<span class="brk-b" style="background:rgba(218,165,32,.15);color:#c58600;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-sparkle"/></svg> Builder</span>';
+    else if(ib)lb.innerHTML='<span class="brk-b"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-broker"/></svg> Broker</span>';
+    else lb.innerHTML='<span class="own-b"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-owner"/></svg> Owner</span>';
+  }
   var pts=[cu.email];
   if(cu.phone)pts.unshift(cu.phone);
-  if(cu.agency)pts.unshift((ib?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-broker"/></svg> ':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-owner"/></svg> ')+cu.agency);
+  if(cu.agency){
+    var roleIcon=isBuilder?'i-sparkle':(ib?'i-broker':'i-owner');
+    pts.unshift('<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#'+roleIcon+'"/></svg> '+cu.agency);
+  }
   if(cu.lic)pts.push('RERA: '+cu.lic);
   if(lg)lg.innerHTML=pts.join(' &nbsp;&middot;&nbsp; ');
   // Show loading
@@ -3151,6 +3184,7 @@ async function renderLister(){
   var myL=(await gL()).filter(function(l){return l.uid===cu.id;});
   var ap=myL.filter(function(l){return l.status==='approved';});
   var pn=myL.filter(function(l){return l.status==='pending';});
+  var rj=myL.filter(function(l){return l.status==='rejected';});
   var myLIds=myL.map(function(l){return l.id;});
   var allInqs=await gInq();
   // Pre-compute leads-per-listing map so the total matches the sum of per-listing
@@ -3161,13 +3195,70 @@ async function renderLister(){
     }
   });
   var totalLeads=Object.keys(leadsByListing).reduce(function(s,k){return s+leadsByListing[k];},0);
+  // Stat boxes — now clickable filters with active state
   var st=document.getElementById('lStats');
-  if(st)st.innerHTML=['<div style="text-align:center;background:var(--wh);border-radius:12px;padding:16px;border:1px solid var(--sa);"><div style="font-size:20px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg></div><div style="font-family:\'Playfair Display\',serif;font-size:28px;font-weight:700;color:var(--t);">'+myL.length+'</div><div style="font-size:12px;color:var(--mu);">Listed</div></div>',
-    '<div style="text-align:center;background:var(--wh);border-radius:12px;padding:16px;border:1px solid var(--sa);"><div style="font-size:20px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg></div><div style="font-family:\'Playfair Display\',serif;font-size:28px;font-weight:700;color:var(--gr);">'+ap.length+'</div><div style="font-size:12px;color:var(--mu);">Approved</div></div>',
-    '<div style="text-align:center;background:var(--wh);border-radius:12px;padding:16px;border:1px solid var(--sa);"><div style="font-size:20px;">&#9201;</div><div style="font-family:\'Playfair Display\',serif;font-size:28px;font-weight:700;color:var(--g);">'+pn.length+'</div><div style="font-size:12px;color:var(--mu);">Pending</div></div>',
-    '<div style="text-align:center;background:var(--wh);border-radius:12px;padding:16px;border:1px solid var(--sa);"><div style="font-size:20px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-phone"/></svg></div><div style="font-family:\'Playfair Display\',serif;font-size:28px;font-weight:700;color:var(--pu);">'+totalLeads+'</div><div style="font-size:12px;color:var(--mu);">Leads</div></div>'].join('');
+  function statBox(filter,iconRef,iconHtml,count,colorVar,label){
+    var on=_listerFilter===filter;
+    var border=on?'2px solid '+colorVar:'1px solid var(--sa)';
+    var bg=on?'var(--cr)':'var(--wh)';
+    return '<button onclick="setListerFilter(\''+filter+'\')" class="lister-stat-box" style="text-align:center;background:'+bg+';border-radius:12px;padding:16px;border:'+border+';cursor:pointer;font-family:\'DM Sans\',sans-serif;width:100%;transition:all .18s;">'
+      +'<div style="font-size:20px;color:'+colorVar+';">'+(iconHtml||'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#'+iconRef+'"/></svg>')+'</div>'
+      +'<div style="font-family:\'Playfair Display\',serif;font-size:28px;font-weight:700;color:'+colorVar+';">'+count+'</div>'
+      +'<div style="font-size:12px;color:var(--mu);">'+label+'</div>'
+      +(on?'<div style="font-size:9px;color:'+colorVar+';font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;">Filtered &middot; click to clear</div>':'')
+      +'</button>';
+  }
+  if(st)st.innerHTML=
+    statBox('all','i-home','',myL.length,'var(--t)','Listed')+
+    statBox('approved','i-check','',ap.length,'var(--gr)','Approved')+
+    statBox('pending','','&#9201;',pn.length,'var(--g)','Pending')+
+    statBox('leads','i-phone','',totalLeads,'var(--pu)','Leads');
+  // Render search bar (insert above the listings list, only render once)
+  var lSrch=document.getElementById('lSrch');
+  if(!lSrch){
+    var ll=document.getElementById('lLst');
+    if(ll&&ll.parentNode){
+      var sd=document.createElement('div');
+      sd.id='lSrchWrap';
+      sd.style.cssText='margin:18px 0 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
+      sd.innerHTML='<div style="position:relative;flex:1;min-width:200px;">'
+        +'<svg class="icn icn-sm" aria-hidden="true" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mu);"><use href="#i-search"/></svg>'
+        +'<input id="lSrch" type="text" placeholder="Search by title, city, locality, building…" autocomplete="off" oninput="onListerSearch(this.value)" style="width:100%;padding:9px 11px 9px 34px;border:1px solid var(--sa);border-radius:8px;font-family:\'DM Sans\',sans-serif;font-size:13px;background:var(--wh);box-sizing:border-box;"/>'
+      +'</div>'
+      +'<div id="lFilterChips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>';
+      ll.parentNode.insertBefore(sd,ll);
+    }
+  }
+  // Apply filter + search to determine rendered list
+  var filteredL=myL;
+  if(_listerFilter==='approved')filteredL=ap;
+  else if(_listerFilter==='pending')filteredL=pn;
+  else if(_listerFilter==='rejected')filteredL=rj;
+  else if(_listerFilter==='leads')filteredL=myL.filter(function(l){return (leadsByListing[l.id]||0)>0;});
+  if(_listerSearch){
+    var q=_listerSearch.toLowerCase();
+    filteredL=filteredL.filter(function(l){
+      return (l.title||'').toLowerCase().indexOf(q)>=0
+        ||(l.city||'').toLowerCase().indexOf(q)>=0
+        ||(l.loc||'').toLowerCase().indexOf(q)>=0
+        ||(l.building||'').toLowerCase().indexOf(q)>=0;
+    });
+  }
+  // Render filter status chip
+  var chips=document.getElementById('lFilterChips');
+  if(chips){
+    var bits=[];
+    if(_listerFilter!=='all'){
+      var lbl=_listerFilter.charAt(0).toUpperCase()+_listerFilter.slice(1);
+      bits.push('<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:var(--tl);color:var(--td);border-radius:50px;font-size:11px;font-weight:700;font-family:\'DM Sans\',sans-serif;">'+esc(lbl)+'<button onclick="setListerFilter(\'all\')" style="background:transparent;border:none;color:var(--td);cursor:pointer;font-size:14px;padding:0 0 0 2px;line-height:1;">&times;</button></span>');
+    }
+    if(_listerSearch){
+      bits.push('<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:var(--cr);border:1px solid var(--sa);color:var(--ink);border-radius:50px;font-size:11px;font-weight:600;font-family:\'DM Sans\',sans-serif;">"'+esc(_listerSearch)+'"<button onclick="clearListerSearch()" style="background:transparent;border:none;color:var(--mu);cursor:pointer;font-size:14px;padding:0 0 0 2px;line-height:1;">&times;</button></span>');
+    }
+    chips.innerHTML=bits.join('');
+  }
   var ll=document.getElementById('lLst');
-  if(ll)ll.innerHTML=myL.length?myL.map(function(l){
+  if(ll)ll.innerHTML=filteredL.length?filteredL.map(function(l){
     var thumbH=l.images&&l.images.length?'<img loading="lazy" decoding="async" src="'+l.images[0]+'" alt="'+escAttr(l.title)+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;"/>':'<div style="font-size:28px;">'+(l.lf==='buy'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg>':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg>')+'</div>';
     var pr=l.lf==='rent'?fmtRentHTML(l.rent)+'/mo':fmtPriceHTML(l.price);
     var lc=leadsByListing[l.id]||0;
@@ -3190,7 +3281,13 @@ async function renderLister(){
       +'</div></div>'
       +rejectedBanner
       +'</div>';
-  }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No listings yet. Click &ldquo;+ New Listing&rdquo; to get started.</div>';
+  }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">'
+    +(myL.length===0
+      ?'No listings yet. Click &ldquo;+ New Listing&rdquo; to get started.'
+      :_listerSearch
+        ?'No listings match &ldquo;'+esc(_listerSearch)+'&rdquo;. <a href="#" onclick="event.preventDefault();clearListerSearch();" style="color:var(--t);">Clear search</a>'
+        :'No '+esc(_listerFilter)+' listings. <a href="#" onclick="event.preventDefault();setListerFilter(\'all\');" style="color:var(--t);">Show all</a>')
+    +'</div>';
 }
 async function removeMyListing(lid){
   if(!cu)return;
@@ -3530,6 +3627,74 @@ async function adminExport(kind){
       if(!rpts.length){toast('No reports.','e');return;}
       downloadCSV('ekmakan-reports-'+date+'.csv',rpts.map(_reportToRow));
       toast('Exported '+rpts.length+' reports.');
+    } else if(kind==='insights'){
+      // Comprehensive market insights — the high-value export brokers/builders pay for
+      var ls=await gL();
+      var us=await gU();
+      var inqs=await gInq();
+      var ap=ls.filter(function(l){return l.status==='approved';});
+      var pn=ls.filter(function(l){return l.status==='pending';});
+      var rj=ls.filter(function(l){return l.status==='rejected';});
+      var brs=us.filter(function(u){return u.role==='broker';});
+      var own=us.filter(function(u){return u.role==='owner';});
+      var bld=us.filter(function(u){return u.role==='builder';});
+      var ten=us.filter(function(u){return u.role==='user';});
+      var d=_computeAdminInsights(ls,ap,pn,rj,inqs,brs,own,bld,ten,us);
+      // Build a multi-section CSV — flat structure for spreadsheet compatibility
+      var rows=[];
+      rows.push({Section:'Summary',Metric:'Total live listings',Value:d.totalLive,Detail:''});
+      rows.push({Section:'Summary',Metric:'Total sale inventory value (₹)',Value:d.saleValue,Detail:''});
+      rows.push({Section:'Summary',Metric:'Total project inventory value (₹)',Value:d.projectValue,Detail:''});
+      rows.push({Section:'Summary',Metric:'Total monthly rent value (₹)',Value:d.rentValue,Detail:''});
+      rows.push({Section:'Summary',Metric:'Total leads',Value:inqs.length,Detail:''});
+      rows.push({Section:'Summary',Metric:'Lead conversion rate (%)',Value:(d.conversionRate*100).toFixed(2),Detail:''});
+      rows.push({Section:'Summary',Metric:'Avg leads per listing',Value:d.totalLive?(inqs.length/d.totalLive).toFixed(2):0,Detail:''});
+      rows.push({Section:'Summary',Metric:'New users (last 7 days)',Value:d.newThisWeek,Detail:''});
+      rows.push({Section:'Summary',Metric:'New users (last 30 days)',Value:d.newThisMonth,Detail:''});
+      rows.push({Section:'Summary',Metric:'Total users',Value:us.length,Detail:''});
+      rows.push({Section:'Summary',Metric:'Approval health (%)',Value:d.approvalHealth.toFixed(1),Detail:''});
+      d.topCities.forEach(function(c,i){rows.push({Section:'Top Cities',Metric:'Rank '+(i+1),Value:c.city,Detail:c.count+' listings'});});
+      d.topLocs.forEach(function(l,i){rows.push({Section:'Top Localities by Inventory',Metric:'Rank '+(i+1),Value:l.loc,Detail:l.count+' listings'});});
+      d.topDemand.forEach(function(l,i){rows.push({Section:'Top Localities by Demand (Leads)',Metric:'Rank '+(i+1),Value:l.loc,Detail:l.leads+' leads'});});
+      d.avgPSFRows.forEach(function(r){rows.push({Section:'Avg Price/Sq.Ft by City',Metric:r.city,Value:'₹'+r.avgPSF.toLocaleString('en-IN'),Detail:r.count+' listings'});});
+      d.typeBreakdown.forEach(function(r){rows.push({Section:'Property Type Breakdown',Metric:r.type,Value:r.count,Detail:Math.round(r.count*100/d.totalLive)+'%'});});
+      d.bhkBreakdown.forEach(function(r){rows.push({Section:'BHK Distribution',Metric:r.bhk,Value:r.count,Detail:Math.round(r.count*100/d.totalLive)+'%'});});
+      Object.keys(d.bhkRentAvg).sort().forEach(function(b){
+        var avg=Math.round(d.bhkRentAvg[b]/d.bhkRentCount[b]);
+        rows.push({Section:'Avg Monthly Rent by BHK',Metric:b+' BHK',Value:'₹'+avg.toLocaleString('en-IN'),Detail:d.bhkRentCount[b]+' listings'});
+      });
+      Object.keys(d.bhkSaleAvg).sort().forEach(function(b){
+        var avg=Math.round(d.bhkSaleAvg[b]/d.bhkSaleCount[b]);
+        rows.push({Section:'Avg Sale Price by BHK',Metric:b+' BHK',Value:'₹'+avg.toLocaleString('en-IN'),Detail:d.bhkSaleCount[b]+' listings'});
+      });
+      if(!rows.length){toast('No data to export.','e');return;}
+      downloadCSV('ekmakan-market-insights-'+date+'.csv',rows);
+      toast('Exported '+rows.length+' insight rows.');
+    } else if(kind==='broker_leaderboard'){
+      var ls=await gL();
+      var us=await gU();
+      var inqs=await gInq();
+      var ap=ls.filter(function(l){return l.status==='approved';});
+      var brs=us.filter(function(u){return u.role==='broker';});
+      var own=us.filter(function(u){return u.role==='owner';});
+      var bld=us.filter(function(u){return u.role==='builder';});
+      var ten=us.filter(function(u){return u.role==='user';});
+      var d=_computeAdminInsights(ls,ap,[],[],inqs,brs,own,bld,ten,us);
+      if(!d.topBrokers.length){toast('No active brokers/builders.','e');return;}
+      var rows=d.topBrokers.map(function(b,i){
+        return {
+          Rank:i+1,
+          Name:b.name,
+          Agency:b.agency,
+          Role:b.role,
+          'Active Listings':b.listings,
+          'Approved Listings':b.approved,
+          Leads:b.leads,
+          'Performance Score':b.leads*3+b.listings
+        };
+      });
+      downloadCSV('ekmakan-broker-leaderboard-'+date+'.csv',rows);
+      toast('Exported top '+rows.length+' brokers.');
     }
   }catch(e){
     console.error('Admin export error:',e);
@@ -3708,6 +3873,232 @@ async function exportLeadsForListing(lid){
 
 // ══ ADMIN ══
 async function aTab(t,btn){document.querySelectorAll('.atab').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');curAT=t;await renderAdmin(t);}
+// ══ ADMIN INSIGHTS ══
+// Builds a rich, monetizable insights panel for the admin overview.
+// Brokers/builders would pay for these — locality price trends, demand heatmap,
+// conversion rates, top-performing brokers, inventory value, etc.
+function _computeAdminInsights(ls,ap,pn,rj,inqs,brs,own,bld,ten,us){
+  // Approved listings only — the live inventory
+  var live=ap;
+  // 1. Inventory value (sum of all approved sale + rent listings)
+  var saleValue=0, rentValue=0, projectValue=0;
+  live.forEach(function(l){
+    if(l.lf==='rent')rentValue+=Number(l.rent||0);
+    else if(l.lf==='project')projectValue+=Number(l.priceMin||l.price||0);
+    else saleValue+=Number(l.price||0);
+  });
+  // 2. Top localities by listing count
+  var locCount={};
+  live.forEach(function(l){
+    var key=(l.loc||'Unknown')+', '+(l.city||'');
+    locCount[key]=(locCount[key]||0)+1;
+  });
+  var topLocs=Object.keys(locCount).map(function(k){return{loc:k,count:locCount[k]};})
+    .sort(function(a,b){return b.count-a.count;}).slice(0,5);
+  // 3. Top cities
+  var cityCount={};
+  live.forEach(function(l){var c=l.city||'Unknown';cityCount[c]=(cityCount[c]||0)+1;});
+  var topCities=Object.keys(cityCount).map(function(k){return{city:k,count:cityCount[k]};})
+    .sort(function(a,b){return b.count-a.count;}).slice(0,5);
+  // 4. Property type breakdown
+  var typeCount={};
+  live.forEach(function(l){var t=l.type||'Unknown';typeCount[t]=(typeCount[t]||0)+1;});
+  var typeBreakdown=Object.keys(typeCount).map(function(k){return{type:k,count:typeCount[k]};})
+    .sort(function(a,b){return b.count-a.count;});
+  // 5. BHK distribution (most popular configurations)
+  var bhkCount={};
+  live.forEach(function(l){var b=l.beds+' BHK';bhkCount[b]=(bhkCount[b]||0)+1;});
+  var bhkBreakdown=Object.keys(bhkCount).map(function(k){return{bhk:k,count:bhkCount[k]};})
+    .sort(function(a,b){return b.count-a.count;}).slice(0,6);
+  // 6. Avg price per sqft by city (carpet area where available)
+  var psfByCity={};
+  live.forEach(function(l){
+    if(l.lf==='rent')return;
+    var carpet=l.carpetArea||l.builtArea||l.area||0;
+    var price=l.lf==='project'?(l.priceMin||l.price||0):(l.price||0);
+    if(!carpet||!price)return;
+    var psf=price/carpet;
+    if(!psfByCity[l.city])psfByCity[l.city]={total:0,count:0};
+    psfByCity[l.city].total+=psf;
+    psfByCity[l.city].count++;
+  });
+  var avgPSFRows=Object.keys(psfByCity).map(function(c){
+    return {city:c,avgPSF:Math.round(psfByCity[c].total/psfByCity[c].count),count:psfByCity[c].count};
+  }).sort(function(a,b){return b.count-a.count;}).slice(0,6);
+  // 7. Lead conversion: leads / listings
+  var conversionRate=live.length?(inqs.length/live.length):0;
+  // 8. Demand by locality (which areas are getting the most leads)
+  var leadsByLoc={};
+  inqs.forEach(function(i){
+    var l=ls.find(function(x){return x.id===i.listingId;});
+    if(!l)return;
+    var key=(l.loc||'Unknown')+', '+(l.city||'');
+    leadsByLoc[key]=(leadsByLoc[key]||0)+1;
+  });
+  var topDemand=Object.keys(leadsByLoc).map(function(k){return{loc:k,leads:leadsByLoc[k]};})
+    .sort(function(a,b){return b.leads-a.leads;}).slice(0,5);
+  // 9. Top brokers leaderboard (most listings + leads)
+  var brokerStats={};
+  live.forEach(function(l){
+    if(!l.uid)return;
+    var u=us.find(function(x){return x.id===l.uid;});
+    if(!u||(u.role!=='broker'&&u.role!=='builder'))return;
+    if(!brokerStats[l.uid]){
+      brokerStats[l.uid]={
+        id:l.uid,
+        name:u.name||'Unknown',
+        agency:u.agency||'',
+        role:u.role,
+        listings:0,
+        leads:0,
+        approved:0
+      };
+    }
+    brokerStats[l.uid].listings++;
+    brokerStats[l.uid].approved++;
+  });
+  inqs.forEach(function(i){
+    var l=ls.find(function(x){return x.id===i.listingId;});
+    if(l&&brokerStats[l.uid])brokerStats[l.uid].leads++;
+  });
+  var topBrokers=Object.keys(brokerStats).map(function(k){return brokerStats[k];})
+    .sort(function(a,b){return (b.leads*3+b.listings)-(a.leads*3+a.listings);}).slice(0,10);
+  // 10. New users this week / month
+  var now=Date.now();
+  var weekAgo=now-7*24*3600*1000;
+  var monthAgo=now-30*24*3600*1000;
+  var newThisWeek=us.filter(function(u){
+    var t=u.joinedAt?new Date(u.joinedAt).getTime():0;return t>=weekAgo;
+  }).length;
+  var newThisMonth=us.filter(function(u){
+    var t=u.joinedAt?new Date(u.joinedAt).getTime():0;return t>=monthAgo;
+  }).length;
+  // 11. Avg time-to-approve (rough — based on posted_at vs status changes; approximation)
+  var avgApprovalMs=0;
+  // (We don't have status_changed_at, so we fall back to: approved listings count vs pending count health.)
+  var approvalHealth=ap.length+pn.length>0?(ap.length/(ap.length+pn.length))*100:0;
+  // 12. Avg rent / sale price per BHK
+  var bhkRentAvg={}, bhkRentCount={};
+  var bhkSaleAvg={}, bhkSaleCount={};
+  live.forEach(function(l){
+    if(l.lf==='rent'&&l.rent){
+      bhkRentAvg[l.beds]=(bhkRentAvg[l.beds]||0)+l.rent;
+      bhkRentCount[l.beds]=(bhkRentCount[l.beds]||0)+1;
+    } else if(l.lf!=='project'&&l.price){
+      bhkSaleAvg[l.beds]=(bhkSaleAvg[l.beds]||0)+l.price;
+      bhkSaleCount[l.beds]=(bhkSaleCount[l.beds]||0)+1;
+    }
+  });
+  return {
+    saleValue:saleValue,rentValue:rentValue,projectValue:projectValue,
+    totalLive:live.length,
+    topLocs:topLocs,topCities:topCities,
+    typeBreakdown:typeBreakdown,bhkBreakdown:bhkBreakdown,
+    avgPSFRows:avgPSFRows,
+    conversionRate:conversionRate,
+    topDemand:topDemand,
+    topBrokers:topBrokers,
+    newThisWeek:newThisWeek,newThisMonth:newThisMonth,
+    approvalHealth:approvalHealth,
+    bhkRentAvg:bhkRentAvg,bhkRentCount:bhkRentCount,
+    bhkSaleAvg:bhkSaleAvg,bhkSaleCount:bhkSaleCount
+  };
+}
+
+function _buildAdminInsights(ls,ap,pn,rj,inqs,brs,own,bld,ten,us){
+  var d=_computeAdminInsights(ls,ap,pn,rj,inqs,brs,own,bld,ten,us);
+  function card(title,subtitle,bodyHtml,accent){
+    accent=accent||'var(--t)';
+    return '<div style="background:var(--wh);border-radius:12px;padding:18px 20px;border:1px solid var(--sa);border-top:3px solid '+accent+';">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;">'+title+'</div>'
+      +(subtitle?'<div style="font-size:11px;color:var(--mu);margin-bottom:10px;">'+subtitle+'</div>':'')
+      +bodyHtml
+      +'</div>';
+  }
+  function row(left,right,colorOverride){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f1e8;font-family:\'DM Sans\',sans-serif;font-size:12.5px;"><span style="color:#555;">'+left+'</span><strong style="color:'+(colorOverride||'var(--ink)')+';">'+right+'</strong></div>';
+  }
+  // ── Inventory Value card ──
+  var totalInv=d.saleValue+d.projectValue;
+  var invHTML='<div style="font-family:\'Playfair Display\',serif;font-size:24px;font-weight:700;color:var(--g);margin-bottom:2px;">'+fmtPriceHTML(totalInv)+'</div>'
+    +'<div style="font-size:11px;color:var(--mu);margin-bottom:10px;">across '+d.totalLive+' approved listings</div>'
+    +row('Sale inventory',fmtPriceHTML(d.saleValue))
+    +row('New project inventory',fmtPriceHTML(d.projectValue))
+    +row('Monthly rent (sum)','&#8377;'+d.rentValue.toLocaleString('en-IN'));
+  // ── Lead Conversion card ──
+  var convPct=(d.conversionRate*100).toFixed(1);
+  var convColor=d.conversionRate>=0.5?'var(--gr)':d.conversionRate>=0.2?'var(--g)':'var(--red)';
+  var convHTML='<div style="font-family:\'Playfair Display\',serif;font-size:24px;font-weight:700;color:'+convColor+';margin-bottom:2px;">'+convPct+'%</div>'
+    +'<div style="font-size:11px;color:var(--mu);margin-bottom:10px;">'+inqs.length+' leads from '+d.totalLive+' active listings</div>'
+    +row('Total leads',inqs.length.toLocaleString('en-IN'))
+    +row('Avg leads per listing',d.totalLive?(inqs.length/d.totalLive).toFixed(2):'0')
+    +row('Approval health',d.approvalHealth.toFixed(0)+'%');
+  // ── Growth card ──
+  var growthHTML='<div style="font-family:\'Playfair Display\',serif;font-size:24px;font-weight:700;color:var(--pu);margin-bottom:2px;">+'+d.newThisWeek+'</div>'
+    +'<div style="font-size:11px;color:var(--mu);margin-bottom:10px;">new users this week</div>'
+    +row('New users (7 days)','+'+d.newThisWeek)
+    +row('New users (30 days)','+'+d.newThisMonth)
+    +row('Total users',us.length.toLocaleString('en-IN'));
+  // ── Top Localities card ──
+  var topLocsHTML=d.topLocs.length?d.topLocs.map(function(l,i){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f5f1e8;font-family:\'DM Sans\',sans-serif;font-size:12.5px;">'
+      +'<span style="display:flex;align-items:center;gap:8px;color:#444;"><span style="background:var(--tl);color:var(--td);width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;">'+(i+1)+'</span> '+esc(l.loc)+'</span>'
+      +'<strong style="color:var(--t);">'+l.count+'</strong></div>';
+  }).join(''):'<div style="color:var(--mu);font-size:12px;text-align:center;padding:14px 0;">No data yet</div>';
+  // ── Top Demand card (leads by locality) ──
+  var topDemandHTML=d.topDemand.length?d.topDemand.map(function(l,i){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f5f1e8;font-family:\'DM Sans\',sans-serif;font-size:12.5px;">'
+      +'<span style="display:flex;align-items:center;gap:8px;color:#444;"><span style="background:#fff3e0;color:#c55a00;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;">'+(i+1)+'</span> '+esc(l.loc)+'</span>'
+      +'<strong style="color:#c55a00;">'+l.leads+' leads</strong></div>';
+  }).join(''):'<div style="color:var(--mu);font-size:12px;text-align:center;padding:14px 0;">No leads yet</div>';
+  // ── Avg Price per Sq.Ft card ──
+  var psfHTML=d.avgPSFRows.length?d.avgPSFRows.map(function(r){
+    return row(esc(r.city)+' <span style="color:var(--mu);font-size:10px;">('+r.count+' listings)</span>','&#8377;'+r.avgPSF.toLocaleString('en-IN')+'/sqft','var(--g)');
+  }).join(''):'<div style="color:var(--mu);font-size:12px;text-align:center;padding:14px 0;">Need more sale listings with carpet area</div>';
+  // ── Property Type & BHK card ──
+  var typeHTML=d.typeBreakdown.slice(0,5).map(function(r){
+    return row(esc(r.type),r.count+' ('+Math.round(r.count*100/d.totalLive)+'%)');
+  }).join('');
+  var bhkHTML=d.bhkBreakdown.map(function(r){
+    return row(esc(r.bhk),r.count+' ('+Math.round(r.count*100/d.totalLive)+'%)');
+  }).join('');
+  // ── Top Brokers Leaderboard ──
+  var leaderHTML=d.topBrokers.length?'<table style="width:100%;border-collapse:collapse;font-size:12px;font-family:\'DM Sans\',sans-serif;">'
+    +'<thead><tr style="background:var(--cr);"><th style="text-align:left;padding:7px 9px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;font-size:10px;">#</th><th style="text-align:left;padding:7px 9px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;font-size:10px;">Broker / Agency</th><th style="text-align:right;padding:7px 9px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;font-size:10px;">Listings</th><th style="text-align:right;padding:7px 9px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;font-size:10px;">Leads</th></tr></thead>'
+    +'<tbody>'
+    +d.topBrokers.map(function(b,i){
+      return '<tr style="border-bottom:1px solid #f5f1e8;"><td style="padding:8px 9px;color:var(--mu);font-weight:700;">'+(i+1)+'</td>'
+        +'<td style="padding:8px 9px;"><strong style="color:var(--ink);">'+esc(b.name)+'</strong>'+(b.agency?'<div style="font-size:10px;color:var(--mu);">'+esc(b.agency)+'</div>':'')+'</td>'
+        +'<td style="padding:8px 9px;text-align:right;color:var(--t);font-weight:700;">'+b.listings+'</td>'
+        +'<td style="padding:8px 9px;text-align:right;color:#c55a00;font-weight:700;">'+b.leads+'</td></tr>';
+    }).join('')
+    +'</tbody></table>':'<div style="color:var(--mu);font-size:12px;text-align:center;padding:14px 0;">No active brokers yet</div>';
+  // Compose full panel
+  return '<div style="margin:30px 0 18px;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;">'
+    +'<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;">📊 Market Insights</h2>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+    +'<button onclick="adminExport(\'insights\')" class="btn btn-o btn-sm"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg> Export Insights CSV</button>'
+    +'<button onclick="adminExport(\'broker_leaderboard\')" class="btn btn-o btn-sm"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-broker"/></svg> Broker Leaderboard CSV</button>'
+    +'</div>'
+    +'</div>'
+    +'<p style="font-size:11.5px;color:var(--mu);margin:0 0 16px;line-height:1.5;">Sellable insights — market-level data brokers, builders and analytics partners would pay for. All values computed live from your active inventory.</p>'
+    +'<div class="ins-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">'
+    +card('💰 Total Inventory Value','Sum of all approved sale + project listings',invHTML,'var(--g)')
+    +card('📈 Lead Conversion','Leads relative to live inventory',convHTML,'#c55a00')
+    +card('👥 User Growth','New signups recently',growthHTML,'var(--pu)')
+    +card('🔥 Top Localities by Inventory','Where most listings are concentrated',topLocsHTML,'var(--t)')
+    +card('📍 Top Demand by Leads','Where buyers/tenants are most active',topDemandHTML,'#c55a00')
+    +card('💵 Avg Price / Sq.Ft','By city, carpet area basis',psfHTML,'var(--g)')
+    +card('🏠 Property Type Breakdown','Inventory mix',typeHTML||'<div style="color:var(--mu);font-size:12px;text-align:center;padding:14px 0;">No data</div>','var(--t)')
+    +card('🛏️ BHK Distribution','Most popular configurations',bhkHTML||'<div style="color:var(--mu);font-size:12px;text-align:center;padding:14px 0;">No data</div>','var(--t)')
+    +'</div>'
+    +'<div style="margin-top:20px;background:var(--wh);border-radius:12px;padding:18px 20px;border:1px solid var(--sa);border-top:3px solid var(--pu);">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;">🏆 Top Brokers Leaderboard</div>'
+    +'<div style="font-size:11px;color:var(--mu);margin-bottom:12px;">Ranked by leads (×3) + listings — performance-weighted</div>'
+    +leaderHTML
+    +'</div>';
+}
+
 async function renderAdmin(t){
   // Show loading in admin content area
   var el=document.getElementById('aC');
@@ -3743,9 +4134,10 @@ async function renderAdmin(t){
         +'</div>';
     }).join('');
     el.innerHTML='<div class="g4" style="margin-bottom:24px;">'+cardsHTML+'</div>'
+      +_buildAdminInsights(ls,ap,pn,rj,inqs,brs,own,bld,ten,us)
       +(pn.length
-        ?'<h2 style="font-family:\'Playfair Display\',serif;font-size:17px;margin-bottom:12px;">&#9888; Needs Review ('+pn.length+')</h2>'+pn.map(aRow).join('')
-        :'<div style="background:var(--wh);border-radius:12px;padding:24px;text-align:center;color:var(--mu);border:1px solid var(--sa);"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg> All listings reviewed.</div>');
+        ?'<h2 style="font-family:\'Playfair Display\',serif;font-size:17px;margin:32px 0 12px;">&#9888; Needs Review ('+pn.length+')</h2>'+pn.map(aRow).join('')
+        :'<div style="background:var(--wh);border-radius:12px;padding:24px;text-align:center;color:var(--mu);border:1px solid var(--sa);margin-top:24px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg> All listings reviewed.</div>');
   }
 
   // All Listings tab — paginated

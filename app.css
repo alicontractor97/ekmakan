@@ -250,6 +250,11 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .lm-disp-item{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--cr);border:1px solid var(--sa);border-radius:50px;font-size:12px;color:var(--ink);font-family:'DM Sans',sans-serif;}
 .lm-disp-item .lm-chip-dist{background:var(--tl);color:var(--td);}
 
+/* Lister portal — clickable stat boxes */
+.lister-stat-box{outline:none;}
+.lister-stat-box:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.07);}
+.lister-stat-box:focus-visible{outline:2px solid var(--t);outline-offset:2px;}
+
 /* Pending image placeholder (during compression) */
 .ip-pending{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--tl),var(--cr));}
 .ip-pending .ip-spinner{width:24px;height:24px;border:3px solid rgba(18,90,81,.2);border-top-color:var(--t);border-radius:50%;animation:ip-spin .9s linear infinite;}
