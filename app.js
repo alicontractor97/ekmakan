@@ -3495,9 +3495,10 @@ function setListerFilter(filter){
   // Clicking the same filter clears it
   if(_listerFilter===filter&&filter!=='all')_listerFilter='all';
   else _listerFilter=filter;
-  // Auto-switch tab to match the filter intent
+  // Auto-switch to the right tab — leads stat goes to leads tab,
+  // any other stat (including "Listed"/all) goes to properties tab.
   if(_listerFilter==='leads')setListerTab('leads');
-  else if(_listerFilter!=='all')setListerTab('properties');
+  else setListerTab('properties');
   renderLister();
 }
 var _listerSearchT=null;
@@ -3583,11 +3584,11 @@ async function renderListerLeads(){
   var f=_leadFilters;
   var filtered=myInq.filter(function(i){
     if(f.from){
-      var d=(i.createdAt||'').slice(0,10);
+      var d=(i.sentAt||'').slice(0,10);
       if(d<f.from)return false;
     }
     if(f.to){
-      var d2=(i.createdAt||'').slice(0,10);
+      var d2=(i.sentAt||'').slice(0,10);
       if(d2>f.to)return false;
     }
     if(f.propId&&Number(i.listingId)!==Number(f.propId))return false;
@@ -3652,17 +3653,18 @@ async function renderListerLeads(){
     var lstTitle=lst?lst.title:'(deleted listing)';
     var lstMeta=lst?(lst.beds+' BHK · '+esc(lst.type)+' · '+esc(lst.city)):'';
     var lstPriceLabel=lst?(lst.lf==='rent'?fmtRent(lst.rent)+'/mo':fmtPrice(lst.price||lst.priceMin)):'';
-    var dateDisp=i.createdAt?new Date(i.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
-    var phone=(i.contact||'').replace(/\D/g,'');
-    var waNum=phone.length===10?'91'+phone:phone;
+    var dateDisp=i.sentAt?new Date(i.sentAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+    var phoneRaw=i.phone||'';
+    var phoneDigits=phoneRaw.replace(/\D/g,'');
+    var waNum=phoneDigits.length===10?'91'+phoneDigits:phoneDigits;
     var waMsg=encodeURIComponent('Hi '+(i.name||'')+', thanks for your interest in '+(lstTitle||'my property')+' on Ek Makān. Happy to share more details and arrange a visit. — '+(cu.name||cu.email));
-    var waLink=phone?'https://wa.me/'+waNum+'?text='+waMsg:'';
+    var waLink=phoneDigits.length>=10?'https://wa.me/'+waNum+'?text='+waMsg:'';
     var actions='<div class="lead-actions">';
     if(waLink){
       actions+='<a class="lead-act-btn lead-act-wa" href="'+waLink+'" target="_blank" rel="noopener" title="Message via WhatsApp">'
         +'<svg class="icn" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413"/></svg>'
         +'WhatsApp</a>';
-      actions+='<a class="lead-act-btn lead-act-call" href="tel:'+i.contact+'" title="Call">'
+      actions+='<a class="lead-act-btn lead-act-call" href="tel:'+esc(phoneRaw)+'" title="Call">'
         +'<svg class="icn" aria-hidden="true"><use href="#i-phone"/></svg>'
         +'Call</a>';
     }
@@ -3675,7 +3677,7 @@ async function renderListerLeads(){
     return '<tr>'
       +'<td style="white-space:nowrap;color:var(--mu);font-size:11.5px;">'+dateDisp+'</td>'
       +'<td><div class="lead-name">'+esc(i.name||'(no name)')+'</div>'
-        +(i.contact?'<div class="lead-meta"><a href="tel:'+esc(i.contact)+'" style="color:var(--mu);text-decoration:none;">'+esc(i.contact)+'</a></div>':'')
+        +(phoneRaw?'<div class="lead-meta"><a href="tel:'+esc(phoneRaw)+'" style="color:var(--mu);text-decoration:none;">'+esc(phoneRaw)+'</a></div>':'')
         +(i.email?'<div class="lead-meta">'+esc(i.email)+'</div>':'')
       +'</td>'
       +'<td><div style="font-size:12.5px;font-weight:600;color:var(--ink);max-width:240px;line-height:1.4;">'+esc(lstTitle)+'</div>'
@@ -3717,8 +3719,8 @@ async function exportFilteredLeadsCSV(){
   var myInq=(await gInq()).filter(function(i){return myLIds.indexOf(i.listingId)>=0;});
   var f=_leadFilters;
   var filtered=myInq.filter(function(i){
-    if(f.from&&(i.createdAt||'').slice(0,10)<f.from)return false;
-    if(f.to&&(i.createdAt||'').slice(0,10)>f.to)return false;
+    if(f.from&&(i.sentAt||'').slice(0,10)<f.from)return false;
+    if(f.to&&(i.sentAt||'').slice(0,10)>f.to)return false;
     if(f.propId&&Number(i.listingId)!==Number(f.propId))return false;
     if(f.type){var lst=myL.find(function(x){return x.id===i.listingId;});if(!lst||lst.type!==f.type)return false;}
     if(f.budgetMin||f.budgetMax){
@@ -3736,9 +3738,9 @@ async function exportFilteredLeadsCSV(){
     var lst=myL.find(function(x){return x.id===i.listingId;})||{};
     var pr=lst.lf==='rent'?fmtRent(lst.rent)+'/mo':fmtPrice(lst.price||lst.priceMin||0);
     rows.push([
-      i.createdAt||'',
+      i.sentAt||'',
       i.name||'',
-      i.contact||'',
+      i.phone||'',
       i.email||'',
       lst.title||'',
       lst.type||'',
