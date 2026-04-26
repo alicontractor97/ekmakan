@@ -62,7 +62,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="app.css?v=20260425-220632"/>
+<link rel="stylesheet" href="app.css?v=20260426-092225"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -519,24 +519,46 @@
 </div>
 
 <!-- LISTER -->
-<div id="pg-lister" class="page" style="padding:40px 60px;background:var(--cr);">
+<div id="pg-lister" class="page" style="padding:40px 60px;background:var(--lister-bg);">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
     <div>
       <div style="display:flex;align-items:center;gap:9px;margin-bottom:3px;">
-        <h1 style="font-family:'Playfair Display',serif;font-size:26px;" id="lTit">My Listings</h1>
+        <h1 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;letter-spacing:-.3px;" id="lTit">My Listings</h1>
         <span id="lBdg"></span>
       </div>
       <p id="lGrt" style="font-size:13px;color:var(--mu);"></p>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-o btn-sm" onclick="openEditProfile()"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-edit"/></svg> Edit Profile</button>
-      <button class="btn btn-o btn-sm" onclick="exportMyLeads()" title="Export all your leads to CSV"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg> Export Leads</button>
-      <button class="btn" onclick="openM('addM')">+ New Listing</button>
+      <button class="btn-lister-primary" onclick="postPropertyClick()"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg> + New Listing</button>
     </div>
   </div>
-  <div class="g4" id="lStats" style="margin-bottom:24px;"></div>
-  <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:12px;">My Properties</h2>
-  <div id="lLst"></div>
+
+  <!-- Tab navigation -->
+  <div class="ltabs" role="tablist">
+    <button class="ltab on" data-ltab="overview" onclick="setListerTab('overview')" role="tab"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-home"/></svg> Overview</button>
+    <button class="ltab" data-ltab="properties" onclick="setListerTab('properties')" role="tab"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-broker"/></svg> Properties</button>
+    <button class="ltab" data-ltab="leads" onclick="setListerTab('leads')" role="tab"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> Leads</button>
+  </div>
+
+  <!-- OVERVIEW TAB: stats + recent activity -->
+  <div class="ltab-pane on" data-lpane="overview">
+    <div class="g4" id="lStats" style="margin-bottom:24px;"></div>
+    <div id="lOverviewExtra"></div>
+  </div>
+
+  <!-- PROPERTIES TAB: search/filter + listing cards -->
+  <div class="ltab-pane" data-lpane="properties">
+    <div id="lPropsContainer">
+      <h2 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:14px;letter-spacing:-.2px;">My Properties</h2>
+      <div id="lLst"></div>
+    </div>
+  </div>
+
+  <!-- LEADS TAB: filterable table -->
+  <div class="ltab-pane" data-lpane="leads">
+    <div id="lLeadsContainer"></div>
+  </div>
 </div>
 
 <!-- ADMIN -->
@@ -1318,11 +1340,11 @@
   </div>
 </div>
 
-<script src="app.js?v=20260425-220632" defer></script>
+<script src="app.js?v=20260426-092225" defer></script>
 <script>
 // Build version stamp — replaced by build script. Used to detect when a new
 // deploy has landed so we can auto-reload the page for users.
-window.__BUILD_VERSION__ = '20260425-220632';
+window.__BUILD_VERSION__ = '20260426-092225';
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){

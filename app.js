@@ -866,6 +866,8 @@ function resetSessionState(){
   if(typeof _formMarker!=='undefined')_formMarker=null;
   // Lister filter + search
   _listerFilter='all';_listerSearch='';
+  if(typeof _listerTab!=='undefined')_listerTab='overview';
+  if(typeof _leadFilters!=='undefined')_leadFilters={from:'',to:'',propId:'',type:'',budgetMin:0,budgetMax:0};
   // Admin tab
   curAT='ov';
   // Image carousel positions
@@ -3493,6 +3495,9 @@ function setListerFilter(filter){
   // Clicking the same filter clears it
   if(_listerFilter===filter&&filter!=='all')_listerFilter='all';
   else _listerFilter=filter;
+  // Auto-switch tab to match the filter intent
+  if(_listerFilter==='leads')setListerTab('leads');
+  else if(_listerFilter!=='all')setListerTab('properties');
   renderLister();
 }
 var _listerSearchT=null;
@@ -3511,6 +3516,250 @@ function clearListerSearch(){
 // State for lister filters
 var _listerFilter='all'; // 'all' | 'approved' | 'pending' | 'rejected' | 'leads'
 var _listerSearch='';
+var _listerTab='overview'; // 'overview' | 'properties' | 'leads'
+// Leads-table filter state
+var _leadFilters={from:'',to:'',propId:'',type:'',budgetMin:0,budgetMax:0};
+
+// ── Tab switching for lister portal ──
+function setListerTab(name){
+  _listerTab=name||'overview';
+  document.querySelectorAll('#pg-lister .ltab').forEach(function(t){
+    t.classList.toggle('on',t.dataset.ltab===_listerTab);
+  });
+  document.querySelectorAll('#pg-lister .ltab-pane').forEach(function(p){
+    p.classList.toggle('on',p.dataset.lpane===_listerTab);
+  });
+  // Render the right pane on demand (fast: data already in cache)
+  if(_listerTab==='leads')renderListerLeads();
+}
+
+// Show rejection reason modal — clean, non-alarming professional note
+function showRejectionReason(lid){
+  gL().then(function(all){
+    var l=all.find(function(x){return x.id===lid;});
+    if(!l)return;
+    var reason=l.rejectionReason||'No reason was provided. Please contact support if you believe this was an error.';
+    var html='<div style="padding:8px 28px 24px;font-family:\'DM Sans\',sans-serif;">'
+      +'<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding:14px;background:#fff5f5;border:1px solid #ffd0d0;border-left:4px solid var(--red);border-radius:10px;">'
+        +'<div style="width:32px;height:32px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg></div>'
+        +'<div style="flex:1;">'
+          +'<div style="font-size:13px;font-weight:700;color:#7a2222;margin-bottom:2px;">Listing not approved</div>'
+          +'<div style="font-size:12px;color:#5a3a3a;line-height:1.5;">A reviewer flagged your listing &mdash; the reason is below. Once you address the concern, click "Edit &amp; Resubmit" and it will go back into the queue.</div>'
+        +'</div>'
+      +'</div>'
+      +'<div style="background:var(--cr);border:1px solid var(--sa);border-radius:10px;padding:16px;margin-bottom:16px;">'
+        +'<div style="font-size:10.5px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">Reviewer note</div>'
+        +'<div style="font-size:13.5px;line-height:1.65;color:var(--ink);font-style:italic;">"'+esc(reason)+'"</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+        +'<button onclick="closeM(\'rejReasonM\');editListing('+lid+');" class="rej-action-btn"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-edit"/></svg> Edit &amp; Resubmit</button>'
+        +'<button onclick="closeM(\'rejReasonM\')" class="rej-action-btn rej-secondary" style="border-color:var(--sa);color:var(--mu);">Close</button>'
+      +'</div>'
+      +'</div>';
+    var existing=document.getElementById('rejReasonM');
+    if(existing)existing.remove();
+    var m=document.createElement('div');
+    m.id='rejReasonM';m.className='mo';
+    m.onclick=function(e){if(e.target===m)closeM('rejReasonM');};
+    m.innerHTML='<div class="mb" style="max-width:520px;"><div class="mh"><h2 style="font-family:\'Playfair Display\',serif;font-size:20px;">Why was this rejected?</h2><button class="mc" onclick="closeM(\'rejReasonM\')" aria-label="Close"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button></div>'+html+'</div>';
+    document.body.appendChild(m);
+    openM('rejReasonM');
+  });
+}
+
+// ── LEADS TABLE ──
+async function renderListerLeads(){
+  if(!cu)return;
+  var wrap=document.getElementById('lLeadsContainer');
+  if(!wrap)return;
+  wrap.innerHTML='<div class="mk-spinner"><span class="mk-spinner-text">Loading leads…</span></div>';
+  // Fetch listings + inquiries
+  var allL=await gL();
+  var myL=allL.filter(function(l){return l.uid===cu.id;});
+  var myLIds=myL.map(function(l){return l.id;});
+  var allInq=await gInq();
+  var myInq=allInq.filter(function(i){return myLIds.indexOf(i.listingId)>=0;});
+  // Apply filters
+  var f=_leadFilters;
+  var filtered=myInq.filter(function(i){
+    if(f.from){
+      var d=(i.createdAt||'').slice(0,10);
+      if(d<f.from)return false;
+    }
+    if(f.to){
+      var d2=(i.createdAt||'').slice(0,10);
+      if(d2>f.to)return false;
+    }
+    if(f.propId&&Number(i.listingId)!==Number(f.propId))return false;
+    if(f.type){
+      var lst=myL.find(function(x){return x.id===i.listingId;});
+      if(!lst||lst.type!==f.type)return false;
+    }
+    if(f.budgetMin||f.budgetMax){
+      var lst2=myL.find(function(x){return x.id===i.listingId;});
+      if(!lst2)return false;
+      var p=lst2.lf==='rent'?lst2.rent:(lst2.price||lst2.priceMin||0);
+      if(f.budgetMin&&p<f.budgetMin)return false;
+      if(f.budgetMax&&p>f.budgetMax)return false;
+    }
+    return true;
+  });
+  // Sort newest first
+  filtered.sort(function(a,b){return (b.createdAt||'').localeCompare(a.createdAt||'');});
+  // Build property dropdown options
+  var propOpts='<option value="">All properties</option>'+myL.map(function(l){
+    return '<option value="'+l.id+'"'+(String(f.propId)===String(l.id)?' selected':'')+'>'+esc(l.title.length>40?l.title.slice(0,40)+'…':l.title)+'</option>';
+  }).join('');
+  // Property type options derived from actual listings
+  var typeSet={};myL.forEach(function(l){if(l.type)typeSet[l.type]=true;});
+  var typeOpts='<option value="">All types</option>'+Object.keys(typeSet).sort().map(function(t){
+    return '<option value="'+esc(t)+'"'+(f.type===t?' selected':'')+'>'+esc(t)+'</option>';
+  }).join('');
+  // Toolbar
+  var toolbar='<div class="leads-toolbar">'
+    +'<div class="filt-group"><label>From date</label><input type="date" id="ldf" value="'+esc(f.from)+'" onchange="updateLeadFilter(\'from\',this.value)"/></div>'
+    +'<div class="filt-group"><label>To date</label><input type="date" id="ldt" value="'+esc(f.to)+'" onchange="updateLeadFilter(\'to\',this.value)"/></div>'
+    +'<div class="filt-group"><label>Property</label><select id="ldp" onchange="updateLeadFilter(\'propId\',this.value)">'+propOpts+'</select></div>'
+    +'<div class="filt-group"><label>Type</label><select id="ldty" onchange="updateLeadFilter(\'type\',this.value)">'+typeOpts+'</select></div>'
+    +'<div class="filt-group"><label>Budget min (₹)</label><input type="number" id="ldbmin" placeholder="0" value="'+(f.budgetMin||'')+'" onchange="updateLeadFilter(\'budgetMin\',Number(this.value)||0)" style="width:130px;"/></div>'
+    +'<div class="filt-group"><label>Budget max (₹)</label><input type="number" id="ldbmax" placeholder="No limit" value="'+(f.budgetMax||'')+'" onchange="updateLeadFilter(\'budgetMax\',Number(this.value)||0)" style="width:130px;"/></div>'
+    +(Object.keys(f).some(function(k){return f[k];})?'<button class="leads-export-btn" onclick="clearLeadFilters()" style="border-color:var(--sa);color:var(--mu);">Clear filters</button>':'')
+    +'<button class="leads-export-btn" onclick="exportFilteredLeadsCSV()"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg> Export CSV</button>'
+    +'</div>';
+  // Stats line
+  var totalAcross=myInq.length;
+  var statsLine='<div class="leads-stats">'
+    +'<span><strong>'+filtered.length+'</strong> showing</span>'
+    +'<span><strong>'+totalAcross+'</strong> total leads</span>'
+    +'<span><strong>'+myL.length+'</strong> properties</span>'
+    +'</div>';
+  // Empty state
+  if(!filtered.length){
+    var emptyMsg=totalAcross===0
+      ?'No leads yet. Once buyers/renters message you about your listings, they\'ll appear here.'
+      :'No leads match your filters. <a href="#" onclick="event.preventDefault();clearLeadFilters();" style="color:var(--t);font-weight:700;">Clear filters</a> to see all '+totalAcross+'.';
+    wrap.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:20px;font-weight:700;margin-bottom:14px;letter-spacing:-.2px;">Lead Inbox</h2>'
+      +toolbar
+      +'<div class="leads-table-wrap">'
+        +statsLine
+        +'<div class="leads-empty"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-mail"/></svg><div>'+emptyMsg+'</div></div>'
+      +'</div>';
+    return;
+  }
+  // Table
+  var rows=filtered.map(function(i){
+    var lst=myL.find(function(x){return x.id===i.listingId;});
+    var lstTitle=lst?lst.title:'(deleted listing)';
+    var lstMeta=lst?(lst.beds+' BHK · '+esc(lst.type)+' · '+esc(lst.city)):'';
+    var lstPriceLabel=lst?(lst.lf==='rent'?fmtRent(lst.rent)+'/mo':fmtPrice(lst.price||lst.priceMin)):'';
+    var dateDisp=i.createdAt?new Date(i.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+    var phone=(i.contact||'').replace(/\D/g,'');
+    var waNum=phone.length===10?'91'+phone:phone;
+    var waMsg=encodeURIComponent('Hi '+(i.name||'')+', thanks for your interest in '+(lstTitle||'my property')+' on Ek Makān. Happy to share more details and arrange a visit. — '+(cu.name||cu.email));
+    var waLink=phone?'https://wa.me/'+waNum+'?text='+waMsg:'';
+    var actions='<div class="lead-actions">';
+    if(waLink){
+      actions+='<a class="lead-act-btn lead-act-wa" href="'+waLink+'" target="_blank" rel="noopener" title="Message via WhatsApp">'
+        +'<svg class="icn" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413"/></svg>'
+        +'WhatsApp</a>';
+      actions+='<a class="lead-act-btn lead-act-call" href="tel:'+i.contact+'" title="Call">'
+        +'<svg class="icn" aria-hidden="true"><use href="#i-phone"/></svg>'
+        +'Call</a>';
+    }
+    if(i.email){
+      actions+='<a class="lead-act-btn lead-act-mail" href="mailto:'+esc(i.email)+'?subject='+encodeURIComponent('Re: '+lstTitle)+'" title="Email">'
+        +'<svg class="icn" aria-hidden="true"><use href="#i-mail"/></svg>'
+        +'Email</a>';
+    }
+    actions+='</div>';
+    return '<tr>'
+      +'<td style="white-space:nowrap;color:var(--mu);font-size:11.5px;">'+dateDisp+'</td>'
+      +'<td><div class="lead-name">'+esc(i.name||'(no name)')+'</div>'
+        +(i.contact?'<div class="lead-meta"><a href="tel:'+esc(i.contact)+'" style="color:var(--mu);text-decoration:none;">'+esc(i.contact)+'</a></div>':'')
+        +(i.email?'<div class="lead-meta">'+esc(i.email)+'</div>':'')
+      +'</td>'
+      +'<td><div style="font-size:12.5px;font-weight:600;color:var(--ink);max-width:240px;line-height:1.4;">'+esc(lstTitle)+'</div>'
+        +(lstMeta?'<div class="lead-meta">'+lstMeta+'</div>':'')
+        +(lstPriceLabel?'<div class="lead-meta" style="color:var(--t);font-weight:700;">'+lstPriceLabel+'</div>':'')
+      +'</td>'
+      +'<td><div class="lead-msg">'+(i.message?esc(i.message):'<span style="color:var(--mu);font-style:italic;">No message</span>')+'</div></td>'
+      +'<td>'+actions+'</td>'
+      +'</tr>';
+  }).join('');
+  wrap.innerHTML='<h2 style="font-family:\'Playfair Display\',serif;font-size:20px;font-weight:700;margin-bottom:14px;letter-spacing:-.2px;">Lead Inbox</h2>'
+    +toolbar
+    +'<div class="leads-table-wrap">'
+      +statsLine
+      +'<div style="overflow-x:auto;">'
+        +'<table class="leads-table">'
+          +'<thead><tr>'
+            +'<th>Date</th>'
+            +'<th>Lead</th>'
+            +'<th>Property</th>'
+            +'<th>Message</th>'
+            +'<th>Contact</th>'
+          +'</tr></thead>'
+          +'<tbody>'+rows+'</tbody>'
+        +'</table>'
+      +'</div>'
+    +'</div>';
+}
+
+function updateLeadFilter(key,val){_leadFilters[key]=val;renderListerLeads();}
+function clearLeadFilters(){_leadFilters={from:'',to:'',propId:'',type:'',budgetMin:0,budgetMax:0};renderListerLeads();}
+
+// CSV export of currently-filtered leads
+async function exportFilteredLeadsCSV(){
+  if(!cu)return;
+  var allL=await gL();
+  var myL=allL.filter(function(l){return l.uid===cu.id;});
+  var myLIds=myL.map(function(l){return l.id;});
+  var myInq=(await gInq()).filter(function(i){return myLIds.indexOf(i.listingId)>=0;});
+  var f=_leadFilters;
+  var filtered=myInq.filter(function(i){
+    if(f.from&&(i.createdAt||'').slice(0,10)<f.from)return false;
+    if(f.to&&(i.createdAt||'').slice(0,10)>f.to)return false;
+    if(f.propId&&Number(i.listingId)!==Number(f.propId))return false;
+    if(f.type){var lst=myL.find(function(x){return x.id===i.listingId;});if(!lst||lst.type!==f.type)return false;}
+    if(f.budgetMin||f.budgetMax){
+      var lst2=myL.find(function(x){return x.id===i.listingId;});
+      if(!lst2)return false;
+      var p=lst2.lf==='rent'?lst2.rent:(lst2.price||lst2.priceMin||0);
+      if(f.budgetMin&&p<f.budgetMin)return false;
+      if(f.budgetMax&&p>f.budgetMax)return false;
+    }
+    return true;
+  });
+  if(!filtered.length){toast('No leads match your filters.','e');return;}
+  var rows=[['Date','Name','Phone','Email','Property','Property Type','City','Price','Message']];
+  filtered.forEach(function(i){
+    var lst=myL.find(function(x){return x.id===i.listingId;})||{};
+    var pr=lst.lf==='rent'?fmtRent(lst.rent)+'/mo':fmtPrice(lst.price||lst.priceMin||0);
+    rows.push([
+      i.createdAt||'',
+      i.name||'',
+      i.contact||'',
+      i.email||'',
+      lst.title||'',
+      lst.type||'',
+      lst.city||'',
+      pr,
+      (i.message||'').replace(/\n/g,' / ')
+    ]);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){
+    var s=String(c==null?'':c);
+    return s.indexOf(',')>=0||s.indexOf('"')>=0||s.indexOf('\n')>=0?'"'+s.replace(/"/g,'""')+'"':s;
+  }).join(',');}).join('\n');
+  var bom='\uFEFF';
+  var blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='ekmakan-leads-'+(new Date()).toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('CSV downloaded — '+filtered.length+' lead'+(filtered.length===1?'':'s'));
+}
 
 async function renderLister(){
   if(!cu||(cu.role!=='broker'&&cu.role!=='owner'&&cu.role!=='builder'))return;
@@ -3518,9 +3767,14 @@ async function renderLister(){
   var lt=document.getElementById('lTit'),lb=document.getElementById('lBdg'),lg=document.getElementById('lGrt');
   if(lt)lt.textContent=isBuilder?'Builder Portal':(ib?'Broker Portal':'Owner Portal');
   if(lb){
-    if(isBuilder)lb.innerHTML='<span class="brk-b" style="background:rgba(218,165,32,.15);color:#c58600;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-sparkle"/></svg> Builder</span>';
-    else if(ib)lb.innerHTML='<span class="brk-b"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-broker"/></svg> Broker</span>';
-    else lb.innerHTML='<span class="own-b"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-owner"/></svg> Owner</span>';
+    var badges=[];
+    if(isBuilder)badges.push('<span class="brk-b" style="background:rgba(218,165,32,.15);color:#c58600;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-sparkle"/></svg> Builder</span>');
+    else if(ib)badges.push('<span class="brk-b"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-broker"/></svg> Broker</span>');
+    else badges.push('<span class="own-b"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-owner"/></svg> Owner</span>');
+    if(cu.trusted){
+      badges.push('<span class="trusted-badge-lister"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg> Trusted</span>');
+    }
+    lb.innerHTML=badges.join(' ');
   }
   var pts=[cu.email];
   if(cu.phone)pts.unshift(cu.phone);
@@ -3551,34 +3805,40 @@ async function renderLister(){
   var st=document.getElementById('lStats');
   function statBox(filter,iconRef,iconHtml,count,colorVar,label){
     var on=_listerFilter===filter;
-    var border=on?'2px solid '+colorVar:'1px solid var(--sa)';
-    var bg=on?'var(--cr)':'var(--wh)';
-    return '<button onclick="setListerFilter(\''+filter+'\')" class="lister-stat-box" style="text-align:center;background:'+bg+';border-radius:12px;padding:16px;border:'+border+';cursor:pointer;font-family:\'DM Sans\',sans-serif;width:100%;transition:all .18s;">'
-      +'<div style="font-size:20px;color:'+colorVar+';">'+(iconHtml||'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#'+iconRef+'"/></svg>')+'</div>'
-      +'<div style="font-family:\'Playfair Display\',serif;font-size:28px;font-weight:700;color:'+colorVar+';">'+count+'</div>'
-      +'<div style="font-size:12px;color:var(--mu);">'+label+'</div>'
-      +(on?'<div style="font-size:9px;color:'+colorVar+';font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:3px;">Filtered &middot; click to clear</div>':'')
+    var border=on?'2px solid '+colorVar:'1px solid var(--lister-border)';
+    var bg='var(--wh)';
+    return '<button onclick="setListerFilter(\''+filter+'\')" class="lister-stat-box" style="text-align:center;background:'+bg+';border-radius:14px;padding:20px 14px;border:'+border+';cursor:pointer;font-family:\'DM Sans\',sans-serif;width:100%;transition:all .2s;">'
+      +'<div style="font-size:20px;color:'+colorVar+';margin-bottom:4px;">'+(iconHtml||'<svg class="icn icn-lg" aria-hidden="true"><use href="#'+iconRef+'"/></svg>')+'</div>'
+      +'<div style="font-family:\'Playfair Display\',serif;font-size:32px;font-weight:700;color:'+colorVar+';line-height:1;letter-spacing:-.5px;">'+count+'</div>'
+      +'<div style="font-size:11.5px;color:var(--mu);margin-top:6px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;">'+label+'</div>'
+      +(on?'<div style="font-size:9.5px;color:'+colorVar+';font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;">Filtered &middot; click to clear</div>':'')
       +'</button>';
   }
-  if(st)st.innerHTML=
-    statBox('all','i-home','',myL.length,'var(--t)','Listed')+
-    statBox('approved','i-check','',ap.length,'var(--gr)','Approved')+
-    statBox('pending','','&#9201;',pn.length,'var(--g)','Pending')+
-    statBox('leads','i-phone','',totalLeads,'var(--pu)','Leads');
-  // Render search bar (insert above the listings list, only render once)
+  if(st){
+    var html=statBox('all','i-home','',myL.length,'var(--t)','Listed')+
+      statBox('approved','i-check','',ap.length,'var(--gr)','Approved')+
+      statBox('pending','','&#9201;',pn.length,'#9a7300','Pending')+
+      statBox('leads','i-phone','',totalLeads,'#c58600','Leads');
+    if(rj.length){
+      html+=statBox('rejected','i-flag','',rj.length,'var(--red)','Rejected');
+    }
+    st.innerHTML=html;
+  }
+  // Render search bar (inside the properties pane, just after the heading; only insert once)
   var lSrch=document.getElementById('lSrch');
   if(!lSrch){
+    var pc=document.getElementById('lPropsContainer');
     var ll=document.getElementById('lLst');
-    if(ll&&ll.parentNode){
+    if(pc&&ll){
       var sd=document.createElement('div');
       sd.id='lSrchWrap';
-      sd.style.cssText='margin:18px 0 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
+      sd.style.cssText='margin:0 0 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
       sd.innerHTML='<div style="position:relative;flex:1;min-width:200px;">'
         +'<svg class="icn icn-sm" aria-hidden="true" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mu);"><use href="#i-search"/></svg>'
-        +'<input id="lSrch" type="text" placeholder="Search by title, city, locality, building…" autocomplete="off" oninput="onListerSearch(this.value)" style="width:100%;padding:9px 11px 9px 34px;border:1px solid var(--sa);border-radius:8px;font-family:\'DM Sans\',sans-serif;font-size:13px;background:var(--wh);box-sizing:border-box;"/>'
+        +'<input id="lSrch" type="text" placeholder="Search by title, city, locality, building…" autocomplete="off" oninput="onListerSearch(this.value)" style="width:100%;padding:10px 12px 10px 34px;border:1px solid var(--lister-border);border-radius:9px;font-family:\'DM Sans\',sans-serif;font-size:13px;background:var(--wh);box-sizing:border-box;box-shadow:var(--lister-shadow-sm);"/>'
       +'</div>'
       +'<div id="lFilterChips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>';
-      ll.parentNode.insertBefore(sd,ll);
+      pc.insertBefore(sd,ll);
     }
   }
   // Apply filter + search to determine rendered list
@@ -3614,32 +3874,38 @@ async function renderLister(){
     var thumbH=l.images&&l.images.length?'<img loading="lazy" decoding="async" src="'+l.images[0]+'" alt="'+escAttr(l.title)+'" style="width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;"/>':'<div style="font-size:28px;">'+(l.lf==='buy'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg>':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg>')+'</div>';
     var pr=l.lf==='rent'?fmtRentHTML(l.rent)+'/mo':fmtPriceHTML(l.price);
     var lc=leadsByListing[l.id]||0;
-    var isRejected=l.status==='rejected'&&l.rejectionReason;
+    var isRejected=l.status==='rejected';
     var rejectedBanner=isRejected?
-      '<div style="background:#fff5f5;border:1px solid #ffcccc;border-left:3px solid var(--red);border-radius:6px;padding:9px 12px;margin-top:10px;font-size:12px;line-height:1.5;color:#7a2222;">'
-        +'<div style="font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;"><svg class="icn icn-sm" aria-hidden="true" style="color:var(--red);"><use href="#i-flag"/></svg> Rejected by admin</div>'
-        +'<div style="color:#5a3a3a;">'+esc(l.rejectionReason)+'</div>'
-        +'<button onclick="event.stopPropagation();editListing('+l.id+')" style="margin-top:8px;background:var(--t);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-edit"/></svg> Edit &amp; Resubmit</button>'
+      '<div class="rej-banner">'
+        +'<div class="rej-banner-head"><svg class="icn icn-sm" aria-hidden="true" style="color:var(--red);"><use href="#i-flag"/></svg> Rejected by reviewer</div>'
+        +'<div class="rej-banner-body">'+(l.rejectionReason?esc(l.rejectionReason.length>140?l.rejectionReason.slice(0,140)+'…':l.rejectionReason):'A reviewer flagged this listing — click "View reason" for details.')+'</div>'
+        +'<div class="rej-banner-actions">'
+          +'<button onclick="event.stopPropagation();showRejectionReason('+l.id+')" class="rej-action-btn rej-secondary"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg> View reason</button>'
+          +'<button onclick="event.stopPropagation();editListing('+l.id+')" class="rej-action-btn"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-edit"/></svg> Edit &amp; Resubmit</button>'
+        +'</div>'
       +'</div>':'';
-    return '<div class="li" style="cursor:pointer;flex-wrap:wrap;" onclick="viewL('+l.id+')" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'var(--wh)\'">'
+    return '<div class="li" style="cursor:pointer;flex-wrap:wrap;" onclick="viewL('+l.id+')">'
       +'<div style="display:flex;align-items:center;gap:12px;width:100%;">'
       +thumbH
       +'<div class="li-in"><strong>'+esc(l.title)+'</strong><span>'+esc(l.city)+' &middot; '+pr+' &middot; '+(l.images?l.images.length:0)+' photo(s)</span></div>'
       +'<span class="pill '+(l.status==='approved'?'pill-g':l.status==='pending'?'pill-y':'pill-r')+'">'+l.status+'</span>'
       +'<div class="li-ac" onclick="event.stopPropagation()">'
-      +(l.status==='approved'?'<button class="btn-sm" onclick="event.stopPropagation();showLeads('+l.id+')" style="background:transparent;color:var(--t);border:1px solid var(--sa);border-radius:6px;padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'var(--cr)\';this.style.borderColor=\'var(--tl)\'" onmouseout="this.style.background=\'transparent\';this.style.borderColor=\'var(--sa)\'">Leads ('+lc+')</button>':'')
-      +'<button class="btn-sm" onclick="event.stopPropagation();editListing('+l.id+')" title="Edit listing" style="background:transparent;color:var(--t);border:1px solid var(--sa);border-radius:6px;padding:5px 9px;font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'transparent\'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-edit"/></svg> Edit</button>'
-      +'<button class="btn-sm" onclick="event.stopPropagation();removeMyListing('+l.id+')" title="Delete listing" style="background:transparent;color:#999;border:1px solid transparent;border-radius:6px;padding:5px 9px;font-size:13px;font-weight:400;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:color .15s;" onmouseover="this.style.color=\'var(--red)\'" onmouseout="this.style.color=\'#999\'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-trash"/></svg></button>'
+      +(l.status==='approved'?'<button class="btn-sm" onclick="event.stopPropagation();setListerTab(\'leads\');updateLeadFilter(\'propId\',\''+l.id+'\')" style="background:transparent;color:var(--t);border:1px solid var(--lister-border);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'var(--cr)\';this.style.borderColor=\'var(--t)\'" onmouseout="this.style.background=\'transparent\';this.style.borderColor=\'var(--lister-border)\'">Leads ('+lc+') &rarr;</button>':'')
+      +'<button class="btn-sm" onclick="event.stopPropagation();editListing('+l.id+')" title="Edit listing" style="background:transparent;color:var(--t);border:1px solid var(--lister-border);border-radius:7px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .15s;" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'transparent\'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-edit"/></svg> Edit</button>'
+      +'<button class="btn-sm" onclick="event.stopPropagation();removeMyListing('+l.id+')" title="Delete listing" style="background:transparent;color:#999;border:1px solid transparent;border-radius:7px;padding:6px 9px;font-size:13px;font-weight:400;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:color .15s;" onmouseover="this.style.color=\'var(--red)\'" onmouseout="this.style.color=\'#999\'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-trash"/></svg></button>'
       +'</div></div>'
       +rejectedBanner
       +'</div>';
-  }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">'
+  }).join(''):'<div style="background:var(--wh);border-radius:14px;padding:32px;text-align:center;color:var(--mu);border:1px solid var(--lister-border);box-shadow:var(--lister-shadow-sm);">'
     +(myL.length===0
       ?'No listings yet. Click &ldquo;+ New Listing&rdquo; to get started.'
       :_listerSearch
         ?'No listings match &ldquo;'+esc(_listerSearch)+'&rdquo;. <a href="#" onclick="event.preventDefault();clearListerSearch();" style="color:var(--t);">Clear search</a>'
         :'No '+esc(_listerFilter)+' listings. <a href="#" onclick="event.preventDefault();setListerFilter(\'all\');" style="color:var(--t);">Show all</a>')
     +'</div>';
+  // If the leads tab is currently active (e.g. after reload or after the user clicked
+  // a stat box), refresh its contents so it reflects the latest listings/inquiries.
+  if(_listerTab==='leads')renderListerLeads();
 }
 async function removeMyListing(lid){
   if(!cu)return;
