@@ -1231,7 +1231,7 @@ function pCard(l){
   var disp=hasImgs?(cu?l.images:l.images.slice(0,2)):[];
   var showLock=hasImgs&&l.images.length>2&&!cu;
 
-  // ── COLUMN 1: Image (fixed width) ──
+  // ── COLUMN 1: Image ──
   var imgHTML='<div class="pc-no-img"><svg class="icn icn-xl" aria-hidden="true" style="color:var(--mu);"><use href="#i-home"/></svg></div>';
   if(hasImgs){
     imgHTML='<img id="ci'+l.id+'" loading="lazy" decoding="async" src="'+disp[0]+'" alt="'+escAttr(l.title)+'"/>';
@@ -1249,56 +1249,36 @@ function pCard(l){
     var visCount=cu?l.images.length:Math.min(2,l.images.length);
     imgHTML+='<div class="pc-photo-cnt"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg> '+visCount+'/'+l.images.length+'</div>';
   }
-  // Top-corner badges over the image — Verified Inclusive sits prominently
+  var typeBadge='<div class="tbdg '+(isP?'proj':ir?'rent':'buy')+'">'+(isP?'New Project':ir?'For Rent':'For Sale')+'</div>';
+  // Single overlay badge — Verified Inclusive (high-trust signal)
   var imgBadges='';
   if(l.verified){
-    imgBadges+='<div class="pc-img-badge pc-vi"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg> Verified Inclusive</div>';
-  } else if(l.tags&&l.tags.length){
-    // If not officially verified but has inclusivity tags, show a softer chip
-    imgBadges+='<div class="pc-img-badge pc-incl"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg> Inclusive</div>';
+    imgBadges+='<div class="pc-img-badge pc-vi"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg> Verified</div>';
   }
-  // For-sale/rent/project status pill (top-left)
-  var typeBadge='<div class="tbdg '+(isP?'proj':ir?'rent':'buy')+'">'+(isP?'New Project':ir?'For Rent':'For Sale')+'</div>';
 
-  // ── COLUMN 2: 2x2 data grid ──
-  // Row 1: Carpet area | Floor (Nth of M)
-  // Row 2: Property age | Water source
-  function fact(label, valueHTML){
-    return '<div class="pc-fact"><div class="pc-fact-lbl">'+label+'</div><div class="pc-fact-val">'+valueHTML+'</div></div>';
-  }
-  var carpet=l.carpetArea?l.carpetArea+' <span class="pc-fact-unit">sq.ft</span>':(l.area?l.area+' <span class="pc-fact-unit">sq.ft</span>':'<span class="pc-fact-dim">—</span>');
-  var floorTxt='<span class="pc-fact-dim">—</span>';
-  if(l.floorNo!=null&&l.totalFloors){
-    var n=Number(l.floorNo);
-    var nth=n===0?'Ground':(n===1?'1st':n===2?'2nd':n===3?'3rd':n+'th');
-    floorTxt=nth+' <span class="pc-fact-unit">of '+l.totalFloors+'</span>';
-  } else if(l.floorNo!=null){
-    floorTxt=Number(l.floorNo)===0?'Ground':l.floorNo;
-  }
-  var ageTxt=l.age?esc(l.age):'<span class="pc-fact-dim">—</span>';
-  var waterTxt='<span class="pc-fact-dim">—</span>';
-  if(l.water){
-    var ws=String(l.water).split(',').map(function(s){return s.trim();}).filter(Boolean);
-    waterTxt=ws.length>1?'Mixed':esc(ws[0]||'—');
-  }
-  var dataGridHTML='<div class="pc-data-grid">'
-    +fact('Carpet Area',carpet)
-    +fact('Floor',floorTxt)
-    +fact('Age',ageTxt)
-    +fact('Water',waterTxt)
-    +'</div>';
-
-  // Title + location strip (above data grid, anchors the column)
+  // ── COLUMN 2: Title, location, key specs strip, tags ──
   var locBits=[];
   if(l.loc)locBits.push(esc(l.loc));
   if(l.city)locBits.push(esc(l.city));
   var locHTML='<div class="pc-loc-row"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-pin"/></svg> '+locBits.join(', ')+'</div>';
-  // BHK + type + furnishing chip strip
+
+  // 99acres-style key spec strip — "3 BHK · 950 sq.ft · 5th Floor · Semi-Furnished"
+  // Pipe-separated, single line, secondary in muted text.
+  var specs=[];
+  specs.push('<strong>'+l.beds+' BHK</strong>');
+  if(l.carpetArea>0)specs.push('<strong>'+l.carpetArea+'</strong> sq.ft <span class="pc-unit-soft">carpet</span>');
+  else if(l.area>0)specs.push('<strong>'+l.area+'</strong> sq.ft');
+  if(l.floorNo!=null&&l.totalFloors){
+    var n=Number(l.floorNo);
+    var nth=n===0?'Ground':(n===1?'1st':n===2?'2nd':n===3?'3rd':n+'th');
+    specs.push(nth+' <span class="pc-unit-soft">of '+l.totalFloors+'</span>');
+  }
+  if(l.type&&l.type!=='Apartment')specs.push(esc(l.type));
+  if(l.furnish)specs.push(esc(l.furnish));
+  var specsHTML='<div class="pc-specs">'+specs.join('<span class="pc-dot">&middot;</span>')+'</div>';
+
+  // Status / RERA / Posted-by chips
   var chips=[];
-  chips.push('<span class="pc-chip pc-chip-primary">'+l.beds+' BHK</span>');
-  if(l.type)chips.push('<span class="pc-chip">'+esc(l.type)+'</span>');
-  if(l.furnish)chips.push('<span class="pc-chip pc-chip-soft">'+esc(l.furnish)+'</span>');
-  // Project status badge if applicable, RERA chip
   if(isP&&l.projectStatus==='New Launch'){
     chips.push('<span class="pc-chip pc-chip-launch"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-2px;"><use href="#i-sparkle"/></svg> New Launch</span>');
   } else if(isP&&l.projectStatus){
@@ -1307,9 +1287,28 @@ function pCard(l){
   if(!ir&&l.rera){
     chips.push('<span class="pc-chip pc-chip-rera">RERA</span>');
   }
-  var chipsHTML='<div class="pc-chips">'+chips.join('')+'</div>';
+  if(l.urole==='owner'){
+    chips.push('<span class="pc-chip pc-chip-owner">Owner</span>');
+  } else if(l.urole==='broker'){
+    chips.push('<span class="pc-chip pc-chip-broker">Broker</span>');
+  } else if(l.urole==='builder'){
+    chips.push('<span class="pc-chip pc-chip-builder">Builder</span>');
+  }
+  // Inclusivity tags — show the first one as a chip if present
+  if(l.tags&&l.tags.length){
+    chips.push('<span class="pc-chip pc-chip-incl">'+esc(l.tags[0])+(l.tags.length>1?' +'+(l.tags.length-1):'')+'</span>');
+  }
+  var chipsHTML=chips.length?'<div class="pc-chips">'+chips.join('')+'</div>':'';
 
-  // ── COLUMN 3: Pricing + CTAs ──
+  // Description preview — 99acres shows 1-2 lines of description
+  var descPreview='';
+  if(l.desc){
+    var d=l.desc.replace(/\s+/g,' ').trim();
+    if(d.length>140)d=d.slice(0,140)+'…';
+    descPreview='<div class="pc-desc">'+esc(d)+'</div>';
+  }
+
+  // ── COLUMN 3: Price + CTAs ──
   var priceHTML;
   var perSqftHTML='';
   if(isP){
@@ -1327,28 +1326,19 @@ function pCard(l){
     if(l.dep)perSqftHTML='<div class="pc-price-sub">Deposit '+fmtRentHTML(l.dep)+'</div>';
   } else {
     priceHTML='<div class="pc-price buy">'+fmtPriceHTML(l.price)+'</div>';
-    if(l.price>0&&l.carpetArea>0){
-      perSqftHTML='<div class="pc-price-sub">'+fmtPriceHTML(Math.round(l.price/l.carpetArea))+'<span class="pc-price-sub-unit">/sq.ft (carpet)</span></div>';
-    } else if(l.price>0&&l.area>0){
+    if(l.price>0&&l.price!==-1&&l.carpetArea>0){
+      perSqftHTML='<div class="pc-price-sub">'+fmtPriceHTML(Math.round(l.price/l.carpetArea))+'<span class="pc-price-sub-unit">/sq.ft</span></div>';
+    } else if(l.price>0&&l.price!==-1&&l.area>0){
       perSqftHTML='<div class="pc-price-sub">'+fmtPriceHTML(Math.round(l.price/l.area))+'<span class="pc-price-sub-unit">/sq.ft</span></div>';
     }
   }
-  // Inclusivity tags strip — sits below data grid in mid column
-  var tagsHTML='';
-  if(l.tags&&l.tags.length){
-    tagsHTML='<div class="pc-tags-row">'+l.tags.slice(0,2).map(function(t){return '<span class="pc-tag">'+esc(t)+'</span>';}).join('')
-      +(l.tags.length>2?'<span class="pc-tag-more">+'+(l.tags.length-2)+'</span>':'')
-      +'</div>';
-  } else {
-    tagsHTML='<div class="pc-tags-row pc-tags-empty"></div>';
-  }
+
   var ctaHTML='<div class="pc-actions">'
     +'<button class="pc-btn-pri '+(ir?'':'buy')+'" onclick="event.stopPropagation();event.preventDefault();oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> '+(cu&&cu.id===l.uid?'View Number':'Contact')+'</button>'
-    +'<button class="pc-btn-shortlist'+(fv?' on':'')+'" onclick="event.stopPropagation();event.preventDefault();togFav('+l.id+',this)" aria-pressed="'+(fv?'true':'false')+'"><svg class="icn icn-sm" aria-hidden="true"><use href="#'+(fv?'i-heart-fill':'i-heart')+'"/></svg> '+(fv?'Saved':'Shortlist')+'</button>'
-    +'<button class="pc-btn-report" onclick="event.stopPropagation();event.preventDefault();openReport('+l.id+')" aria-label="Report listing" title="Report"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg></button>'
+    +'<button class="pc-btn-shortlist'+(fv?' on':'')+'" onclick="event.stopPropagation();event.preventDefault();togFav('+l.id+',this)" aria-pressed="'+(fv?'true':'false')+'" title="Shortlist this property"><svg class="icn icn-sm" aria-hidden="true"><use href="#'+(fv?'i-heart-fill':'i-heart')+'"/></svg> '+(fv?'Saved':'Shortlist')+'</button>'
     +'</div>';
 
-  // ── Compose final 3-column card ──
+  // ── Compose card ──
   return '<a class="pc-link" href="'+_listingUrl(l.id)+'" onclick="return _cardClick(event,'+l.id+')" target="_blank" rel="noopener">'
     +'<div class="pc">'
       +'<div class="pc-col-img">'
@@ -1357,11 +1347,11 @@ function pCard(l){
         +imgHTML
       +'</div>'
       +'<div class="pc-col-mid">'
-        +'<div class="pc-title">'+esc(l.title)+(l.building?' &middot; <span class="pc-bldg">'+esc(l.building)+'</span>':'')+'</div>'
+        +'<div class="pc-title">'+esc(l.title)+(l.building?'<span class="pc-bldg"> &middot; '+esc(l.building)+'</span>':'')+'</div>'
         +locHTML
+        +specsHTML
         +chipsHTML
-        +dataGridHTML
-        +tagsHTML
+        +descPreview
       +'</div>'
       +'<div class="pc-col-action">'
         +'<div class="pc-price-block">'
@@ -1369,6 +1359,7 @@ function pCard(l){
           +perSqftHTML
         +'</div>'
         +ctaHTML
+        +'<button class="pc-btn-report" onclick="event.stopPropagation();event.preventDefault();openReport('+l.id+')" aria-label="Report listing" title="Report"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg> Report</button>'
       +'</div>'
     +'</div></a>';
 }
@@ -2252,7 +2243,6 @@ async function viewL(id){
     +(isProj&&l.completion?'<div class="ic"><div class="ll">COMPLETION</div><strong>'+new Date(l.completion).toLocaleDateString('en-IN',{month:'long',year:'numeric'})+'</strong></div>':'<div class="ic"><div class="ll">FLOOR</div><strong>'+floorDisplay+'</strong></div>')
     +(!isProj?'<div class="ic"><div class="ll">FACING</div><strong>'+esc(l.facing||'—')+'</strong></div>':'')
     +(ir?'<div class="ic"><div class="ll">AVAILABILITY</div><strong>'+esc(l.avail||'—')+'</strong></div>':'')
-    +(!ir&&!isProj&&l.txnType?'<div class="ic"><div class="ll">TRANSACTION</div><strong>'+esc(l.txnType)+'</strong></div>':'')
     +(l.ownership?'<div class="ic"><div class="ll">OWNERSHIP</div><strong>'+esc(l.ownership)+'</strong></div>':'')
     +(waterDisplay?'<div class="ic"><div class="ll">WATER</div><strong style="font-size:12px;">'+esc(waterDisplay)+'</strong></div>':'')
     +(l.backup?'<div class="ic"><div class="ll">POWER BACKUP</div><strong style="font-size:12px;">'+esc(l.backup)+'</strong></div>':'')
