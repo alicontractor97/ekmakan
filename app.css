@@ -1111,6 +1111,170 @@ textarea.fi{resize:vertical;height:72px;}
 .listing-map{height:180px;width:100%;z-index:0;border-radius:8px;overflow:hidden;}
 .dv-blur{position:absolute;inset:0;backdrop-filter:blur(12px);background:rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
 .dv-blur p{font-size:13px;color:#fff;font-weight:600;text-align:center;padding:0 20px;}
+/* ── BUILDER PROJECT WIZARD ── */
+/* Inventory table — dynamic BHK config rows */
+.inv-empty{
+  text-align:center;padding:24px 16px;
+  background:var(--cr);border:2px dashed var(--sa);border-radius:10px;
+  font-size:13px;color:var(--ink);
+  font-family:'DM Sans',sans-serif;
+}
+.inv-table{
+  background:var(--wh);border:1px solid var(--sa);
+  border-radius:10px;overflow:hidden;
+  box-shadow:0 1px 2px rgba(13,42,38,.04);
+}
+.inv-row{
+  display:grid;
+  grid-template-columns:1.2fr 1.4fr 1.6fr 1.4fr 36px;
+  gap:8px;
+  padding:10px 12px;
+  align-items:center;
+  border-bottom:1px solid var(--sa);
+}
+.inv-row:last-child{border-bottom:none;}
+.inv-row.inv-head{
+  background:var(--cr);
+  font-family:'DM Sans',sans-serif;
+  font-size:10.5px;font-weight:700;
+  color:var(--mu);
+  text-transform:uppercase;letter-spacing:.5px;
+  padding:8px 12px;
+}
+.inv-fi{
+  padding:7px 9px !important;
+  font-size:12px !important;
+  font-family:'DM Sans',sans-serif;
+}
+.inv-fi-sm{width:100%;}
+.inv-fi-xs{width:100%;min-width:0;}
+.inv-range{display:flex;align-items:center;gap:5px;}
+.inv-dash{font-size:13px;color:var(--mu);font-weight:600;flex:0 0 auto;}
+.inv-dash-v{display:block;text-align:center;font-size:10px;margin:2px 0;}
+.inv-price-cell{display:flex;flex-direction:column;gap:2px;}
+.inv-price-row{display:flex;gap:4px;}
+.inv-price-row .inv-fi-xs:first-child{flex:1;}
+.inv-price-row .inv-fi-xs:last-child{flex:0 0 50px;}
+.inv-stock-cell{display:flex;flex-direction:column;gap:4px;}
+.inv-stock-row{display:flex;align-items:center;gap:4px;}
+.inv-bar{
+  width:100%;height:5px;
+  background:var(--sa);border-radius:3px;
+  overflow:hidden;
+}
+.inv-bar-fill{
+  height:100%;background:linear-gradient(90deg,var(--t),var(--gr));
+  transition:width .25s;
+}
+.inv-stock-lbl{
+  font-family:'DM Sans',sans-serif;
+  font-size:10px;color:var(--mu);font-weight:500;
+}
+.inv-remove{
+  background:transparent;border:none;color:var(--red);
+  cursor:pointer;padding:6px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.inv-remove:hover{background:#fff5f5;}
+.inv-add-btn{
+  background:transparent;color:var(--t);
+  border:1.5px dashed var(--t);border-radius:8px;
+  padding:10px 14px;font-size:12.5px;font-weight:700;
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  width:100%;margin-top:8px;
+  transition:all .15s;
+}
+.inv-add-btn:hover{background:var(--tl);}
+@media (max-width: 720px){
+  .inv-row{grid-template-columns:1fr;gap:5px;padding:10px;border:1px solid var(--sa);border-radius:8px;margin:8px;}
+  .inv-row.inv-head{display:none;}
+  .inv-table{background:transparent;border:none;box-shadow:none;}
+}
+
+/* Segmented toggle (price breakup) */
+.seg-toggle{
+  display:flex;border:1px solid var(--sa);border-radius:8px;
+  overflow:hidden;background:var(--wh);
+}
+.seg-opt{
+  flex:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  padding:10px 12px;
+  font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;
+  color:var(--ink);
+  transition:all .15s;
+  border-right:1px solid var(--sa);
+  text-align:center;
+}
+.seg-opt:last-child{border-right:none;}
+.seg-opt input{display:none;}
+.seg-opt small{display:block;font-size:10px;color:var(--mu);font-weight:500;margin-top:2px;}
+.seg-opt:has(input:checked){background:var(--tl);color:var(--td);}
+.seg-opt:has(input:checked) small{color:var(--td);}
+
+/* Checkbox grid (payment schemes) */
+.chk-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:8px;
+}
+.chk-opt{
+  cursor:pointer;
+  border:1px solid var(--sa);
+  border-radius:8px;
+  padding:10px 12px;
+  background:var(--wh);
+  transition:all .15s;
+  display:flex;align-items:flex-start;gap:8px;
+}
+.chk-opt input{margin-top:3px;flex:0 0 auto;cursor:pointer;}
+.chk-opt span{flex:1;display:flex;flex-direction:column;font-family:'DM Sans',sans-serif;font-size:12.5px;color:var(--ink);}
+.chk-opt span strong{font-weight:700;}
+.chk-opt span small{font-size:10.5px;color:var(--mu);font-weight:500;margin-top:2px;}
+.chk-opt:hover{border-color:var(--tl);background:var(--cr);}
+.chk-opt:has(input:checked){background:var(--tl);border-color:var(--t);}
+
+/* Side-rail navigation in Media stage */
+.b-media-rail{
+  display:grid;
+  grid-template-columns:170px 1fr;
+  gap:18px;
+  margin-bottom:18px;
+  padding:14px;
+  background:var(--cr);
+  border:1px solid var(--sa);
+  border-radius:10px;
+}
+.b-media-side{
+  display:flex;flex-direction:column;gap:4px;
+}
+.b-media-tab{
+  background:transparent;border:none;
+  text-align:left;padding:10px 12px;
+  border-radius:8px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  font-size:12.5px;font-weight:600;
+  color:var(--mu);
+  display:flex;align-items:center;gap:8px;
+  transition:all .15s;
+}
+.b-media-tab:hover{background:var(--wh);color:var(--ink);}
+.b-media-tab.on{background:var(--t);color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(18,90,81,.18);}
+.b-media-tab .icn{width:14px;height:14px;}
+.b-media-pane{
+  background:var(--wh);
+  border:1px solid var(--sa);
+  border-radius:10px;
+  padding:14px 16px;
+  min-height:140px;
+}
+@media (max-width: 720px){
+  .b-media-rail{grid-template-columns:1fr;}
+  .b-media-side{flex-direction:row;overflow-x:auto;}
+  .b-media-tab{flex:0 0 auto;white-space:nowrap;}
+}
+
 /* Detail view body — side-by-side gallery + facts */
 .vbody-grid{
   display:grid;

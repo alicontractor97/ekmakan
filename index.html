@@ -62,7 +62,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="app.css?v=20260428-142350"/>
+<link rel="stylesheet" href="app.css?v=20260428-182931"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -1034,15 +1034,37 @@
           <input type="hidden" id="lPrMax"/>
         </div>
         <div class="fg s2" id="lUnitsW" style="display:none;">
-          <label class="flbl">Unit Configurations <span style="color:var(--mu);font-weight:400;">(optional — helps buyers compare)</span></label>
-          <div style="font-size:11px;color:var(--mu);margin-bottom:8px;">Add each available configuration. E.g. "3 BHK, 1450 sq.ft, ₹85L – ₹1.2Cr"</div>
+          <label class="flbl">Inventory &amp; Configurations <span style="color:var(--red);">*</span></label>
+          <div style="font-size:11.5px;color:var(--mu);margin-bottom:10px;line-height:1.5;">Add each BHK type with its <strong>carpet area range</strong>, <strong>price range</strong>, and <strong>inventory status</strong>. Buyers compare configurations side-by-side on the listing page.</div>
           <div id="lUnits"></div>
-          <button type="button" onclick="addUnit()" style="background:transparent;color:var(--t);border:1.5px dashed var(--t);border-radius:8px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;margin-top:6px;">+ Add Unit Configuration</button>
+          <button type="button" onclick="addUnit()" class="inv-add-btn">+ Add unit configuration</button>
         </div>
+        <!-- Builder-only: project scale -->
+        <div class="fg" id="lAcreageW" style="display:none;"><label class="flbl">Total Acreage <span style="color:var(--mu);font-weight:400;font-size:11px;">(acres)</span></label><input class="fi" type="number" id="lAcreage" placeholder="e.g. 4.5" step="0.1" min="0"/></div>
+        <div class="fg" id="lTowersW" style="display:none;"><label class="flbl">Total Towers <span style="color:var(--mu);font-weight:400;font-size:11px;">(buildings in complex)</span></label><input class="fi" type="number" id="lTowers" placeholder="e.g. 6" min="1"/></div>
+        <!-- Builder-only: payment plans -->
+        <div class="fg s2" id="lPaymentW" style="display:none;">
+          <label class="flbl">Price Breakup Format</label>
+          <div class="seg-toggle">
+            <label class="seg-opt"><input type="radio" name="lBreakup" value="all_inclusive" checked/><span>All-inclusive <small>(taxes &amp; charges included)</small></span></label>
+            <label class="seg-opt"><input type="radio" name="lBreakup" value="basic_plus_govt"/><span>Basic + Govt charges separate</span></label>
+          </div>
+        </div>
+        <div class="fg s2" id="lSchemesW" style="display:none;">
+          <label class="flbl">Payment Schemes <span style="color:var(--mu);font-weight:400;font-size:11px;">(check all that apply)</span></label>
+          <div class="chk-grid">
+            <label class="chk-opt"><input type="checkbox" name="lScheme" value="10_90"/><span><strong>10:90 Scheme</strong><small>10% on booking, 90% on possession</small></span></label>
+            <label class="chk-opt"><input type="checkbox" name="lScheme" value="no_pre_emi"/><span><strong>No Pre-EMI till possession</strong><small>Builder pays interest until handover</small></span></label>
+            <label class="chk-opt"><input type="checkbox" name="lScheme" value="construction_linked"/><span><strong>Construction-Linked Plan</strong><small>Pay as construction progresses</small></span></label>
+            <label class="chk-opt"><input type="checkbox" name="lScheme" value="subvention"/><span><strong>Subvention Scheme</strong><small>Bank-builder partnership EMI</small></span></label>
+            <label class="chk-opt"><input type="checkbox" name="lScheme" value="possession_linked"/><span><strong>Possession-Linked</strong><small>20% now, 80% on possession</small></span></label>
+          </div>
+        </div>
+        <div class="fg" id="lBookingW" style="display:none;"><label class="flbl">Booking Amount <span style="color:var(--mu);font-weight:400;font-size:11px;">(initial token)</span></label><div style="display:flex;gap:0;align-items:stretch;"><span class="fi" style="flex:0 0 auto;width:50px;border-radius:8px 0 0 8px;border-right:none;background:var(--cr);color:var(--ink);font-weight:700;display:flex;align-items:center;justify-content:center;">&#8377;</span><input class="fi" type="number" id="lBooking" placeholder="100000" min="0" style="border-radius:0 8px 8px 0;"/></div></div>
         <div class="fg" id="lAvW"><label class="flbl">Availability</label><select class="fi" id="lAv"><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
         <div class="fg" id="lPoW" style="display:none;"><label class="flbl">Possession</label><select class="fi" id="lPo"><option>Ready to Move</option><option>Under Construction</option><option>Within 6 Months</option><option>Within 1 Year</option></select></div>
         <div class="fg" id="lProjW" style="display:none;"><label class="flbl">Project Status *</label><select class="fi" id="lProj"><option>New Launch</option><option>Under Construction</option><option>Ready to Move</option><option>Completed</option></select></div>
-        <div class="fg" id="lCompW" style="display:none;"><label class="flbl">Expected Completion</label><input class="fi" type="month" id="lComp"/></div>
+        <div class="fg" id="lCompW" style="display:none;"><label class="flbl">Possession Date</label><input class="fi" type="month" id="lComp"/></div>
         <div class="fg s2" id="lReW" style="display:none;"><label class="flbl">RERA Number <span id="lReReq" style="color:var(--red);font-weight:700;display:none;">*</span> <span class="info-bubble" data-tip="RERA registration is mandatory for all new construction and resale projects in Mumbai/Maharashtra. Format: P51800012345 or RERA/MH/2024/001. Required for new projects.">i</span></label><input class="fi" type="text" id="lRe" placeholder="P51800012345 or RERA/MH/2024/001"/></div>
       </div>
     </div>
@@ -1051,6 +1073,36 @@
     <div class="wiz-pane" data-pane="6">
       <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;">Media &amp; final details</h3>
       <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Photos, video, contact info, and a description make your listing stand out.</p>
+
+      <!-- Builder-only: side-rail navigation between Photos / Floor Plans / Brochure / Video -->
+      <div id="bMediaRail" style="display:none;" class="b-media-rail">
+        <aside class="b-media-side">
+          <button type="button" class="b-media-tab on" data-bmt="photos" onclick="setBMediaTab('photos')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg> Photos</button>
+          <button type="button" class="b-media-tab" data-bmt="plans" onclick="setBMediaTab('plans')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-building"/></svg> Floor Plans</button>
+          <button type="button" class="b-media-tab" data-bmt="video" onclick="setBMediaTab('video')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg> Hero Video</button>
+          <button type="button" class="b-media-tab" data-bmt="brochure" onclick="setBMediaTab('brochure')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> Brochure</button>
+        </aside>
+        <div class="b-media-pane">
+          <div class="b-media-sec on" data-bmp="photos">
+            <h4 style="font-family:'Playfair Display',serif;font-size:15px;margin-bottom:8px;">Project Photos</h4>
+            <p style="font-size:12px;color:var(--mu);margin-bottom:10px;">Upload up to 25 photos covering elevation, sample flat, amenities, and construction progress. Use the main upload zone below.</p>
+          </div>
+          <div class="b-media-sec" data-bmp="plans" style="display:none;">
+            <h4 style="font-family:'Playfair Display',serif;font-size:15px;margin-bottom:8px;">Floor Plans</h4>
+            <div class="fg"><label class="flbl">Master Plan URL</label><input class="fi" type="url" id="lMasterPlan" placeholder="https://example.com/master-plan.pdf"/><div style="font-size:11px;color:var(--mu);margin-top:3px;">Public link to your master site plan (PDF or image).</div></div>
+            <div style="font-size:11.5px;color:var(--mu);margin-top:8px;line-height:1.5;">Per-BHK unit plans can be added once your inventory is set up. Inventory rows in Stage 3 will each get a "Plan" upload slot in a future update.</div>
+          </div>
+          <div class="b-media-sec" data-bmp="video" style="display:none;">
+            <h4 style="font-family:'Playfair Display',serif;font-size:15px;margin-bottom:8px;">Hero Video</h4>
+            <p style="font-size:12px;color:var(--mu);margin-bottom:10px;">A cinematic walkthrough or 3D render works best. Use the main video uploader below.</p>
+          </div>
+          <div class="b-media-sec" data-bmp="brochure" style="display:none;">
+            <h4 style="font-family:'Playfair Display',serif;font-size:15px;margin-bottom:8px;">Project Brochure</h4>
+            <div class="fg"><label class="flbl">Brochure URL <span style="color:var(--mu);font-weight:400;font-size:11px;">(PDF link)</span></label><input class="fi" type="url" id="lBrochure" placeholder="https://example.com/brochure.pdf"/><div style="font-size:11px;color:var(--mu);margin-top:3px;">Direct PDF link to your prospectus. Buyers will see a "Download Brochure" button on the listing.</div></div>
+          </div>
+        </div>
+      </div>
+
       <div class="fg2">
         <div class="fg s2">
           <label class="flbl">Photos &amp; Video <span style="color:var(--mu);font-weight:400;font-size:11px;">Up to 15 photos + 1 walk-through video</span></label>
@@ -1413,11 +1465,11 @@
   </div>
 </div>
 
-<script src="app.js?v=20260428-142350" defer></script>
+<script src="app.js?v=20260428-182931" defer></script>
 <script>
 // Build version stamp — replaced by build script. Used to detect when a new
 // deploy has landed so we can auto-reload the page for users.
-window.__BUILD_VERSION__ = '20260428-142350';
+window.__BUILD_VERSION__ = '20260428-182931';
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){

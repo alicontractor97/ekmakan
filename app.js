@@ -140,9 +140,25 @@ function renderTurnstile(containerId,tokenSetter){
 }
 
 // Map Supabase row → JS listing shape (keeps all existing pCard/viewL/etc. working)
-function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',floorNo:r.floor_no!=null?r.floor_no:null,totalFloors:r.total_floors||null,facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[],txnType:r.transaction_type||'',ownership:r.ownership||'',water:r.water_source||'',backup:r.power_backup||'',landmarks:r.landmarks||[],videoUrl:r.video_url||'',pincode:r.pincode||'',streetAddress:r.street_address||'',lat:r.latitude!=null?r.latitude:null,lng:r.longitude!=null?r.longitude:null};}
+function mapL(r){return{id:r.id,lf:r.listing_for,title:r.title,building:r.building_name||'',city:r.city,loc:r.locality||'',type:r.property_type||'Apartment',beds:String(r.beds||2),baths:r.baths||1,area:r.area_sqft||0,carpetArea:r.carpet_area||0,builtArea:r.built_up_area||0,superArea:r.super_built_up_area||0,age:r.property_age||'',furnDetails:r.furnishing_details||[],rent:r.rent||0,dep:r.deposit||0,price:r.price||0,stype:r.sale_type||'',poss:r.possession||'',rera:r.rera_no||'',contact:r.contact_phone||'',owner:r.owner_name||'',agency:r.agency_name||'',tags:r.tags||[],amens:r.amenities||[],verified:r.verified||false,status:r.status||'pending',rejectionReason:r.rejection_reason||'',images:r.images||[],desc:r.description||'',postedAt:r.posted_at?(r.posted_at+'').split('T')[0]:'',uid:r.user_id,urole:r.user_role||'owner',furnish:r.furnishing||'',floor:r.floor_range||'',floorNo:r.floor_no!=null?r.floor_no:null,totalFloors:r.total_floors||null,facing:r.facing||'',avail:r.availability||'',isProject:r.is_project||false,projectStatus:r.project_status||'',completion:r.completion_date||'',priceMin:r.price_range_min||0,priceMax:r.price_range_max||0,unitTypes:r.unit_types||[],txnType:r.transaction_type||'',ownership:r.ownership||'',water:r.water_source||'',backup:r.power_backup||'',landmarks:r.landmarks||[],videoUrl:r.video_url||'',pincode:r.pincode||'',streetAddress:r.street_address||'',lat:r.latitude!=null?r.latitude:null,lng:r.longitude!=null?r.longitude:null,
+  // Builder project fields
+  totalAcreage:r.total_acreage||null,totalTowers:r.total_towers||null,
+  brochureUrl:r.brochure_url||'',masterPlanUrl:r.master_plan_url||'',
+  unitPlans:r.unit_plans||[],galleryCategorized:r.gallery_categorized||{},
+  paymentSchemes:r.payment_schemes||[],bookingAmount:r.booking_amount||null,
+  priceBreakupType:r.price_breakup_type||''};}
 // Map JS listing → Supabase row
-function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',floor_no:l.floorNo!=null&&l.floorNo!==''?Number(l.floorNo):null,total_floors:l.totalFloors?Number(l.totalFloors):null,facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[],transaction_type:l.txnType||'',ownership:l.ownership||'',water_source:l.water||'',power_backup:l.backup||'',landmarks:l.landmarks||[],video_url:l.videoUrl||'',pincode:l.pincode||'',street_address:l.streetAddress||'',latitude:l.lat!=null&&l.lat!==''?Number(l.lat):null,longitude:l.lng!=null&&l.lng!==''?Number(l.lng):null};}
+function unmapL(l){return{listing_for:l.lf,title:l.title,building_name:l.building||'',city:l.city,locality:l.loc||'',property_type:l.type||'Apartment',beds:Number(l.beds)||2,baths:Number(l.baths)||1,area_sqft:Number(l.area)||0,carpet_area:Number(l.carpetArea)||0,built_up_area:Number(l.builtArea)||0,super_built_up_area:Number(l.superArea)||0,property_age:l.age||'',furnishing_details:l.furnDetails||[],rent:Number(l.rent)||0,deposit:Number(l.dep)||0,price:Number(l.price)||0,sale_type:l.stype||'',possession:l.poss||'',rera_no:l.rera||'',contact_phone:l.contact,owner_name:l.owner,agency_name:l.agency||'',description:l.desc||'',tags:l.tags||[],amenities:l.amens||[],images:l.images||[],verified:l.verified||false,status:l.status||'pending',user_id:l.uid||(cu?cu.id:null),user_role:l.urole||(cu?cu.role:'owner'),furnishing:l.furnish||'',floor_range:l.floor||'',floor_no:l.floorNo!=null&&l.floorNo!==''?Number(l.floorNo):null,total_floors:l.totalFloors?Number(l.totalFloors):null,facing:l.facing||'',availability:l.avail||'',is_project:l.isProject||false,project_status:l.projectStatus||'',completion_date:l.completion||null,price_range_min:Number(l.priceMin)||0,price_range_max:Number(l.priceMax)||0,unit_types:l.unitTypes||[],transaction_type:l.txnType||'',ownership:l.ownership||'',water_source:l.water||'',power_backup:l.backup||'',landmarks:l.landmarks||[],video_url:l.videoUrl||'',pincode:l.pincode||'',street_address:l.streetAddress||'',latitude:l.lat!=null&&l.lat!==''?Number(l.lat):null,longitude:l.lng!=null&&l.lng!==''?Number(l.lng):null,
+  // Builder project fields
+  total_acreage:l.totalAcreage!=null&&l.totalAcreage!==''?Number(l.totalAcreage):null,
+  total_towers:l.totalTowers!=null&&l.totalTowers!==''?Number(l.totalTowers):null,
+  brochure_url:l.brochureUrl||'',
+  master_plan_url:l.masterPlanUrl||'',
+  unit_plans:l.unitPlans||[],
+  gallery_categorized:l.galleryCategorized||{},
+  payment_schemes:l.paymentSchemes||[],
+  booking_amount:l.bookingAmount!=null&&l.bookingAmount!==''?Number(l.bookingAmount):null,
+  price_breakup_type:l.priceBreakupType||null};}
 function mapInq(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',listingCity:r.listing_city||'',lf:r.listing_for||'rent',contact:'',name:r.inquirer_name||'',phone:r.inquirer_phone||'',email:r.inquirer_email||'',message:r.message||'',uid:r.user_id,sentAt:r.sent_at?(r.sent_at+'').split('T')[0]:''};}
 function mapUsr(r){return{id:r.id,name:r.name,email:r.email,phone:r.phone||'',role:r.role||'user',agency:r.agency||'',lic:r.license_no||'',joinedAt:r.joined_at?(r.joined_at+'').split('T')[0]:'',verified:r.verified||false,trusted:r.is_trusted||false};}
 function mapRpt(r){return{id:r.id,listingId:r.listing_id,listingTitle:r.listing_title||'',type:r.report_type||'',desc:r.description||'',reporterName:r.reporter_name||'',reporterContact:r.reporter_contact||'',reporterUid:r.reporter_user_id,status:r.status||'open',submittedAt:r.submitted_at?(r.submitted_at+'').split('T')[0]:''};}
@@ -340,7 +356,7 @@ function showEmpty(elId,icon,title,sub){
 // ══ DATA ACCESS (Supabase) ══
 async function gL(){
   if(_cacheL&&_cacheValid('l'))return _cacheL;
-  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks,video_url,pincode,street_address,latitude,longitude').order('posted_at',{ascending:false});
+  var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks,video_url,pincode,street_address,latitude,longitude,total_acreage,total_towers,brochure_url,master_plan_url,unit_plans,gallery_categorized,payment_schemes,booking_amount,price_breakup_type').order('posted_at',{ascending:false});
   if(error){toast('Failed to load listings. Please refresh.','e');_cacheL=[];return[];}
   _cacheL=(data||[]).map(mapL);
   _cacheTime.l=Date.now();
@@ -2277,7 +2293,7 @@ async function viewL(id){
   if(!l){
     // Direct fetch by ID — handles deep links before cache is warm
     try{
-      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks,video_url,pincode,street_address,latitude,longitude').eq('id',id).eq('status','approved').single();
+      var {data,error}=await sb.from('listings').select('id,listing_for,title,building_name,city,locality,property_type,beds,baths,area_sqft,rent,deposit,price,sale_type,possession,rera_no,contact_phone,owner_name,agency_name,tags,amenities,verified,status,rejection_reason,images,description,posted_at,user_id,user_role,furnishing,floor_range,facing,availability,is_project,project_status,completion_date,price_range_min,price_range_max,unit_types,carpet_area,built_up_area,super_built_up_area,property_age,furnishing_details,transaction_type,ownership,water_source,power_backup,floor_no,total_floors,landmarks,video_url,pincode,street_address,latitude,longitude,total_acreage,total_towers,brochure_url,master_plan_url,unit_plans,gallery_categorized,payment_schemes,booking_amount,price_breakup_type').eq('id',id).eq('status','approved').single();
       if(data&&!error)l=mapL(data);
     }catch(e){}
   }
@@ -2408,17 +2424,57 @@ async function viewL(id){
   // Unit types table (for projects)
   var unitsTableHTML='';
   if(isProj&&l.unitTypes&&l.unitTypes.length){
-    unitsTableHTML='<div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Unit Configurations</div>'
+    unitsTableHTML='<div class="dv-sec"><div class="dv-sec-hd">Unit Configurations &amp; Inventory</div>'
       +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;font-family:\'DM Sans\',sans-serif;border:1px solid var(--sa);border-radius:8px;overflow:hidden;">'
-      +'<thead><tr style="background:var(--cr);text-align:left;"><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Configuration</th><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Area</th><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Price Range</th></tr></thead><tbody>'
+      +'<thead><tr style="background:var(--cr);text-align:left;"><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Configuration</th><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Carpet Area</th><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Price Range</th><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Inventory</th></tr></thead><tbody>'
       +l.unitTypes.map(function(u){
         var pr;
         if(u.priceMax&&u.priceMax>u.priceMin)pr=fmtPriceHTML(u.priceMin)+' &ndash; '+fmtPriceHTML(u.priceMax);
         else if(u.priceMin)pr=fmtPriceHTML(u.priceMin);
         else pr='—';
-        return '<tr style="border-top:1px solid var(--sa);"><td style="padding:10px 14px;font-weight:700;color:var(--ink);">'+esc(u.bhk||'—')+'</td><td style="padding:10px 14px;color:var(--ink);">'+(u.area?u.area+' sq.ft':'—')+'</td><td style="padding:10px 14px;font-weight:700;color:var(--g);">'+pr+'</td></tr>';
+        var areaTxt;
+        if(u.carpet_min&&u.carpet_max&&u.carpet_max>u.carpet_min)areaTxt=u.carpet_min+'–'+u.carpet_max+' sq.ft';
+        else if(u.carpet_min)areaTxt=u.carpet_min+' sq.ft';
+        else if(u.area)areaTxt=u.area+' sq.ft';
+        else areaTxt='—';
+        var invTxt='—';
+        if(u.units_total){
+          var sold=Math.max(0,(u.units_total||0)-(u.units_available||0));
+          invTxt=u.units_available+'/'+u.units_total+' available';
+          if(u.units_available===0)invTxt='<span style="color:var(--red);font-weight:700;">Sold out</span>';
+        }
+        return '<tr style="border-top:1px solid var(--sa);"><td style="padding:10px 14px;font-weight:700;color:var(--ink);">'+esc(u.bhk||'—')+'</td><td style="padding:10px 14px;color:var(--ink);">'+areaTxt+'</td><td style="padding:10px 14px;font-weight:700;color:var(--g);">'+pr+'</td><td style="padding:10px 14px;font-size:12px;color:var(--mu);">'+invTxt+'</td></tr>';
       }).join('')
       +'</tbody></table></div></div>';
+  }
+  // Project meta block (acreage, towers, payment schemes, booking, brochure)
+  var projMetaHTML='';
+  if(isProj){
+    var bits=[];
+    if(l.totalAcreage)bits.push('<div class="ic"><div class="ll">TOTAL AREA</div><strong>'+l.totalAcreage+' acres</strong></div>');
+    if(l.totalTowers)bits.push('<div class="ic"><div class="ll">TOWERS</div><strong>'+l.totalTowers+'</strong></div>');
+    if(l.bookingAmount)bits.push('<div class="ic"><div class="ll">BOOKING AMOUNT</div><strong style="color:var(--g);">&#8377;'+l.bookingAmount.toLocaleString('en-IN')+'</strong></div>');
+    if(l.priceBreakupType)bits.push('<div class="ic"><div class="ll">PRICE FORMAT</div><strong style="font-size:12px;">'+(l.priceBreakupType==='all_inclusive'?'All-inclusive':'Basic + Govt charges')+'</strong></div>');
+    var schLabels={'10_90':'10:90 Scheme','no_pre_emi':'No Pre-EMI','construction_linked':'Construction-Linked','subvention':'Subvention','possession_linked':'Possession-Linked'};
+    if(l.paymentSchemes&&l.paymentSchemes.length){
+      var sch=l.paymentSchemes.map(function(s){return schLabels[s]||s;}).join(', ');
+      bits.push('<div class="ic" style="grid-column:1/-1;"><div class="ll">PAYMENT SCHEMES</div><strong style="font-size:12px;">'+esc(sch)+'</strong></div>');
+    }
+    if(bits.length){
+      projMetaHTML='<div class="dv-sec"><div class="dv-sec-hd">Project &amp; Payment Details</div><div class="info-g">'+bits.join('')+'</div></div>';
+    }
+  }
+  // Brochure / Master Plan download buttons
+  var docsHTML='';
+  if(isProj&&(l.brochureUrl||l.masterPlanUrl)){
+    docsHTML='<div class="dv-sec"><div class="dv-sec-hd">Project Documents</div><div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    if(l.brochureUrl){
+      docsHTML+='<a href="'+esc(l.brochureUrl)+'" target="_blank" rel="noopener" class="dv-btn-sec" style="text-decoration:none;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> Download Brochure</a>';
+    }
+    if(l.masterPlanUrl){
+      docsHTML+='<a href="'+esc(l.masterPlanUrl)+'" target="_blank" rel="noopener" class="dv-btn-sec" style="text-decoration:none;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-building"/></svg> View Master Plan</a>';
+    }
+    docsHTML+='</div></div>';
   }
   // Build area display — use specific values if present, fall back to old area_sqft
   var areaParts=[];
@@ -2503,6 +2559,8 @@ async function viewL(id){
       +priceBreakdownHTML
       +'<div id="priceCompareSlot"></div>'
       +unitsTableHTML
+      +projMetaHTML
+      +docsHTML
       +(l.desc?'<div class="dv-sec"><div class="dv-sec-hd">About this property</div><p class="dv-desc">'+esc(l.desc)+'</p></div>':'')
       +((furnDetH||landmarksH||amH)?'<div class="dv-sec">'
         +furnDetH
@@ -3657,7 +3715,10 @@ function setLM(m){
   // Buy-specific fields
   ['lPrW','lPoW','lReW','lTxnW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=(m==='buy'||m==='project')?'':'none';});
   // Project-specific fields
-  ['lProjW','lCompW','lPrMinW','lPrMaxW','lUnitsW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='project'?'':'none';});
+  ['lProjW','lCompW','lPrMinW','lPrMaxW','lUnitsW','lAcreageW','lTowersW','lPaymentW','lSchemesW','lBookingW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='project'?'':'none';});
+  // Builder-only side-rail in Stage 6 (Media)
+  var rail=document.getElementById('bMediaRail');
+  if(rail)rail.style.display=m==='project'?'':'none';
   // RERA required indicator — shown for projects, AND for buy listings whose
   // transaction type is "New Booking" (legally required by RERA in MH).
   refreshReraRequired();
@@ -3777,6 +3838,19 @@ async function editListing(id){
   var projEl=document.getElementById('lProj');if(projEl)projEl.value=l.projectStatus||'New Launch';
   _unitTypes=l.unitTypes?l.unitTypes.slice():[];
   renderUnits();
+  // Builder project field prefills
+  setVal('lAcreage',l.totalAcreage||'');
+  setVal('lTowers',l.totalTowers||'');
+  setVal('lBooking',l.bookingAmount||'');
+  // Price breakup radio
+  var brk=l.priceBreakupType||'all_inclusive';
+  var brkEl=document.querySelector('input[name="lBreakup"][value="'+brk+'"]');
+  if(brkEl)brkEl.checked=true;
+  // Payment schemes checkboxes
+  var schemes=l.paymentSchemes||[];
+  document.querySelectorAll('input[name="lScheme"]').forEach(function(c){c.checked=schemes.indexOf(c.value)>=0;});
+  setVal('lBrochure',l.brochureUrl||'');
+  setVal('lMasterPlan',l.masterPlanUrl||'');
   // Set dropdowns
   var tp=document.getElementById('lTp');if(tp)tp.value=l.type||'Apartment';
   var bd=document.getElementById('lBd');if(bd)bd.value=l.beds||'2';
@@ -3827,6 +3901,14 @@ async function doSub(){
   if(lMode==='rent'&&!rv){if(le){le.style.display='';le.textContent='Please enter monthly rent.';}return;}
   if(lMode==='buy'&&pv===0){if(le){le.style.display='';le.textContent='Please enter sale price (or choose "Price on Request").';}return;}
   if(lMode==='project'&&!Number(getVal('lPrMin'))){if(le){le.style.display='';le.textContent='Please enter project starting price.';}return;}
+  if(lMode==='project'&&(!_unitTypes||!_unitTypes.length)){
+    if(le){le.style.display='';le.textContent='Please add at least one unit configuration in Stage 3 (Inventory).';}
+    return;
+  }
+  if(lMode==='project'&&_unitTypes.some(function(u){return !u.bhk||(!u.priceMin&&!u.price_min_core);})){
+    if(le){le.style.display='';le.textContent='Each unit configuration needs a BHK type and at least a minimum price.';}
+    return;
+  }
   // RERA mandatory: new projects (always) AND buy listings with txnType=New Booking
   var reraVal=(getVal('lRe')||'').trim();
   var lTxnVal=getVal('lTxn');
@@ -3889,7 +3971,18 @@ async function doSub(){
     completion:isProject&&getVal('lComp')?getVal('lComp')+'-01':null,
     priceMin:isProject?(Number(getVal('lPrMin'))||0):0,
     priceMax:isProject?(Number(getVal('lPrMax'))||0):0,
-    unitTypes:isProject?_unitTypes.slice():[]
+    unitTypes:isProject?_unitTypes.slice():[],
+    // New builder fields
+    totalAcreage:isProject?(Number(getVal('lAcreage'))||null):null,
+    totalTowers:isProject?(Number(getVal('lTowers'))||null):null,
+    bookingAmount:isProject?(Number(getVal('lBooking'))||null):null,
+    priceBreakupType:isProject?(function(){
+      var r=document.querySelector('input[name="lBreakup"]:checked');
+      return r?r.value:'all_inclusive';
+    })():'',
+    paymentSchemes:isProject?Array.prototype.slice.call(document.querySelectorAll('input[name="lScheme"]:checked')).map(function(c){return c.value;}):[],
+    brochureUrl:isProject?(getVal('lBrochure')||''):'',
+    masterPlanUrl:isProject?(getVal('lMasterPlan')||''):''
   };
 
   // Block submit if any photos are still processing or have failed
@@ -4439,31 +4532,92 @@ async function showLeads(lid){
 
 // ══ PROJECT UNIT TYPES ══
 // Each unit: { bhk: '3 BHK', area: 1450, priceMin: 8500000, priceMax: 12000000 }
+// Builder-only side-rail tab navigation in Stage 6 (Media). Toggles
+// .on class on the chosen tab + reveals matching content pane. Idempotent.
+function setBMediaTab(name){
+  document.querySelectorAll('#bMediaRail .b-media-tab').forEach(function(t){
+    t.classList.toggle('on',t.dataset.bmt===name);
+  });
+  document.querySelectorAll('#bMediaRail .b-media-sec').forEach(function(p){
+    p.style.display=p.dataset.bmp===name?'':'none';
+    p.classList.toggle('on',p.dataset.bmp===name);
+  });
+}
+
 var _unitTypes=[];
 
+// Rich Inventory Table — used in the builder/project flow.
+// Each row tracks: BHK type, carpet area range (min-max), price range (min-max in Lakh/Crore),
+// units available, units total. The inventory bar visualizes sold vs. available.
+var BHK_PRESETS=['1 BHK','2 BHK','3 BHK','4 BHK','5 BHK','Studio','Penthouse','Duplex','Villa'];
 function renderUnits(){
   var el=document.getElementById('lUnits');
   if(!el)return;
   if(!_unitTypes.length){
-    el.innerHTML='<div style="font-size:12px;color:var(--mu);padding:10px 0;">No unit configurations added yet.</div>';
+    el.innerHTML='<div class="inv-empty"><div style="font-size:24px;color:var(--mu);"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-building"/></svg></div><div style="margin-top:6px;">No unit configurations added yet.</div><div style="font-size:11.5px;color:var(--mu);margin-top:2px;">Add at least one BHK type with its carpet area and price range.</div></div>';
     return;
   }
-  el.innerHTML=_unitTypes.map(function(u,i){
-    return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center;">'
-      +'<input class="fi" type="text" placeholder="2 BHK" value="'+escAttr(u.bhk||'')+'" onchange="updateUnit('+i+',\'bhk\',this.value)" style="font-size:12px;padding:7px 9px;"/>'
-      +'<input class="fi" type="number" placeholder="Area (sq.ft)" value="'+(u.area||'')+'" onchange="updateUnit('+i+',\'area\',Number(this.value)||0)" style="font-size:12px;padding:7px 9px;"/>'
-      +'<input class="fi" type="number" placeholder="Min ₹" value="'+(u.priceMin||'')+'" onchange="updateUnit('+i+',\'priceMin\',Number(this.value)||0)" style="font-size:12px;padding:7px 9px;"/>'
-      +'<input class="fi" type="number" placeholder="Max ₹" value="'+(u.priceMax||'')+'" onchange="updateUnit('+i+',\'priceMax\',Number(this.value)||0)" style="font-size:12px;padding:7px 9px;"/>'
-      +'<button type="button" onclick="removeUnit('+i+')" aria-label="Remove" style="background:transparent;border:none;color:var(--red);cursor:pointer;padding:6px;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-trash"/></svg></button>'
-    +'</div>';
-  }).join('');
+  el.innerHTML='<div class="inv-table">'
+    +'<div class="inv-row inv-head">'
+      +'<div>Unit Type</div>'
+      +'<div>Carpet Area (sq.ft)</div>'
+      +'<div>Price Range</div>'
+      +'<div>Inventory</div>'
+      +'<div></div>'
+    +'</div>'
+    +_unitTypes.map(function(u,i){
+      var avail=Number(u.units_available||0);
+      var total=Number(u.units_total||0);
+      var pct=total>0?Math.min(100,Math.round((total-avail)/total*100)):0;
+      var pmCore=u.price_min_core||(u.priceMin?(u.priceMin>=10000000?(u.priceMin/10000000).toFixed(2).replace(/\.?0+$/,''):(u.priceMin/100000).toFixed(2).replace(/\.?0+$/,'')):'');
+      var pmUnit=u.price_min_unit||(u.priceMin>=10000000?'cr':'lakh');
+      var pxCore=u.price_max_core||(u.priceMax?(u.priceMax>=10000000?(u.priceMax/10000000).toFixed(2).replace(/\.?0+$/,''):(u.priceMax/100000).toFixed(2).replace(/\.?0+$/,'')):'');
+      var pxUnit=u.price_max_unit||(u.priceMax>=10000000?'cr':'lakh');
+      return '<div class="inv-row">'
+        +'<div><select class="fi inv-fi" onchange="updateUnit('+i+',\'bhk\',this.value)">'+BHK_PRESETS.map(function(b){return '<option'+(b===u.bhk?' selected':'')+'>'+b+'</option>';}).join('')+'</select></div>'
+        +'<div class="inv-range">'
+          +'<input class="fi inv-fi inv-fi-sm" type="number" placeholder="Min" value="'+(u.carpet_min||u.area||'')+'" min="0" onchange="updateUnit('+i+',\'carpet_min\',Number(this.value)||0)"/>'
+          +'<span class="inv-dash">–</span>'
+          +'<input class="fi inv-fi inv-fi-sm" type="number" placeholder="Max" value="'+(u.carpet_max||'')+'" min="0" onchange="updateUnit('+i+',\'carpet_max\',Number(this.value)||0)"/>'
+        +'</div>'
+        +'<div class="inv-price-cell">'
+          +'<div class="inv-price-row"><input class="fi inv-fi inv-fi-xs" type="number" placeholder="Min" value="'+esc(String(pmCore))+'" min="0" step="0.01" onchange="updateUnitPrice('+i+',\'min\',this.value,document.getElementById(\'unitMinUnit'+i+'\').value)"/>'
+            +'<select class="fi inv-fi inv-fi-xs" id="unitMinUnit'+i+'" onchange="updateUnitPrice('+i+',\'min\',this.previousElementSibling.value,this.value)"><option value="lakh"'+(pmUnit==='lakh'?' selected':'')+'>L</option><option value="cr"'+(pmUnit==='cr'?' selected':'')+'>Cr</option></select>'
+          +'</div>'
+          +'<span class="inv-dash inv-dash-v">to</span>'
+          +'<div class="inv-price-row"><input class="fi inv-fi inv-fi-xs" type="number" placeholder="Max" value="'+esc(String(pxCore))+'" min="0" step="0.01" onchange="updateUnitPrice('+i+',\'max\',this.value,document.getElementById(\'unitMaxUnit'+i+'\').value)"/>'
+            +'<select class="fi inv-fi inv-fi-xs" id="unitMaxUnit'+i+'" onchange="updateUnitPrice('+i+',\'max\',this.previousElementSibling.value,this.value)"><option value="lakh"'+(pxUnit==='lakh'?' selected':'')+'>L</option><option value="cr"'+(pxUnit==='cr'?' selected':'')+'>Cr</option></select>'
+          +'</div>'
+        +'</div>'
+        +'<div class="inv-stock-cell">'
+          +'<div class="inv-stock-row">'
+            +'<input class="fi inv-fi inv-fi-xs" type="number" placeholder="Avail." value="'+(avail||'')+'" min="0" onchange="updateUnit('+i+',\'units_available\',Number(this.value)||0)"/>'
+            +'<span class="inv-dash">/</span>'
+            +'<input class="fi inv-fi inv-fi-xs" type="number" placeholder="Total" value="'+(total||'')+'" min="0" onchange="updateUnit('+i+',\'units_total\',Number(this.value)||0)"/>'
+          +'</div>'
+          +(total>0?'<div class="inv-bar"><div class="inv-bar-fill" style="width:'+pct+'%"></div></div>'
+            +'<div class="inv-stock-lbl">'+(total-avail)+' sold / '+total+' total</div>':'')
+        +'</div>'
+        +'<div><button type="button" onclick="removeUnit('+i+')" aria-label="Remove row" class="inv-remove"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-trash"/></svg></button></div>'
+      +'</div>';
+    }).join('')
+  +'</div>';
 }
 function addUnit(){
-  _unitTypes.push({bhk:'',area:0,priceMin:0,priceMax:0});
+  _unitTypes.push({bhk:'2 BHK',carpet_min:0,carpet_max:0,price_min_core:'',price_min_unit:'lakh',price_max_core:'',price_max_unit:'cr',units_available:0,units_total:0,priceMin:0,priceMax:0});
   renderUnits();
 }
 function updateUnit(idx,key,val){
   if(_unitTypes[idx])_unitTypes[idx][key]=val;
+}
+// Update the price min/max — keeps both the raw rupee value (priceMin/priceMax for sorting/display)
+// AND the core+unit display fields (for the form).
+function updateUnitPrice(idx,which,coreStr,unit){
+  var u=_unitTypes[idx];if(!u)return;
+  var core=Number(coreStr)||0;
+  var rupees=core?(unit==='cr'?Math.round(core*10000000):Math.round(core*100000)):0;
+  if(which==='min'){u.price_min_core=coreStr;u.price_min_unit=unit;u.priceMin=rupees;}
+  else{u.price_max_core=coreStr;u.price_max_unit=unit;u.priceMax=rupees;}
 }
 function removeUnit(idx){
   _unitTypes.splice(idx,1);
@@ -5671,6 +5825,11 @@ function openM(id){
       var wcP=document.getElementById('wizCardProject');
       if(wcP)wcP.style.display=cu.role==='builder'?'':'none';
       _unitTypes=[];renderUnits();
+      // Reset builder project fields
+      ['lAcreage','lTowers','lBooking','lBrochure','lMasterPlan'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+      var brkDef=document.querySelector('input[name="lBreakup"][value="all_inclusive"]');
+      if(brkDef)brkDef.checked=true;
+      document.querySelectorAll('input[name="lScheme"]').forEach(function(c){c.checked=false;});
       _selFurn=[];renderFurnishingItems();
       _selWater=[];setWaterFromString('');
       _landmarks=[];renderLandmarks();
