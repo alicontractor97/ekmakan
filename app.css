@@ -222,11 +222,10 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .sim-price.buy{color:var(--g);}
 
 /* Property card anchor wrapper — opens in new tab natively */
-.pc-link{display:flex;flex-direction:column;text-decoration:none;color:inherit;cursor:pointer;height:100%;}
+.pc-link{display:block;text-decoration:none;color:inherit;cursor:pointer;}
 .pc-link:hover{text-decoration:none;color:inherit;}
 .pc-link:focus{outline:none;}
 .pc-link:focus-visible{outline:2px solid var(--t);outline-offset:2px;border-radius:12px;}
-.pc-link>.pc{flex:1;display:flex;flex-direction:column;}
 .sim-link{text-decoration:none;color:inherit;flex:0 0 220px;scroll-snap-align:start;}
 .sim-link:hover,.sim-link:focus{text-decoration:none;color:inherit;}
 
@@ -919,8 +918,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 }
 
 /* Wrapper stretches to grid cell */
-/* Card wrapper takes natural content height (not forced to fill grid cell). */
-.pc-link>.pc{height:auto;}
+/* pc-link is display:block — card controls its own layout */
 
 /* HOW IT WORKS */
 .how{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;}
