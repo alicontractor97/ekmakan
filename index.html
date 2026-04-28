@@ -62,7 +62,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="app.css?v=20260428-135847"/>
+<link rel="stylesheet" href="app.css?v=20260428-142350"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -89,6 +89,13 @@
       <path d="M6.5 6h2M6.5 9h2M6.5 12h2M6.5 15h2M6.5 18h2"/>
       <path d="M15.5 11h2M15.5 14h2M15.5 17h2"/>
       <path d="M4 22h17"/>
+    </symbol>
+    <symbol id="i-crane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 22h7V10H2zM4 14h3M4 17h3M4 20h3"/>
+      <path d="M9 10V4l8-2v4"/>
+      <path d="M17 6v16M14 22h6"/>
+      <path d="M13 6h8M17 6v-2"/>
+      <rect x="15" y="10" width="4" height="4" rx=".5"/>
     </symbol>
     <symbol id="i-bed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 18v-7a2 2 0 0 1 2-2h7v7M3 18h18v-5a2 2 0 0 0-2-2H12"/>
@@ -667,38 +674,70 @@
       <p style="text-align:center;margin-top:14px;"><a href="#" onclick="event.preventDefault();setAT('login')" style="font-size:12px;color:var(--t);text-decoration:none;font-weight:600;">&#8592; Back to Sign In</a></p>
     </div>
 
-    <!-- REGISTER -->
-    <div id="rFrm" style="display:none;" data-role="user">
-      <p style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">I am a</p>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
-        <div id="rrU" onclick="setRR('user')" class="role-card on">
-          <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-home"/></svg></div>
-          <div style="font-size:12px;font-weight:700;">Rent or Buy</div>
-          <div style="font-size:10px;color:var(--mu);margin-top:2px;">Looking for a home</div>
+    <!-- REGISTER — Multi-step wizard -->
+    <div id="rFrm" style="display:none;" data-role="user" data-step="1">
+      <!-- Step indicator -->
+      <div class="reg-steps" id="regSteps">
+        <div class="reg-step on" data-rs="1"><span class="reg-step-num">1</span><span class="reg-step-lbl">Role</span></div>
+        <div class="reg-step" data-rs="2"><span class="reg-step-num">2</span><span class="reg-step-lbl">Details</span></div>
+        <div class="reg-step" data-rs="3"><span class="reg-step-num">3</span><span class="reg-step-lbl">Security</span></div>
+      </div>
+
+      <!-- Step 1: Choose role -->
+      <div class="reg-pane" id="regS1">
+        <p style="font-size:12px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">I am a</p>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;">
+          <div id="rrU" onclick="setRR('user')" class="role-card on">
+            <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-home"/></svg></div>
+            <div style="font-size:13px;font-weight:700;">Rent or Buy</div>
+            <div style="font-size:10.5px;color:var(--mu);margin-top:2px;">Looking for a home</div>
+          </div>
+          <div id="rrO" onclick="setRR('owner')" class="role-card">
+            <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-owner"/></svg></div>
+            <div style="font-size:13px;font-weight:700;">Owner</div>
+            <div style="font-size:10.5px;color:var(--mu);margin-top:2px;">List my property</div>
+          </div>
+          <div id="rrB" onclick="setRR('broker')" class="role-card">
+            <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-broker"/></svg></div>
+            <div style="font-size:13px;font-weight:700;">Broker</div>
+            <div style="font-size:10.5px;color:var(--mu);margin-top:2px;">Agent / Agency</div>
+          </div>
+          <div id="rrBd" onclick="setRR('builder')" class="role-card">
+            <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-crane"/></svg></div>
+            <div style="font-size:13px;font-weight:700;">Builder</div>
+            <div style="font-size:10.5px;color:var(--mu);margin-top:2px;">New projects / launches</div>
+          </div>
         </div>
-        <div id="rrO" onclick="setRR('owner')" class="role-card">
-          <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-owner"/></svg></div>
-          <div style="font-size:12px;font-weight:700;">Owner</div>
-          <div style="font-size:10px;color:var(--mu);margin-top:2px;">List my property</div>
+        <div id="rNote" class="al ali" style="font-size:12px;margin-bottom:12px;">Browse, save, and contact listings for renting or buying. Free forever.</div>
+        <button class="btn btn-bl" onclick="regNext()">Continue &rarr;</button>
+      </div>
+
+      <!-- Step 2: Personal + professional details -->
+      <div class="reg-pane" id="regS2" style="display:none;">
+        <div class="fg"><label class="flbl">Full Name *</label><input class="fi" type="text" id="rNm" placeholder="Your full name" autocomplete="name"/></div>
+        <div class="fg"><label class="flbl">Email *</label><input class="fi" type="email" id="rEm" placeholder="you@example.com" autocomplete="email"/></div>
+        <div class="fg">
+          <label class="flbl">Mobile Number *</label>
+          <div style="display:flex;gap:0;">
+            <span class="fi" style="flex:0 0 auto;width:60px;border-radius:8px 0 0 8px;border-right:none;background:var(--cr);color:var(--ink);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px;">+91</span>
+            <input class="fi" type="tel" id="rPh" placeholder="98765 43210" autocomplete="tel" maxlength="10" style="border-radius:0 8px 8px 0;" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"/>
+          </div>
+          <div style="font-size:10.5px;color:var(--mu);margin-top:3px;">10-digit Indian mobile number</div>
         </div>
-        <div id="rrB" onclick="setRR('broker')" class="role-card">
-          <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-broker"/></svg></div>
-          <div style="font-size:12px;font-weight:700;">Broker</div>
-          <div style="font-size:10px;color:var(--mu);margin-top:2px;">Agent / Agency</div>
-        </div>
-        <div id="rrBd" onclick="setRR('builder')" class="role-card">
-          <div style="margin-bottom:6px;color:var(--t);display:flex;justify-content:center;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-sparkle"/></svg></div>
-          <div style="font-size:12px;font-weight:700;">Builder</div>
-          <div style="font-size:10px;color:var(--mu);margin-top:2px;">New projects / launches</div>
+        <!-- Professional fields — hidden for regular users, shown for broker/builder/owner -->
+        <div id="rAg" style="display:none;" class="fg"><label class="flbl" id="rAgLabel">Agency Name</label><input class="fi" type="text" id="rAn" placeholder="e.g. Khan Properties"/></div>
+        <div id="rLc" style="display:none;" class="fg"><label class="flbl">RERA / License No.</label><input class="fi" type="text" id="rLn" placeholder="RERA/MH/2024/001"/></div>
+        <div id="rWb" style="display:none;" class="fg"><label class="flbl">Company Website</label><input class="fi" type="url" id="rWu" placeholder="https://yourcompany.com"/></div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-o" onclick="regBack()" style="flex:0 0 auto;">&larr; Back</button>
+          <button class="btn btn-bl" onclick="regNext()" style="flex:1;">Continue &rarr;</button>
         </div>
       </div>
-      <div id="rNote" class="al ali" style="font-size:12px;margin-bottom:10px;">Browse, save, and contact listings for renting or buying. Free forever.</div>
-      <div class="fg2">
-        <div class="fg s2"><label class="flbl">Full Name *</label><input class="fi" type="text" id="rNm" placeholder="Your full name" autocomplete="name"/></div>
-        <div class="fg"><label class="flbl">Email *</label><input class="fi" type="email" id="rEm" placeholder="you@example.com" autocomplete="email"/></div>
-        <div class="fg"><label class="flbl">Mobile *</label><input class="fi" type="tel" id="rPh" placeholder="+91 98765 43210" autocomplete="tel"/></div>
-        <div class="fg s2">
-          <label class="flbl">Password *</label>
+
+      <!-- Step 3: Password + CAPTCHA + submit -->
+      <div class="reg-pane" id="regS3" style="display:none;">
+        <div class="fg">
+          <label class="flbl">Create Password *</label>
           <div style="position:relative;">
             <input class="fi" type="password" id="rPw" placeholder="Min. 8 characters" autocomplete="new-password" oninput="checkPwStr(this)" style="padding-right:44px;"/>
             <button type="button" onclick="togglePw('rPw',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);padding:4px;display:flex;align-items:center;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg></button>
@@ -708,14 +747,15 @@
             <span id="psLbl" style="font-size:11px;color:var(--mu);"></span>
           </div>
         </div>
-        <div class="fg s2" id="rAg" style="display:none;"><label class="flbl">Agency / Company</label><input class="fi" type="text" id="rAn" placeholder="e.g. Khan Properties"/></div>
-        <div class="fg s2" id="rLc" style="display:none;"><label class="flbl">RERA / License No.</label><input class="fi" type="text" id="rLn" placeholder="RERA/MH/2024/001"/></div>
+        <div style="background:var(--cr);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--mu);margin-bottom:10px;line-height:1.5;">
+          &#9989; By creating an account you agree to our <span onclick="openM('charterM')" style="color:var(--t);cursor:pointer;font-weight:700;">Inclusion Charter</span> and <span onclick="openM('termsM')" style="color:var(--t);cursor:pointer;font-weight:700;">Terms of Service</span>.
+        </div>
+        <div id="turnstileWrap" style="margin-bottom:10px;display:flex;justify-content:center;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-o" onclick="regBack()" style="flex:0 0 auto;">&larr; Back</button>
+          <button class="btn btn-bl" onclick="doReg()" style="flex:1;">Create Account</button>
+        </div>
       </div>
-      <div style="background:var(--cr);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--mu);margin-bottom:12px;line-height:1.5;">
-        &#9989; By creating an account you agree to our <span onclick="openM('charterM')" style="color:var(--t);cursor:pointer;font-weight:700;">Inclusion Charter</span> and <span onclick="openM('termsM')" style="color:var(--t);cursor:pointer;font-weight:700;">Terms of Service</span>.
-      </div>
-      <div id="turnstileWrap" style="margin-bottom:12px;display:flex;justify-content:center;"></div>
-      <button class="btn btn-bl" onclick="doReg()">Create Account</button>
     </div>
   </div>
 </div>
@@ -1373,11 +1413,11 @@
   </div>
 </div>
 
-<script src="app.js?v=20260428-135847" defer></script>
+<script src="app.js?v=20260428-142350" defer></script>
 <script>
 // Build version stamp — replaced by build script. Used to detect when a new
 // deploy has landed so we can auto-reload the page for users.
-window.__BUILD_VERSION__ = '20260428-135847';
+window.__BUILD_VERSION__ = '20260428-142350';
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){

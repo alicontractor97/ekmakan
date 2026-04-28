@@ -453,14 +453,21 @@ function setAT(t){
   var al=document.getElementById('atL'),ar=document.getElementById('atR');
   var ae=document.getElementById('aErr');
   if(lf)lf.style.display=t==='login'?'':'none';
-  if(rf){rf.style.display=t==='reg'?'':'none';if(t==='reg'&&!rf.dataset.role)rf.dataset.role='user';}
+  if(rf){
+    rf.style.display=t==='reg'?'':'none';
+    if(t==='reg'){
+      if(!rf.dataset.role)rf.dataset.role='user';
+      // Reset wizard to step 1
+      _regStep=1;
+      if(typeof _showRegStep==='function')_showRegStep(1);
+    }
+  }
   if(prf)prf.style.display=t==='reset'?'':'none';
   if(al)al.classList.toggle('on',t==='login');
   if(ar)ar.classList.toggle('on',t==='reg');
   if(ae)ae.style.display='none';
-  // Render Turnstile when login or registration tab is shown
+  // Render Turnstile when login tab shown (reg CAPTCHA is lazy-rendered on step 3)
   if(t==='login')renderTurnstile('turnstileLoginWrap',function(tk){_turnstileLoginToken=tk;});
-  if(t==='reg')renderTurnstile('turnstileWrap',function(tk){_turnstileToken=tk;});
   if(t==='reset')renderTurnstile('turnstileResetWrap',function(tk){_turnstileResetToken=tk;});
 }
 
@@ -469,11 +476,13 @@ function setRR(r){
   var btnMap={'user':'rrU','owner':'rrO','broker':'rrB','builder':'rrBd'};
   var bt=document.getElementById(btnMap[r]||'rrU');if(bt)bt.classList.add('on');
   var rf=document.getElementById('rFrm');if(rf)rf.dataset.role=r;
-  var ag=document.getElementById('rAg'),lc=document.getElementById('rLc');
-  // Agency field shown for broker and builder; license shown only for broker (builders use RERA at project level)
+  var ag=document.getElementById('rAg'),lc=document.getElementById('rLc'),wb=document.getElementById('rWb');
+  // Agency field shown for broker and builder; license shown only for broker
   if(ag)ag.style.display=(r==='broker'||r==='builder')?'':'none';
   if(lc)lc.style.display=r==='broker'?'':'none';
-  var agLabel=ag?ag.querySelector('.flbl'):null;
+  // Website field shown only for builder
+  if(wb)wb.style.display=r==='builder'?'':'none';
+  var agLabel=document.getElementById('rAgLabel');
   if(agLabel)agLabel.textContent=r==='builder'?'Builder / Company Name *':'Agency Name';
   var nt=document.getElementById('rNote');
   if(nt){
@@ -482,6 +491,59 @@ function setRR(r){
     else if(r==='owner'){nt.className='al alw';nt.textContent='List directly — no broker needed. Simple owner dashboard included.';}
     else{nt.className='al ali';nt.textContent='Browse, save and contact listings for renting or buying. Free forever.';}
   }
+}
+
+// Registration wizard step navigation
+var _regStep=1;
+function _showRegStep(n){
+  _regStep=n;
+  var rf=document.getElementById('rFrm');if(rf)rf.dataset.step=n;
+  for(var i=1;i<=3;i++){
+    var pane=document.getElementById('regS'+i);
+    if(pane)pane.style.display=i===n?'':'none';
+  }
+  // Update step indicator
+  document.querySelectorAll('.reg-step').forEach(function(el){
+    var s=Number(el.dataset.rs);
+    el.classList.toggle('on',s===n);
+    el.classList.toggle('done',s<n);
+  });
+  // Clear error on step change
+  var ae=document.getElementById('aErr');if(ae)ae.style.display='none';
+}
+
+function regNext(){
+  var ae=document.getElementById('aErr');if(ae)ae.style.display='none';
+  var rf=document.getElementById('rFrm');
+  var role=rf?rf.dataset.role||'user':'user';
+  if(_regStep===1){
+    // Step 1 → 2: role selected, proceed
+    _showRegStep(2);
+  } else if(_regStep===2){
+    // Validate personal details before moving to step 3
+    var nm=(document.getElementById('rNm').value||'').trim();
+    var em=(document.getElementById('rEm').value||'').trim().toLowerCase();
+    var ph=(document.getElementById('rPh').value||'').trim();
+    if(!nm){if(ae){ae.style.display='';ae.textContent='Please enter your full name.';}return;}
+    if(!em||!isEmailFormatValid(em)){if(ae){ae.style.display='';ae.textContent='Please enter a valid email address.';}return;}
+    if(isDisposableEmail(em)){if(ae){ae.style.display='';ae.textContent='Disposable email addresses are not accepted.';}return;}
+    // Phone: must be exactly 10 digits
+    var phDigits=ph.replace(/\D/g,'');
+    if(phDigits.length!==10){if(ae){ae.style.display='';ae.textContent='Please enter a valid 10-digit Indian mobile number.';}return;}
+    // Builder: company name required
+    if(role==='builder'){
+      var ag=(document.getElementById('rAn').value||'').trim();
+      if(!ag){if(ae){ae.style.display='';ae.textContent='Company / builder name is required.';}return;}
+    }
+    _showRegStep(3);
+    // Render CAPTCHA on step 3 (lazy — only when user reaches it)
+    if(typeof renderTurnstile==='function')renderTurnstile('turnstileWrap',function(tk){_turnstileToken=tk;});
+  }
+}
+
+function regBack(){
+  if(_regStep===2)_showRegStep(1);
+  else if(_regStep===3)_showRegStep(2);
 }
 
 // Resend the email-verification link for an unconfirmed account
@@ -532,15 +594,23 @@ async function doLogin(){
 function doReg(){
   var nm=document.getElementById('rNm').value.trim();
   var em=document.getElementById('rEm').value.trim().toLowerCase();
-  var ph=document.getElementById('rPh').value.trim();
+  var phRaw=document.getElementById('rPh').value.trim();
   var pw=document.getElementById('rPw').value;
   var rf=document.getElementById('rFrm');
   var role=rf?rf.dataset.role||'user':'user';
   var ag=document.getElementById('rAn').value.trim();
   var lc=document.getElementById('rLn').value.trim();
+  var website=(document.getElementById('rWu')||{}).value||'';
+  website=website.trim();
   var ae=document.getElementById('aErr');
   if(ae)ae.style.display='none';
-  if(!nm||!em||!ph||!pw){if(ae){ae.style.display='';ae.textContent='Please fill in all required fields.';}return;}
+  // Phone: strip non-digits, must be exactly 10
+  var phDigits=phRaw.replace(/\D/g,'');
+  var ph='+91'+phDigits;
+  if(!nm||!em||phDigits.length!==10||!pw){
+    if(ae){ae.style.display='';ae.textContent=phDigits.length!==10?'Please enter a valid 10-digit Indian mobile number.':'Please fill in all required fields.';}
+    return;
+  }
   // Turnstile CAPTCHA check
   if(!_turnstileToken){
     if(ae){ae.style.display='';ae.textContent='Please complete the verification challenge above.';}
@@ -564,7 +634,6 @@ function doReg(){
       return;
     }
   }
-  if(ph.replace(/\D/g,'').length<10){if(ae){ae.style.display='';ae.textContent='Please enter a valid 10-digit mobile number.';}return;}
   if(pw.length<8){if(ae){ae.style.display='';ae.textContent='Password must be at least 8 characters.';}return;}
   // Supabase Auth sign-up (duplicate check is handled server-side)
   var btn=document.querySelector('#rFrm button.btn-bl')||null;
@@ -573,7 +642,7 @@ function doReg(){
 
   var doSignup=async function(){
     try{
-      var {data:authData,error:authErr}=await sb.auth.signUp({email:em,password:pw,options:{data:{name:nm,phone:ph,role:role,agency:ag,license_no:lc},captchaToken:_turnstileToken}});
+      var {data:authData,error:authErr}=await sb.auth.signUp({email:em,password:pw,options:{data:{name:nm,phone:ph,role:role,agency:ag,license_no:lc,website:website},captchaToken:_turnstileToken}});
       if(authErr)throw authErr;
       if(!authData.user)throw new Error('Sign-up failed.');
       // ── Detect "user already exists" silent failure ──

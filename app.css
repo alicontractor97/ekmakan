@@ -47,7 +47,27 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .preset-chip{font-size:11px;padding:3px 9px;border-radius:50px;background:var(--cr);border:1px solid var(--sa);cursor:pointer;color:var(--ink);transition:all .15s;white-space:nowrap;}
 .preset-chip:hover{background:var(--tl);border-color:var(--t);color:var(--td);}
 /* ROLE CARDS (register) */
-.role-card{border:2px solid var(--sa);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .18s;background:var(--wh);}
+/* Registration wizard step indicator */
+.reg-steps{display:flex;gap:0;margin-bottom:18px;position:relative;}
+.reg-steps::before{content:'';position:absolute;top:14px;left:20px;right:20px;height:2px;background:var(--sa);}
+.reg-step{flex:1;text-align:center;position:relative;z-index:1;}
+.reg-step-num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--wh);border:2px solid var(--sa);
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;
+  color:var(--mu);
+  transition:all .2s;
+}
+.reg-step-lbl{display:block;font-family:'DM Sans',sans-serif;font-size:10.5px;color:var(--mu);margin-top:4px;font-weight:600;}
+.reg-step.on .reg-step-num{background:var(--t);border-color:var(--t);color:#fff;}
+.reg-step.on .reg-step-lbl{color:var(--t);font-weight:700;}
+.reg-step.done .reg-step-num{background:var(--t);border-color:var(--t);color:#fff;}
+.reg-step.done .reg-step-lbl{color:var(--t);}
+.reg-pane{animation:fadeUp .25s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+.role-card{border:2px solid var(--sa);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .18s;background:var(--wh);}
 .role-card:hover{border-color:var(--tl);background:var(--cr);}
 .role-card.on{border-color:var(--t);background:var(--tl);}
 .role-card.on .ps-bar,div.role-card.on>div:nth-child(2){color:var(--td);}
