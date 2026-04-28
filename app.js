@@ -1156,12 +1156,48 @@ async function renderHome(){
   if(hfr)hfr.innerHTML='<div class="mk-spinner"><span class="mk-spinner-text">Loading rentals…</span></div>';
   if(hfb)hfb.innerHTML='<div class="mk-spinner"><span class="mk-spinner-text">Loading properties…</span></div>';
   var ls=(await gL()).filter(function(l){return l.status==='approved';});
-  var rentals=ls.filter(function(l){return l.lf==='rent';});
-  var sales=ls.filter(function(l){return l.lf==='buy';});
-  if(hfr)hfr.innerHTML=rentals.length?rentals.slice(0,4).map(pCardCompact).join('')
-    :'<div class="mk-empty"><div class="mk-empty-icon"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg></div><div class="mk-empty-title">No rental listings yet</div><div class="mk-empty-sub">Be the first to <span onclick="openM(\'addM\')" style="color:var(--t);cursor:pointer;font-weight:700;">post a rental listing</span>!</div></div>';
-  if(hfb)hfb.innerHTML=sales.length?sales.slice(0,4).map(pCardCompact).join('')
-    :'<div class="mk-empty"><div class="mk-empty-icon"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg></div><div class="mk-empty-title">No properties for sale yet</div><div class="mk-empty-sub">Be the first to <span onclick="openM(\'addM\')" style="color:var(--t);cursor:pointer;font-weight:700;">list a property for sale</span>!</div></div>';
+  // Recently posted within last 30 days, newest first
+  var thirtyDaysAgo=Date.now()-(30*24*60*60*1000);
+  function postedTs(l){
+    if(!l.postedAt)return 0;
+    var t=new Date(l.postedAt).getTime();
+    return isNaN(t)?0:t;
+  }
+  function recentSort(a,b){return postedTs(b)-postedTs(a);}
+  var recentRentals=ls.filter(function(l){return l.lf==='rent'&&postedTs(l)>thirtyDaysAgo;}).sort(recentSort);
+  var recentSales=ls.filter(function(l){return l.lf==='buy'&&postedTs(l)>thirtyDaysAgo;}).sort(recentSort);
+  // Fallback: if nothing in the last 30 days, fall back to overall most-recent so
+  // the strip is never empty when listings exist.
+  if(!recentRentals.length)recentRentals=ls.filter(function(l){return l.lf==='rent';}).sort(recentSort);
+  if(!recentSales.length)recentSales=ls.filter(function(l){return l.lf==='buy';}).sort(recentSort);
+  // Cap at 12 cards per strip — plenty to scroll through, keeps DOM reasonable
+  recentRentals=recentRentals.slice(0,12);
+  recentSales=recentSales.slice(0,12);
+  function buildCarousel(items, gridId){
+    var cards=items.map(pCardCompact).join('');
+    return '<div class="hcr-wrap">'
+      +'<button class="hcr-arr l" onclick="hcrScroll(\''+gridId+'\',-1)" aria-label="Scroll left"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-chevron-left"/></svg></button>'
+      +'<div class="hcr-track" id="'+gridId+'-track">'+cards+'</div>'
+      +'<button class="hcr-arr r" onclick="hcrScroll(\''+gridId+'\',1)" aria-label="Scroll right"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>'
+      +'</div>';
+  }
+  if(hfr)hfr.innerHTML=recentRentals.length?buildCarousel(recentRentals,'hFR')
+    :'<div class="mk-empty"><div class="mk-empty-icon"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg></div><div class="mk-empty-title">No rental listings yet</div><div class="mk-empty-sub">Be the first to <span onclick="postPropertyClick()" style="color:var(--t);cursor:pointer;font-weight:700;">post a rental listing</span>!</div></div>';
+  if(hfb)hfb.innerHTML=recentSales.length?buildCarousel(recentSales,'hFB')
+    :'<div class="mk-empty"><div class="mk-empty-icon"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg></div><div class="mk-empty-title">No properties for sale yet</div><div class="mk-empty-sub">Be the first to <span onclick="postPropertyClick()" style="color:var(--t);cursor:pointer;font-weight:700;">list a property for sale</span>!</div></div>';
+}
+
+// Scroll a homepage carousel by approximately one card-width in either direction.
+function hcrScroll(gridId,dir){
+  var track=document.getElementById(gridId+'-track');
+  if(!track)return;
+  // One full visible width per click — feels natural & avoids partial-card states
+  var dx=track.clientWidth*0.85*dir;
+  if(track.scrollBy){
+    track.scrollBy({left:dx,behavior:'smooth'});
+  } else {
+    track.scrollLeft+=dx;
+  }
 }
 function goCityBrowse(name){
   _resetBrowseFilters();

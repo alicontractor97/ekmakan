@@ -608,19 +608,49 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .cc-poster{font-weight:500;}
 .cc-posted{color:var(--gr);font-weight:700;}
 
-/* Override .g3 layout WHEN it contains compact cards (homepage strips).
-   Direct child selector — only the strip's own grid, not browse cards. */
-#hFR.g3,#hFB.g3{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  gap:16px;
+/* Homepage carousel — horizontal scroll strip with overflowing arrows */
+.hcr-wrap{position:relative;}
+.hcr-track{
+  display:flex;gap:16px;
+  overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  padding:4px 0 14px;
+  /* Hide scrollbar visually — but keep keyboard/touch scrolling */
+  scrollbar-width:thin;scrollbar-color:var(--sa) transparent;
 }
+.hcr-track::-webkit-scrollbar{height:6px;}
+.hcr-track::-webkit-scrollbar-track{background:transparent;}
+.hcr-track::-webkit-scrollbar-thumb{background:var(--sa);border-radius:3px;}
+.hcr-track>.cc-link{
+  flex:0 0 260px;
+  scroll-snap-align:start;
+}
+.hcr-arr{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:38px;height:38px;border-radius:50%;
+  background:var(--wh);border:1px solid var(--sa);
+  color:var(--ink);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  z-index:5;
+  box-shadow:0 4px 12px rgba(13,42,38,.12);
+  transition:all .15s;
+}
+.hcr-arr:hover{
+  background:var(--t);color:#fff;border-color:var(--t);
+  box-shadow:0 6px 18px rgba(18,90,81,.25);
+}
+.hcr-arr.l{left:-12px;}
+.hcr-arr.r{right:-12px;}
+.hcr-arr .icn{width:18px;height:18px;}
 @media (max-width: 720px){
-  #hFR.g3,#hFB.g3{grid-template-columns:repeat(2,1fr);gap:12px;}
+  .hcr-track>.cc-link{flex:0 0 220px;}
+  .hcr-arr{display:none;} /* Touch devices: rely on swipe */
 }
-@media (max-width: 480px){
-  #hFR.g3,#hFB.g3{grid-template-columns:1fr;}
-}
+
+/* Homepage strips no longer use .g3 grid — they wrap in .hcr-wrap which is a flex track.
+   The .g3 container becomes a passthrough for the carousel. */
+#hFR.g3,#hFB.g3{display:block;}
 
 /* PROPERTY CARD — 99acres-style horizontal layout */
 .pc{
@@ -644,8 +674,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 /* COLUMN 1: Image */
 .pc-col-img{
   position:relative;
-  flex:0 0 360px;
-  width:360px;
+  flex:0 0 320px;
+  width:320px;
   background:#f3f3f3;
   overflow:hidden;
 }
@@ -743,26 +773,26 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 
-/* Metric strip — Price | Area | BHK */
+/* Metric strip — Price | Area | BHK
+   Inline + tight gaps so missing metrics don't stretch the layout into emptiness */
 .pc-metric-strip{
-  display:flex;align-items:flex-start;
+  display:flex;align-items:flex-start;flex-wrap:wrap;
   margin-top:6px;margin-bottom:4px;
   gap:0;
 }
 .pc-metric{
-  flex:1 1 auto;min-width:0;
-  padding:0 18px;
+  flex:0 0 auto;min-width:0;
+  padding:0 24px;
   border-left:1px solid var(--sa);
 }
 .pc-metric:first-child{padding-left:0;border-left:none;}
-.pc-metric-price{flex:1.4 1 auto;}
 .pc-mt-val{
   font-family:'DM Sans',sans-serif;
   font-size:18px;font-weight:800;
   color:var(--ink);line-height:1.2;letter-spacing:-.3px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;
 }
-.pc-metric-price .pc-mt-val{color:var(--t);}
+.pc-metric-price .pc-mt-val{color:var(--t);font-size:22px;}
 .pc-mt-unit{
   font-family:'DM Sans',sans-serif;
   font-size:13px;font-weight:500;color:var(--mu);
@@ -771,7 +801,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .pc-mt-lbl{
   font-family:'DM Sans',sans-serif;
   font-size:11.5px;color:var(--mu);
-  margin-top:2px;font-weight:500;
+  margin-top:3px;font-weight:500;
 }
 
 /* Nearby chips strip */
