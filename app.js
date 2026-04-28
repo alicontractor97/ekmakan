@@ -1231,7 +1231,7 @@ function pCard(l){
   var disp=hasImgs?(cu?l.images:l.images.slice(0,2)):[];
   var showLock=hasImgs&&l.images.length>2&&!cu;
 
-  // ── Image section ──
+  // ── COLUMN 1: Image (fixed width) ──
   var imgHTML='<div class="pc-no-img"><svg class="icn icn-xl" aria-hidden="true" style="color:var(--mu);"><use href="#i-home"/></svg></div>';
   if(hasImgs){
     imgHTML='<img id="ci'+l.id+'" loading="lazy" decoding="async" src="'+disp[0]+'" alt="'+escAttr(l.title)+'"/>';
@@ -1241,32 +1241,77 @@ function pCard(l){
     }
     if(showLock){
       imgHTML+='<div class="pc-blur">'
-        +'<div style="font-size:26px;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-lock"/></svg></div>'
-        +'<p>Sign up free to see all '+l.images.length+' photos &amp; contact details</p>'
+        +'<div style="font-size:22px;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-lock"/></svg></div>'
+        +'<p>Sign up to view all '+l.images.length+' photos</p>'
         +'<button class="btn btn-sm" onclick="event.stopPropagation();openM(\'authM\')">Sign Up Free</button>'
         +'</div>';
     }
     var visCount=cu?l.images.length:Math.min(2,l.images.length);
     imgHTML+='<div class="pc-photo-cnt"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg> '+visCount+'/'+l.images.length+'</div>';
   }
-
-  // ── Badges (top-right of info area) ──
-  var badges=[];
-  // Builder-listed projects: "New Launch" or fallback project status badge
-  if(isP&&l.projectStatus==='New Launch'){
-    badges.push('<span class="pc-badge new-launch"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-sparkle"/></svg> New Launch</span>');
-  } else if(isP&&l.projectStatus){
-    badges.push('<span class="pc-badge project">'+esc(l.projectStatus)+'</span>');
+  // Top-corner badges over the image — Verified Inclusive sits prominently
+  var imgBadges='';
+  if(l.verified){
+    imgBadges+='<div class="pc-img-badge pc-vi"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg> Verified Inclusive</div>';
+  } else if(l.tags&&l.tags.length){
+    // If not officially verified but has inclusivity tags, show a softer chip
+    imgBadges+='<div class="pc-img-badge pc-incl"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg> Inclusive</div>';
   }
-  if(l.verified)badges.push('<span class="pc-badge verified"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-check"/></svg> Verified</span>');
-  if(!ir&&l.rera)badges.push('<span class="pc-badge rera">RERA</span>');
-  // Note: NO "New" badge on regular non-project sale listings, even if sale_type='First Owner'.
-  // Only actual builder-launched projects get a New Launch badge. This prevents
-  // resale flats from being mistaken for fresh builder inventory.
-  var badgesHTML=badges.length?'<div class="pc-badges">'+badges.join('')+'</div>':'';
+  // For-sale/rent/project status pill (top-left)
+  var typeBadge='<div class="tbdg '+(isP?'proj':ir?'rent':'buy')+'">'+(isP?'New Project':ir?'For Rent':'For Sale')+'</div>';
 
-  // ── Price block (compact, lakh/crore formatted) ──
+  // ── COLUMN 2: 2x2 data grid ──
+  // Row 1: Carpet area | Floor (Nth of M)
+  // Row 2: Property age | Water source
+  function fact(label, valueHTML){
+    return '<div class="pc-fact"><div class="pc-fact-lbl">'+label+'</div><div class="pc-fact-val">'+valueHTML+'</div></div>';
+  }
+  var carpet=l.carpetArea?l.carpetArea+' <span class="pc-fact-unit">sq.ft</span>':(l.area?l.area+' <span class="pc-fact-unit">sq.ft</span>':'<span class="pc-fact-dim">—</span>');
+  var floorTxt='<span class="pc-fact-dim">—</span>';
+  if(l.floorNo!=null&&l.totalFloors){
+    var n=Number(l.floorNo);
+    var nth=n===0?'Ground':(n===1?'1st':n===2?'2nd':n===3?'3rd':n+'th');
+    floorTxt=nth+' <span class="pc-fact-unit">of '+l.totalFloors+'</span>';
+  } else if(l.floorNo!=null){
+    floorTxt=Number(l.floorNo)===0?'Ground':l.floorNo;
+  }
+  var ageTxt=l.age?esc(l.age):'<span class="pc-fact-dim">—</span>';
+  var waterTxt='<span class="pc-fact-dim">—</span>';
+  if(l.water){
+    var ws=String(l.water).split(',').map(function(s){return s.trim();}).filter(Boolean);
+    waterTxt=ws.length>1?'Mixed':esc(ws[0]||'—');
+  }
+  var dataGridHTML='<div class="pc-data-grid">'
+    +fact('Carpet Area',carpet)
+    +fact('Floor',floorTxt)
+    +fact('Age',ageTxt)
+    +fact('Water',waterTxt)
+    +'</div>';
+
+  // Title + location strip (above data grid, anchors the column)
+  var locBits=[];
+  if(l.loc)locBits.push(esc(l.loc));
+  if(l.city)locBits.push(esc(l.city));
+  var locHTML='<div class="pc-loc-row"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-pin"/></svg> '+locBits.join(', ')+'</div>';
+  // BHK + type + furnishing chip strip
+  var chips=[];
+  chips.push('<span class="pc-chip pc-chip-primary">'+l.beds+' BHK</span>');
+  if(l.type)chips.push('<span class="pc-chip">'+esc(l.type)+'</span>');
+  if(l.furnish)chips.push('<span class="pc-chip pc-chip-soft">'+esc(l.furnish)+'</span>');
+  // Project status badge if applicable, RERA chip
+  if(isP&&l.projectStatus==='New Launch'){
+    chips.push('<span class="pc-chip pc-chip-launch"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-2px;"><use href="#i-sparkle"/></svg> New Launch</span>');
+  } else if(isP&&l.projectStatus){
+    chips.push('<span class="pc-chip pc-chip-launch">'+esc(l.projectStatus)+'</span>');
+  }
+  if(!ir&&l.rera){
+    chips.push('<span class="pc-chip pc-chip-rera">RERA</span>');
+  }
+  var chipsHTML='<div class="pc-chips">'+chips.join('')+'</div>';
+
+  // ── COLUMN 3: Pricing + CTAs ──
   var priceHTML;
+  var perSqftHTML='';
   if(isP){
     if(l.priceMax&&l.priceMax>l.priceMin){
       priceHTML='<div class="pc-price buy">'+fmtPriceHTML(l.priceMin)+' &ndash; '+fmtPriceHTML(l.priceMax)+'</div>';
@@ -1275,59 +1320,57 @@ function pCard(l){
     }
     if(l.completion){
       var cd=new Date(l.completion);
-      if(!isNaN(cd))priceHTML+='<div class="pc-deposit">Possession: '+cd.toLocaleDateString('en-IN',{month:'short',year:'numeric'})+'</div>';
+      if(!isNaN(cd))perSqftHTML='<div class="pc-price-sub">Possession '+cd.toLocaleDateString('en-IN',{month:'short',year:'numeric'})+'</div>';
     }
   } else if(ir){
-    priceHTML='<div class="pc-price">'+fmtRentHTML(l.rent)
-      +'<span class="pc-price-unit">/mo</span></div>'
-      +(l.dep?'<div class="pc-deposit">Deposit '+fmtRentHTML(l.dep)+'</div>':'');
+    priceHTML='<div class="pc-price">'+fmtRentHTML(l.rent)+'<span class="pc-price-unit">/mo</span></div>';
+    if(l.dep)perSqftHTML='<div class="pc-price-sub">Deposit '+fmtRentHTML(l.dep)+'</div>';
   } else {
-    priceHTML='<div class="pc-price buy">'+fmtPriceHTML(l.price)+'</div>'
-      +(l.area>0?'<div class="pc-deposit">'+fmtPriceHTML(Math.round(l.price/l.area))+'/sq.ft</div>':'');
+    priceHTML='<div class="pc-price buy">'+fmtPriceHTML(l.price)+'</div>';
+    if(l.price>0&&l.carpetArea>0){
+      perSqftHTML='<div class="pc-price-sub">'+fmtPriceHTML(Math.round(l.price/l.carpetArea))+'<span class="pc-price-sub-unit">/sq.ft (carpet)</span></div>';
+    } else if(l.price>0&&l.area>0){
+      perSqftHTML='<div class="pc-price-sub">'+fmtPriceHTML(Math.round(l.price/l.area))+'<span class="pc-price-sub-unit">/sq.ft</span></div>';
+    }
   }
-
-  // ── Spec row (BHK · sq.ft · type) ──
-  var specs=[];
-  specs.push('<strong>'+l.beds+' BHK</strong>');
-  if(l.area>0)specs.push('<strong>'+l.area+'</strong> sq.ft');
-  if(l.type&&l.type!=='Apartment')specs.push(esc(l.type));
-  else specs.push(esc(l.type));
-  if(l.furnish)specs.push(esc(l.furnish));
-  var specsHTML='<div class="pc-specs">'+specs.join('<span class="pc-dot">&middot;</span>')+'</div>';
-
-  // ── Location line (building + locality + city) ──
-  var locBits=[];
-  if(l.building)locBits.push('<strong>'+esc(l.building)+'</strong>');
-  if(l.loc)locBits.push(esc(l.loc));
-  if(l.city)locBits.push(esc(l.city));
-  var locHTML='<div class="pc-loc"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-pin"/></svg> '+locBits.join(', ')+'</div>';
-
-  // ── Footer actions ──
-  var footerHTML='<div class="pc-footer">'
-    +'<button class="pc-btn-sec" onclick="event.stopPropagation();viewL('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg> View Details</button>'
-    +'<button class="pc-btn-pri '+(ir?'':'buy')+'" onclick="event.stopPropagation();oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> '+(cu&&cu.id===l.uid?'View Number':'Send Inquiry')+'</button>'
-    +'<button class="pc-btn-report" onclick="event.stopPropagation();openReport('+l.id+')" aria-label="Report discrimination" title="Report discrimination"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg></button>'
+  // Inclusivity tags strip — sits below data grid in mid column
+  var tagsHTML='';
+  if(l.tags&&l.tags.length){
+    tagsHTML='<div class="pc-tags-row">'+l.tags.slice(0,2).map(function(t){return '<span class="pc-tag">'+esc(t)+'</span>';}).join('')
+      +(l.tags.length>2?'<span class="pc-tag-more">+'+(l.tags.length-2)+'</span>':'')
+      +'</div>';
+  } else {
+    tagsHTML='<div class="pc-tags-row pc-tags-empty"></div>';
+  }
+  var ctaHTML='<div class="pc-actions">'
+    +'<button class="pc-btn-pri '+(ir?'':'buy')+'" onclick="event.stopPropagation();event.preventDefault();oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> '+(cu&&cu.id===l.uid?'View Number':'Contact')+'</button>'
+    +'<button class="pc-btn-shortlist'+(fv?' on':'')+'" onclick="event.stopPropagation();event.preventDefault();togFav('+l.id+',this)" aria-pressed="'+(fv?'true':'false')+'"><svg class="icn icn-sm" aria-hidden="true"><use href="#'+(fv?'i-heart-fill':'i-heart')+'"/></svg> '+(fv?'Saved':'Shortlist')+'</button>'
+    +'<button class="pc-btn-report" onclick="event.stopPropagation();event.preventDefault();openReport('+l.id+')" aria-label="Report listing" title="Report"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg></button>'
     +'</div>';
 
+  // ── Compose final 3-column card ──
   return '<a class="pc-link" href="'+_listingUrl(l.id)+'" onclick="return _cardClick(event,'+l.id+')" target="_blank" rel="noopener">'
     +'<div class="pc">'
-    +'<div class="pc-img">'
-      +'<div class="tbdg '+(isP?'proj':ir?'rent':'buy')+'">'+(isP?'New Project':ir?'For Rent':'For Sale')+'</div>'
-      +'<button class="fave-btn" onclick="event.stopPropagation();event.preventDefault();togFav('+l.id+',this)" aria-label="Save to favorites" aria-pressed="'+(fv?'true':'false')+'"><svg class="icn icn-sm" aria-hidden="true"><use href="#'+(fv?'i-heart-fill':'i-heart')+'"/></svg></button>'
-      +imgHTML
-    +'</div>'
-    +'<div class="pc-body">'
-      +'<div class="pc-top">'
-        +'<div class="pc-title">'+esc(l.title)+'</div>'
-        +badgesHTML
+      +'<div class="pc-col-img">'
+        +typeBadge
+        +imgBadges
+        +imgHTML
       +'</div>'
-      +locHTML
-      +specsHTML
-      +'<div class="pc-price-row">'+priceHTML+'</div>'
-      +'<div class="pc-tags">'+(l.tags.length?l.tags.slice(0,3).map(function(t){return '<span class="pc-tag">'+esc(t)+'</span>';}).join(''):'')+'</div>'
-    +'</div>'
-    +footerHTML
-  +'</div></a>';
+      +'<div class="pc-col-mid">'
+        +'<div class="pc-title">'+esc(l.title)+(l.building?' &middot; <span class="pc-bldg">'+esc(l.building)+'</span>':'')+'</div>'
+        +locHTML
+        +chipsHTML
+        +dataGridHTML
+        +tagsHTML
+      +'</div>'
+      +'<div class="pc-col-action">'
+        +'<div class="pc-price-block">'
+          +priceHTML
+          +perSqftHTML
+        +'</div>'
+        +ctaHTML
+      +'</div>'
+    +'</div></a>';
 }
 
 async function cSlide(id,dir){
