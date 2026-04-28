@@ -2339,7 +2339,7 @@ async function viewL(id){
   // Unit types table (for projects)
   var unitsTableHTML='';
   if(isProj&&l.unitTypes&&l.unitTypes.length){
-    unitsTableHTML='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Unit Configurations</div>'
+    unitsTableHTML='<div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Unit Configurations</div>'
       +'<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;font-family:\'DM Sans\',sans-serif;border:1px solid var(--sa);border-radius:8px;overflow:hidden;">'
       +'<thead><tr style="background:var(--cr);text-align:left;"><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Configuration</th><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Area</th><th style="padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mu);">Price Range</th></tr></thead><tbody>'
       +l.unitTypes.map(function(u){
@@ -2362,7 +2362,7 @@ async function viewL(id){
   // Furnishing details (icon grid, read-only)
   var furnDetH='';
   if(l.furnDetails&&l.furnDetails.length){
-    furnDetH='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">What\'s Included</div>'
+    furnDetH='<div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">What\'s Included</div>'
       +'<div class="furn-display">'
       +l.furnDetails.map(function(code){
         var it=FURN_MAP[code];
@@ -2376,7 +2376,7 @@ async function viewL(id){
   if(l.landmarks&&l.landmarks.length){
     // Sort by category for grouping feel
     var sorted=l.landmarks.slice().sort(function(a,b){return (a.category||'').localeCompare(b.category||'');});
-    landmarksH='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:var(--t);"><use href="#i-pin"/></svg> Nearby Landmarks</div>'
+    landmarksH='<div style="margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:var(--t);"><use href="#i-pin"/></svg> Nearby Landmarks</div>'
       +'<div class="lm-display">'
       +sorted.map(function(lm){
         var ico=LM_ICONS[lm.category]||'📍';
@@ -2425,25 +2425,33 @@ async function viewL(id){
     '<div class="vbody-grid">'
       +'<div class="vbody-gallery">'+imgH+'</div>'
       +'<div class="vbody-facts">'
-        +(tagsH?'<div class="tags-r" style="margin-bottom:10px;">'+tagsH+'</div>':'')
+        +(tagsH?'<div class="tags-r" style="margin-bottom:6px;">'+tagsH+'</div>':'')
         +factsHTML
       +'</div>'
     +'</div>'
-    +priceBreakdownHTML
-    +'<div id="priceCompareSlot"></div>'
-    +unitsTableHTML
-    +furnDetH
-    +landmarksH
-    +amH
-    +'<p style="font-size:13px;line-height:1.75;margin-bottom:13px;">'+esc(l.desc)+'</p>'
-    +'<div class="listing-map-wrap" id="listingMapWrap" style="display:none;"><h4><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-pin"/></svg> Location</h4><div class="listing-map" id="listingMap"></div></div>'
-    +cntH
-    +'<button class="btn btn-bl" onclick="closeM(\'viewM\');oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-phone"/></svg> '+(cu?'Contact Directly':'Send Inquiry')+'</button>'
-    +'<div style="display:flex;gap:8px;margin-top:10px;">'
-    +'<button onclick="shareWhatsApp('+l.id+')" style="flex:1;padding:11px;background:#25D366;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-whatsapp"/></svg> Share on WhatsApp</button>'
-    +'<button onclick="copyListingLink('+l.id+')" style="flex:1;padding:11px;background:var(--cr);color:var(--ink);border:1.5px solid var(--sa);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-link"/></svg> Copy Link</button>'
-    +'</div>'
-    +'<button onclick="openReport('+l.id+')" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1.5px solid #ffcccc;color:var(--red);border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .18s;" onmouseover="this.style.background=\'#fff5f5\'" onmouseout="this.style.background=\'transparent\'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-flag"/></svg> Report Discrimination or Unfair Treatment</button>';
+    // Everything below the hero block is full-width, compact sections
+    +'<div class="dv-sections">'
+      +priceBreakdownHTML
+      +'<div id="priceCompareSlot"></div>'
+      +unitsTableHTML
+      +(l.desc?'<div class="dv-sec"><div class="dv-sec-hd">About this property</div><p class="dv-desc">'+esc(l.desc)+'</p></div>':'')
+      +((furnDetH||landmarksH||amH)?'<div class="dv-sec">'
+        +furnDetH
+        +landmarksH
+        +amH
+      +'</div>':'')
+      +'<div class="listing-map-wrap" id="listingMapWrap" style="display:none;"><div class="dv-sec-hd" style="margin-bottom:8px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-pin"/></svg> Location</div><div class="listing-map" id="listingMap"></div></div>'
+      // Contact + actions: horizontal bar
+      +'<div class="dv-action-bar">'
+        +cntH
+        +'<div class="dv-action-btns">'
+          +'<button class="dv-btn-primary" onclick="closeM(\'viewM\');oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> '+(cu?'Contact Directly':'Send Inquiry')+'</button>'
+          +'<button class="dv-btn-wa" onclick="shareWhatsApp('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-whatsapp"/></svg> WhatsApp</button>'
+          +'<button class="dv-btn-sec" onclick="copyListingLink('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-link"/></svg> Copy Link</button>'
+        +'</div>'
+      +'</div>'
+    +'<button onclick="openReport('+l.id+')" class="dv-report-btn"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg> Report Discrimination or Unfair Treatment</button>'
+    +'</div>'; // close dv-sections
   openM('viewM');
   // Track current detail id for the shortlist button
   _currentDetailId=id;
@@ -3973,14 +3981,14 @@ function showRejectionReason(lid){
     if(!l)return;
     var reason=l.rejectionReason||'No reason was provided. Please contact support if you believe this was an error.';
     var html='<div style="padding:8px 28px 24px;font-family:\'DM Sans\',sans-serif;">'
-      +'<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding:14px;background:#fff5f5;border:1px solid #ffd0d0;border-left:4px solid var(--red);border-radius:10px;">'
+      +'<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;padding:14px;background:#fff5f5;border:1px solid #ffd0d0;border-left:4px solid var(--red);border-radius:10px;">'
         +'<div style="width:32px;height:32px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg></div>'
         +'<div style="flex:1;">'
           +'<div style="font-size:13px;font-weight:700;color:#7a2222;margin-bottom:2px;">Listing not approved</div>'
           +'<div style="font-size:12px;color:#5a3a3a;line-height:1.5;">A reviewer flagged your listing &mdash; the reason is below. Once you address the concern, click "Edit &amp; Resubmit" and it will go back into the queue.</div>'
         +'</div>'
       +'</div>'
-      +'<div style="background:var(--cr);border:1px solid var(--sa);border-radius:10px;padding:16px;margin-bottom:16px;">'
+      +'<div style="background:var(--cr);border:1px solid var(--sa);border-radius:10px;padding:16px;margin-bottom:10px;">'
         +'<div style="font-size:10.5px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">Reviewer note</div>'
         +'<div style="font-size:13.5px;line-height:1.65;color:var(--ink);font-style:italic;">"'+esc(reason)+'"</div>'
       +'</div>'
@@ -5477,7 +5485,7 @@ async function rReports(){
   var open=rpts.filter(function(r){return r.status==='open';});
   var resolved=rpts.filter(function(r){return r.status==='resolved';});
   var ls=await gL();
-  var html='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">'
+  var html='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">'
     +'<div><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:2px;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-flag"/></svg> Discrimination Reports</h2>'
     +'<p style="font-size:12px;color:var(--mu);">'+open.length+' open &middot; '+resolved.length+' resolved</p></div>'
     +(rpts.length?_adminExportBtn('rpt'):'')
