@@ -1249,120 +1249,138 @@ function pCard(l){
     var visCount=cu?l.images.length:Math.min(2,l.images.length);
     imgHTML+='<div class="pc-photo-cnt"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg> '+visCount+'/'+l.images.length+'</div>';
   }
-  var typeBadge='<div class="tbdg '+(isP?'proj':ir?'rent':'buy')+'">'+(isP?'New Project':ir?'For Rent':'For Sale')+'</div>';
-  // Single overlay badge — Verified Inclusive (high-trust signal)
-  var imgBadges='';
+  // FEATURED chip — top-left of image (matches 99acres "FEATURED" treatment).
+  // Verified Inclusive trumps the regular type pill on the image — it carries trust.
+  var topLeftBadge='';
   if(l.verified){
-    imgBadges+='<div class="pc-img-badge pc-vi"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg> Verified</div>';
+    topLeftBadge='<div class="pc-img-badge pc-vi"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg> Verified</div>';
+  } else if(isP&&l.projectStatus==='New Launch'){
+    topLeftBadge='<div class="pc-img-badge pc-launch">New Launch</div>';
+  } else {
+    topLeftBadge='<div class="pc-img-badge pc-type pc-type-'+(isP?'proj':ir?'rent':'buy')+'">'+(isP?'New Project':ir?'For Rent':'For Sale')+'</div>';
+  }
+  // Heart top-right
+  var heartHTML='<button class="pc-heart" onclick="event.stopPropagation();event.preventDefault();togFav('+l.id+',this)" aria-label="Save to favorites" aria-pressed="'+(fv?'true':'false')+'"><svg class="icn icn-sm" aria-hidden="true"><use href="#'+(fv?'i-heart-fill':'i-heart')+'"/></svg></button>';
+
+  // ── COLUMN 2: Right pane (99acres-style) ──
+  // Title is the building/society name when available; subtitle has BHK + locality.
+  var societyName=l.building||l.title;
+  var subtitle=l.beds+' BHK '+(l.type||'Flat')+' for '+(ir?'rent':isP?'sale':'sale')+(l.loc||l.city?' in '+esc((l.loc?l.loc+', ':'')+l.city):'');
+
+  // Big horizontal metric strip — Price | Area | BHK · Baths
+  // Each metric: value bold, label muted small. Vertical bar separators.
+  var priceMain;
+  var priceSub;
+  if(isP){
+    if(l.priceMax&&l.priceMax>l.priceMin){
+      priceMain=fmtPriceHTML(l.priceMin)+' &ndash; '+fmtPriceHTML(l.priceMax);
+    } else {
+      priceMain='Starts '+fmtPriceHTML(l.priceMin||l.price);
+    }
+    priceSub=l.completion?'Possession '+(function(){var d=new Date(l.completion);return isNaN(d)?'':d.toLocaleDateString('en-IN',{month:'short',year:'numeric'});})():'New Project';
+  } else if(ir){
+    priceMain=fmtRentHTML(l.rent)+'<span class="pc-mt-unit">/month</span>';
+    priceSub=l.dep?'+ Deposit &#8377;'+l.dep.toLocaleString('en-IN'):'';
+  } else {
+    priceMain=fmtPriceHTML(l.price);
+    if(l.price>0&&l.price!==-1){
+      var per=l.carpetArea>0?Math.round(l.price/l.carpetArea):(l.area>0?Math.round(l.price/l.area):0);
+      priceSub=per>0?fmtPriceHTML(per)+'/sqft':'';
+    } else priceSub='';
+  }
+  var areaMain='';
+  var areaSub='';
+  if(l.carpetArea>0){
+    areaMain=l.carpetArea.toLocaleString('en-IN')+' <span class="pc-mt-unit">sqft</span>';
+    areaSub='Carpet Area';
+  } else if(l.area>0){
+    areaMain=l.area.toLocaleString('en-IN')+' <span class="pc-mt-unit">sqft</span>';
+    areaSub='Built-up Area';
+  } else if(l.builtArea>0){
+    areaMain=l.builtArea.toLocaleString('en-IN')+' <span class="pc-mt-unit">sqft</span>';
+    areaSub='Built-up Area';
+  }
+  var bhkMain=l.beds+' BHK';
+  var bhkSub=l.baths?l.baths+' Bath'+(l.baths>1?'s':''):'';
+  var metricStrip='<div class="pc-metric-strip">'
+    +'<div class="pc-metric pc-metric-price"><div class="pc-mt-val">'+priceMain+'</div>'+(priceSub?'<div class="pc-mt-lbl">'+priceSub+'</div>':'')+'</div>'
+    +(areaMain?'<div class="pc-metric"><div class="pc-mt-val">'+areaMain+'</div>'+(areaSub?'<div class="pc-mt-lbl">'+areaSub+'</div>':'')+'</div>':'')
+    +'<div class="pc-metric"><div class="pc-mt-val">'+bhkMain+'</div>'+(bhkSub?'<div class="pc-mt-lbl">'+bhkSub+'</div>':'')+'</div>'
+    +'</div>';
+
+  // Nearby chips (if landmarks exist) — matches 99acres "Nearby:" pattern
+  var nearbyHTML='';
+  if(l.landmarks&&l.landmarks.length){
+    var lm=l.landmarks.slice(0,2).map(function(landmark){
+      var name=typeof landmark==='string'?landmark:(landmark.name||'');
+      return name?'<span class="pc-nearby-chip">'+esc(name)+'</span>':'';
+    }).filter(Boolean).join('');
+    var moreCount=Math.max(0,l.landmarks.length-2);
+    nearbyHTML='<div class="pc-nearby"><span class="pc-nearby-lbl">Nearby:</span>'+lm+(moreCount>0?'<span class="pc-nearby-chip pc-nearby-more">+'+moreCount+'</span>':'')+'</div>';
   }
 
-  // ── COLUMN 2: Title, location, key specs strip, tags ──
-  var locBits=[];
-  if(l.loc)locBits.push(esc(l.loc));
-  if(l.city)locBits.push(esc(l.city));
-  var locHTML='<div class="pc-loc-row"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-pin"/></svg> '+locBits.join(', ')+'</div>';
-
-  // 99acres-style key spec strip — "3 BHK · 950 sq.ft · 5th Floor · Semi-Furnished"
-  // Pipe-separated, single line, secondary in muted text.
-  var specs=[];
-  specs.push('<strong>'+l.beds+' BHK</strong>');
-  if(l.carpetArea>0)specs.push('<strong>'+l.carpetArea+'</strong> sq.ft <span class="pc-unit-soft">carpet</span>');
-  else if(l.area>0)specs.push('<strong>'+l.area+'</strong> sq.ft');
-  if(l.floorNo!=null&&l.totalFloors){
-    var n=Number(l.floorNo);
-    var nth=n===0?'Ground':(n===1?'1st':n===2?'2nd':n===3?'3rd':n+'th');
-    specs.push(nth+' <span class="pc-unit-soft">of '+l.totalFloors+'</span>');
-  }
-  if(l.type&&l.type!=='Apartment')specs.push(esc(l.type));
-  if(l.furnish)specs.push(esc(l.furnish));
-  var specsHTML='<div class="pc-specs">'+specs.join('<span class="pc-dot">&middot;</span>')+'</div>';
-
-  // Status / RERA / Posted-by chips
-  var chips=[];
-  if(isP&&l.projectStatus==='New Launch'){
-    chips.push('<span class="pc-chip pc-chip-launch"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-2px;"><use href="#i-sparkle"/></svg> New Launch</span>');
-  } else if(isP&&l.projectStatus){
-    chips.push('<span class="pc-chip pc-chip-launch">'+esc(l.projectStatus)+'</span>');
-  }
-  if(!ir&&l.rera){
-    chips.push('<span class="pc-chip pc-chip-rera">RERA</span>');
-  }
-  if(l.urole==='owner'){
-    chips.push('<span class="pc-chip pc-chip-owner">Owner</span>');
-  } else if(l.urole==='broker'){
-    chips.push('<span class="pc-chip pc-chip-broker">Broker</span>');
-  } else if(l.urole==='builder'){
-    chips.push('<span class="pc-chip pc-chip-builder">Builder</span>');
-  }
-  // Inclusivity tags — show the first one as a chip if present
-  if(l.tags&&l.tags.length){
-    chips.push('<span class="pc-chip pc-chip-incl">'+esc(l.tags[0])+(l.tags.length>1?' +'+(l.tags.length-1):'')+'</span>');
-  }
-  var chipsHTML=chips.length?'<div class="pc-chips">'+chips.join('')+'</div>':'';
-
-  // Description preview — 99acres shows 1-2 lines of description
+  // Description preview (single-line clamped)
   var descPreview='';
   if(l.desc){
     var d=l.desc.replace(/\s+/g,' ').trim();
-    if(d.length>140)d=d.slice(0,140)+'…';
+    if(d.length>150)d=d.slice(0,150)+'…';
     descPreview='<div class="pc-desc">'+esc(d)+'</div>';
   }
 
-  // ── COLUMN 3: Price + CTAs ──
-  var priceHTML;
-  var perSqftHTML='';
-  if(isP){
-    if(l.priceMax&&l.priceMax>l.priceMin){
-      priceHTML='<div class="pc-price buy">'+fmtPriceHTML(l.priceMin)+' &ndash; '+fmtPriceHTML(l.priceMax)+'</div>';
-    } else {
-      priceHTML='<div class="pc-price buy">Starts '+fmtPriceHTML(l.priceMin||l.price)+'</div>';
-    }
-    if(l.completion){
-      var cd=new Date(l.completion);
-      if(!isNaN(cd))perSqftHTML='<div class="pc-price-sub">Possession '+cd.toLocaleDateString('en-IN',{month:'short',year:'numeric'})+'</div>';
-    }
-  } else if(ir){
-    priceHTML='<div class="pc-price">'+fmtRentHTML(l.rent)+'<span class="pc-price-unit">/mo</span></div>';
-    if(l.dep)perSqftHTML='<div class="pc-price-sub">Deposit '+fmtRentHTML(l.dep)+'</div>';
-  } else {
-    priceHTML='<div class="pc-price buy">'+fmtPriceHTML(l.price)+'</div>';
-    if(l.price>0&&l.price!==-1&&l.carpetArea>0){
-      perSqftHTML='<div class="pc-price-sub">'+fmtPriceHTML(Math.round(l.price/l.carpetArea))+'<span class="pc-price-sub-unit">/sq.ft</span></div>';
-    } else if(l.price>0&&l.price!==-1&&l.area>0){
-      perSqftHTML='<div class="pc-price-sub">'+fmtPriceHTML(Math.round(l.price/l.area))+'<span class="pc-price-sub-unit">/sq.ft</span></div>';
-    }
-  }
+  // Footer row: poster info + CTAs
+  var roleLabel=l.urole==='owner'?'Owner':l.urole==='broker'?'Broker':l.urole==='builder'?'Builder':'Lister';
+  var roleClass=l.urole==='owner'?'pc-role-owner':l.urole==='broker'?'pc-role-broker':l.urole==='builder'?'pc-role-builder':'pc-role-other';
+  var posted=l.postedAt?_relativeTime(l.postedAt):'';
+  var posterName=l.agency||l.owner||'';
+  var posterInitial=(posterName||'?').charAt(0).toUpperCase();
+  var footerHTML='<div class="pc-footer-row">'
+    +'<div class="pc-footer-poster">'
+      +(posted?'<span class="pc-posted">'+esc(posted)+'</span>':'')
+      +'<span class="pc-role-tag '+roleClass+'">'+roleLabel+'</span>'
+      +(posterName?'<span class="pc-poster-name"><span class="pc-poster-avatar">'+esc(posterInitial)+'</span>'+esc(posterName.length>22?posterName.slice(0,22)+'…':posterName)+'</span>':'')
+    +'</div>'
+    +'<div class="pc-footer-cta">'
+      +'<button class="pc-btn-outline" onclick="event.stopPropagation();event.preventDefault();oCnt('+l.id+')">'+(cu?'View Number':'Sign in for Number')+'</button>'
+      +'<button class="pc-btn-fill '+(ir?'':'buy')+'" onclick="event.stopPropagation();event.preventDefault();oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-phone"/></svg> Contact</button>'
+    +'</div>'
+  +'</div>';
 
-  var ctaHTML='<div class="pc-actions">'
-    +'<button class="pc-btn-pri '+(ir?'':'buy')+'" onclick="event.stopPropagation();event.preventDefault();oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> '+(cu&&cu.id===l.uid?'View Number':'Contact')+'</button>'
-    +'<button class="pc-btn-shortlist'+(fv?' on':'')+'" onclick="event.stopPropagation();event.preventDefault();togFav('+l.id+',this)" aria-pressed="'+(fv?'true':'false')+'" title="Shortlist this property"><svg class="icn icn-sm" aria-hidden="true"><use href="#'+(fv?'i-heart-fill':'i-heart')+'"/></svg> '+(fv?'Saved':'Shortlist')+'</button>'
-    +'</div>';
-
-  // ── Compose card ──
   return '<a class="pc-link" href="'+_listingUrl(l.id)+'" onclick="return _cardClick(event,'+l.id+')" target="_blank" rel="noopener">'
     +'<div class="pc">'
       +'<div class="pc-col-img">'
-        +typeBadge
-        +imgBadges
+        +topLeftBadge
+        +heartHTML
         +imgHTML
       +'</div>'
       +'<div class="pc-col-mid">'
-        +'<div class="pc-title">'+esc(l.title)+(l.building?'<span class="pc-bldg"> &middot; '+esc(l.building)+'</span>':'')+'</div>'
-        +locHTML
-        +specsHTML
-        +chipsHTML
-        +descPreview
-      +'</div>'
-      +'<div class="pc-col-action">'
-        +'<div class="pc-price-block">'
-          +priceHTML
-          +perSqftHTML
+        +'<div class="pc-head">'
+          +'<div class="pc-society">'+esc(societyName)+'</div>'
+          +'<button class="pc-report-icon" onclick="event.stopPropagation();event.preventDefault();openReport('+l.id+')" aria-label="Report listing" title="Report"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg></button>'
         +'</div>'
-        +ctaHTML
-        +'<button class="pc-btn-report" onclick="event.stopPropagation();event.preventDefault();openReport('+l.id+')" aria-label="Report listing" title="Report"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-flag"/></svg> Report</button>'
+        +'<div class="pc-subtitle">'+subtitle+'</div>'
+        +metricStrip
+        +nearbyHTML
+        +descPreview
+        +footerHTML
       +'</div>'
     +'</div></a>';
 }
+
+// Format a date as a relative phrase: "1d ago", "2w ago", "3m ago".
+// Used by pCard footer to mimic 99acres "1w ago" indicator.
+function _relativeTime(dateStr){
+  if(!dateStr)return '';
+  var d=new Date(dateStr);
+  if(isNaN(d))return '';
+  var diff=Date.now()-d.getTime();
+  var days=Math.floor(diff/(1000*60*60*24));
+  if(days<1)return 'today';
+  if(days<7)return days+'d ago';
+  if(days<30)return Math.floor(days/7)+'w ago';
+  if(days<365)return Math.floor(days/30)+'mo ago';
+  return Math.floor(days/365)+'y ago';
+}
+
 
 async function cSlide(id,dir){
   var l=(await gL()).find(function(x){return x.id===id;});
@@ -2231,9 +2249,9 @@ async function viewL(id){
     if(w==='24x7')return '24x7 Water';
     return w;
   }).join(', '):'';
-  document.getElementById('vCnt').innerHTML=imgH
-    +(tagsH?'<div class="tags-r" style="margin-bottom:12px;">'+tagsH+'</div>':'')
-    +'<div class="info-g">'
+  // Compose the detail body — side-by-side on desktop (image left, facts right),
+  // stacked on mobile. The wrapper class .vbody-grid handles the responsiveness.
+  var factsHTML='<div class="info-g">'
     +'<div class="ic"><div class="ll">'+priceLbl+'</div><strong style="color:'+(ir?'var(--t)':'var(--g)')+';">'+priceDisplay+'</strong></div>'
     +(ir?'<div class="ic"><div class="ll">DEPOSIT</div><strong>&#8377;'+l.dep.toLocaleString('en-IN')+'</strong></div>':'')
     +'<div class="ic"><div class="ll">TYPE</div><strong>'+esc(l.type)+' &middot; '+l.beds+'BHK &middot; '+l.baths+'B</strong></div>'
@@ -2249,6 +2267,15 @@ async function viewL(id){
     +(!ir&&!isProj?'<div class="ic"><div class="ll">TRANSACTION TYPE</div><strong>'+esc(l.txnType||(l.stype==='New'||l.stype==='First Owner'?'New Booking':(l.stype||'—')))+'</strong></div>':'')
     +(!ir&&!isProj?'<div class="ic"><div class="ll">POSSESSION</div><strong>'+esc(l.poss||'—')+'</strong></div>':'')
     +(!ir&&l.rera?'<div class="ic" style="grid-column:1/-1;"><div class="ll">RERA NO.</div><strong style="color:var(--gr);">'+esc(l.rera)+'</strong></div>':'')
+    +'</div>';
+
+  document.getElementById('vCnt').innerHTML=
+    '<div class="vbody-grid">'
+      +'<div class="vbody-gallery">'+imgH+'</div>'
+      +'<div class="vbody-facts">'
+        +(tagsH?'<div class="tags-r" style="margin-bottom:10px;">'+tagsH+'</div>':'')
+        +factsHTML
+      +'</div>'
     +'</div>'
     +priceBreakdownHTML
     +'<div id="priceCompareSlot"></div>'
