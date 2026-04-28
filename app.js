@@ -9,7 +9,9 @@ const PTYB=['Apartment','Flat','House','Villa','Plot'];
 const BEDS=['1','2','3','4','5+'];
 const FURN=['Unfurnished','Semi-Furnished','Fully Furnished'];
 const POSS=['Ready to Move','Under Construction','Within 6 Months','Within 1 Year'];
-const STYP=['First Owner','Resale'];
+// Transaction Type filter values (used as the buy-page chip filter; replaces the old "Sale Type" filter
+// which was a duplicate of Transaction Type with fewer options).
+const STYP=['Resale','New Booking','Builder Resale'];
 const FACE=['North','South','East','West','North-East','North-West'];
 const FLOR=['Ground','1st-2nd','3rd-5th','5th-10th','10th+'];
 
@@ -981,12 +983,14 @@ function fmtRent(v){
   return '\u20B9'+v.toLocaleString('en-IN');
 }
 function fmtPrice(v){
+  if(v===-1)return 'Price on Request';
   if(v>=10000000)return '\u20B9'+(v/10000000).toFixed(2).replace(/\.?0+$/,'')+' Cr';
   if(v>=100000)return '\u20B9'+(v/100000).toFixed(2).replace(/\.?0+$/,'')+' L';
   if(v>=1000)return '\u20B9'+(v/1000).toFixed(1).replace(/\.0$/,'')+' K';
   return '\u20B9'+v.toLocaleString('en-IN');
 }
 function fmtPriceHTML(v){
+  if(v===-1)return 'Price on Request';
   if(v>=10000000)return '&#8377;'+(v/10000000).toFixed(2).replace(/\.?0+$/,'')+' Cr';
   if(v>=100000)return '&#8377;'+(v/100000).toFixed(2).replace(/\.?0+$/,'')+' L';
   if(v>=1000)return '&#8377;'+(v/1000).toFixed(1).replace(/\.0$/,'')+' K';
@@ -1471,9 +1475,15 @@ async function renderBrowse(){
     if(fBF.length){ls=ls.filter(function(l){return fBF.indexOf(l.furnish)>=0;});hasAnyFilters=true;}
     if(fBPo.length){ls=ls.filter(function(l){return fBPo.indexOf(l.poss)>=0;});hasAnyFilters=true;}
     if(fBST.length){ls=ls.filter(function(l){
-      // Backwards compat: old listings have sale_type='New' which now displays as 'First Owner'
-      var st=l.stype==='New'?'First Owner':l.stype;
-      return fBST.indexOf(st)>=0;
+      // Use transaction_type as the canonical field. Backward compat: legacy listings
+      // with sale_type='New' (no transaction_type) → treat as "New Booking";
+      // sale_type='Resale' → "Resale".
+      var tx=l.txnType||'';
+      if(!tx&&l.stype){
+        if(l.stype==='New'||l.stype==='First Owner')tx='New Booking';
+        else if(l.stype==='Resale')tx='Resale';
+      }
+      return fBST.indexOf(tx)>=0;
     });hasAnyFilters=true;}
     if(fBFc.length){ls=ls.filter(function(l){return fBFc.indexOf(l.facing)>=0;});hasAnyFilters=true;}
     if(fBFl.length){ls=ls.filter(function(l){return fBFl.indexOf(l.floor)>=0;});hasAnyFilters=true;}
@@ -2203,7 +2213,7 @@ async function viewL(id){
     +(l.ownership?'<div class="ic"><div class="ll">OWNERSHIP</div><strong>'+esc(l.ownership)+'</strong></div>':'')
     +(waterDisplay?'<div class="ic"><div class="ll">WATER</div><strong style="font-size:12px;">'+esc(waterDisplay)+'</strong></div>':'')
     +(l.backup?'<div class="ic"><div class="ll">POWER BACKUP</div><strong style="font-size:12px;">'+esc(l.backup)+'</strong></div>':'')
-    +(!ir&&!isProj?'<div class="ic"><div class="ll">SALE TYPE</div><strong>'+esc(l.stype==='New'?'First Owner':(l.stype||'—'))+'</strong></div>':'')
+    +(!ir&&!isProj?'<div class="ic"><div class="ll">TRANSACTION TYPE</div><strong>'+esc(l.txnType||(l.stype==='New'||l.stype==='First Owner'?'New Booking':(l.stype||'—')))+'</strong></div>':'')
     +(!ir&&!isProj?'<div class="ic"><div class="ll">POSSESSION</div><strong>'+esc(l.poss||'—')+'</strong></div>':'')
     +(!ir&&l.rera?'<div class="ic" style="grid-column:1/-1;"><div class="ll">RERA NO.</div><strong style="color:var(--gr);">'+esc(l.rera)+'</strong></div>':'')
     +'</div>'
@@ -2887,23 +2897,76 @@ function hImgsArr(files){
     return true;
   });
   if(!valid.length)return;
-  // Show pending placeholders right away — feels instant
-  valid.forEach(function(){upImgs.push('__PENDING__');});
+  // Reserve slots up front so parallel uploads have stable indices.
+  // CRITICAL: we do NOT splice on failure — that would shift other in-flight uploads
+  // to the wrong slot. Instead, mark the failed slot as __FAILED__ and let rPv()
+  // render a clear "retry / remove" control for the user.
+  var startIdx=upImgs.length;
+  valid.forEach(function(f){upImgs.push({state:'__PENDING__',file:f,name:f.name});});
   rPv();
-  // Compress in parallel — much faster than serial
-  var startIdx=upImgs.length-valid.length;
+  // Compress in parallel
   valid.forEach(function(f,localIdx){
     var globalIdx=startIdx+localIdx;
+    // Hard cap so a hung compress never leaves the user stuck. 30s is generous —
+    // real compresses take 0.2-2s; >30s means the browser is genuinely stuck.
+    var timeoutMs=30000;
+    var timedOut=false;
+    var timer=setTimeout(function(){
+      timedOut=true;
+      if(upImgs[globalIdx]&&typeof upImgs[globalIdx]==='object'&&upImgs[globalIdx].state==='__PENDING__'){
+        upImgs[globalIdx]={state:'__FAILED__',name:f.name,reason:'Timed out — file may be too large or browser is busy.'};
+        rPv();
+      }
+    },timeoutMs);
     compressImage(f).then(function(dataUrl){
+      clearTimeout(timer);
+      if(timedOut)return;
       upImgs[globalIdx]=dataUrl;
       rPv();
     }).catch(function(err){
+      clearTimeout(timer);
+      if(timedOut)return;
       console.error('compress fail',err);
-      // Remove the placeholder for this failed image
-      upImgs.splice(globalIdx,1);
+      upImgs[globalIdx]={state:'__FAILED__',name:f.name,reason:(err&&err.message)||'Could not process this file.'};
       rPv();
-      toast('"'+f.name+'" failed to process.','e');
+      toast('"'+f.name+'" failed — click Remove on the slot to clear it.','e');
     });
+  });
+}
+
+// Manually remove a single image slot — works for pending, failed, or successfully uploaded slots.
+// Used by the X button on every preview tile.
+function removeImgSlot(idx){
+  if(idx<0||idx>=upImgs.length)return;
+  upImgs.splice(idx,1);
+  rPv();
+}
+
+// Retry a failed slot with the original file (kept on the slot object).
+function retryImgSlot(idx){
+  var slot=upImgs[idx];
+  if(!slot||typeof slot!=='object'||slot.state!=='__FAILED__'||!slot.file){
+    // Stale state — just remove it
+    removeImgSlot(idx);
+    return;
+  }
+  var f=slot.file;
+  upImgs[idx]={state:'__PENDING__',file:f,name:f.name};
+  rPv();
+  var timer=setTimeout(function(){
+    if(upImgs[idx]&&typeof upImgs[idx]==='object'&&upImgs[idx].state==='__PENDING__'){
+      upImgs[idx]={state:'__FAILED__',name:f.name,reason:'Timed out on retry.',file:f};
+      rPv();
+    }
+  },30000);
+  compressImage(f).then(function(dataUrl){
+    clearTimeout(timer);
+    upImgs[idx]=dataUrl;
+    rPv();
+  }).catch(function(err){
+    clearTimeout(timer);
+    upImgs[idx]={state:'__FAILED__',name:f.name,reason:(err&&err.message)||'Still failed.',file:f};
+    rPv();
   });
 }
 
@@ -2995,7 +3058,8 @@ async function uploadListingImages(images){
   if(!images||!images.length||!cu)return [];
   // Pre-pass: separate already-uploaded URLs from new base64 entries
   // Skip any leftover pending placeholders (shouldn't reach here but be safe)
-  var clean=images.filter(function(im){return im&&im!=='__PENDING__';});
+  // Only keep string data URLs — pending/failed slots are objects and must be filtered out
+  var clean=images.filter(function(im){return im&&typeof im==='string'&&im!=='__PENDING__';});
   var tasks=[];
   var resultMap=new Array(clean.length);
   for(var i=0;i<clean.length;i++){
@@ -3137,20 +3201,155 @@ async function uploadListingVideo(){
 function rPv(){
   var pv=document.getElementById('iPv');if(!pv)return;
   pv.innerHTML=upImgs.map(function(s,i){
+    // Pending or failed slot — slot is now an object, not just a string sentinel
+    if(s&&typeof s==='object'){
+      if(s.state==='__PENDING__'){
+        return '<div class="ip ip-pending">'
+          +'<div class="ip-spinner"></div>'
+          +'<div class="ip-pending-lbl">'+esc(s.name||'Processing…').slice(0,30)+'</div>'
+          +'<button onclick="removeImgSlot('+i+')" aria-label="Cancel" title="Cancel" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;z-index:2;">×</button>'
+          +'</div>';
+      }
+      if(s.state==='__FAILED__'){
+        return '<div class="ip ip-failed" style="background:#ffeeee;border:1px solid #ffcccc;">'
+          +'<div style="text-align:center;padding:8px;">'
+            +'<div style="color:var(--red);font-size:18px;line-height:1;">⚠</div>'
+            +'<div style="font-size:10.5px;color:#7a2222;font-weight:700;margin-top:4px;line-height:1.2;">Failed</div>'
+            +'<div style="font-size:9.5px;color:#7a2222;margin-top:2px;line-height:1.3;max-width:90px;overflow:hidden;text-overflow:ellipsis;">'+esc((s.name||'').slice(0,18))+'</div>'
+            +'<div style="display:flex;gap:3px;justify-content:center;margin-top:6px;">'
+              +(s.file?'<button onclick="retryImgSlot('+i+')" style="background:var(--t);color:#fff;border:none;border-radius:4px;padding:3px 7px;font-size:10px;font-weight:600;cursor:pointer;">Retry</button>':'')
+              +'<button onclick="removeImgSlot('+i+')" style="background:transparent;color:var(--red);border:1px solid var(--red);border-radius:4px;padding:3px 7px;font-size:10px;font-weight:600;cursor:pointer;">Remove</button>'
+            +'</div>'
+          +'</div>'
+          +'</div>';
+      }
+    }
+    // Legacy string sentinel — treat as still pending (older flows)
     if(s==='__PENDING__'){
-      return '<div class="ip ip-pending"><div class="ip-spinner"></div><div class="ip-pending-lbl">Processing…</div></div>';
+      return '<div class="ip ip-pending"><div class="ip-spinner"></div><div class="ip-pending-lbl">Processing…</div><button onclick="removeImgSlot('+i+')" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;z-index:2;" aria-label="Cancel">×</button></div>';
     }
     return '<div class="ip"><img src="'+s+'" alt="Uploaded photo '+(i+1)+'"/><button onclick="rmImg('+i+')" aria-label="Remove photo '+(i+1)+'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-x"/></svg></button>'+(i<2?'<div class="free-lbl">Free</div>':'')+'</div>';
   }).join('');
   // Show count
   var dz=document.getElementById('dz');
   if(dz){
-    var realCount=upImgs.filter(function(s){return s!=='__PENDING__';}).length;
-    var pendCount=upImgs.length-realCount;
+    var realCount=upImgs.filter(function(s){
+      // Real images = strings (data URLs); pending/failed = objects
+      return s&&typeof s==='string'&&s!=='__PENDING__';
+    }).length;
+    var pendCount=upImgs.filter(function(s){return s&&typeof s==='object'&&s.state==='__PENDING__';}).length;
+    var failedCount=upImgs.filter(function(s){return s&&typeof s==='object'&&s.state==='__FAILED__';}).length;
     var lblP=dz.querySelector('p:first-of-type');
-    if(lblP)lblP.textContent=upImgs.length>0?(realCount+(pendCount?' (+'+pendCount+' processing)':'')+' / '+MAX_IMAGES+' photos'):'Click or drag & drop photos here';
+    var statusBits=[];
+    if(realCount)statusBits.push(realCount+' / '+MAX_IMAGES+' photos');
+    if(pendCount)statusBits.push(pendCount+' processing');
+    if(failedCount)statusBits.push(failedCount+' failed');
+    if(lblP)lblP.textContent=statusBits.length?statusBits.join(' · '):'Click or drag & drop photos here';
   }
 }
+// ── PRICE INPUT HELPERS ──
+// Convert (core, unit) → integer rupees. Lakh × 100,000; Crore × 10,000,000.
+function _coreToRupees(core,unit){
+  var n=Number(core);
+  if(!n||isNaN(n))return 0;
+  return Math.round(unit==='cr'?n*10000000:n*100000);
+}
+// Convert rupees → {core, unit} for prefill on edit. Picks Crores if ≥1Cr, else Lakhs.
+function _rupeesToCore(r){
+  if(!r)return {core:'',unit:'lakh'};
+  var n=Number(r);
+  if(n>=10000000){
+    var cr=n/10000000;
+    return {core:Number(cr.toFixed(2)),unit:'cr'};
+  }
+  var lk=n/100000;
+  return {core:Number(lk.toFixed(2)),unit:'lakh'};
+}
+// Sync the hidden input (lPr / lPrMin / lPrMax) from its core+unit pair.
+// Called on every input/change so getVal('lPr') always returns the canonical rupee number.
+function _syncPriceHidden(coreId,unitId,hiddenId){
+  var c=document.getElementById(coreId);
+  var u=document.getElementById(unitId);
+  var h=document.getElementById(hiddenId);
+  if(!c||!u||!h)return;
+  var core=c.value;
+  var unit=u.value;
+  h.value=String(_coreToRupees(core,unit));
+}
+// Wire the three price field pairs to keep their hidden inputs in sync.
+// Idempotent — calling multiple times is safe.
+function bindPriceInputs(){
+  var pairs=[
+    ['lPrCore','lPrUnit','lPr'],
+    ['lPrMinCore','lPrMinUnit','lPrMin'],
+    ['lPrMaxCore','lPrMaxUnit','lPrMax']
+  ];
+  pairs.forEach(function(p){
+    var c=document.getElementById(p[0]);
+    var u=document.getElementById(p[1]);
+    if(!c||!u)return;
+    if(c.dataset.bound)return;
+    c.dataset.bound='1';u.dataset.bound='1';
+    var sync=function(){_syncPriceHidden(p[0],p[1],p[2]);if(p[2]==='lPr'&&typeof updatePriceCalc==='function')updatePriceCalc();};
+    c.addEventListener('input',sync);
+    u.addEventListener('change',sync);
+  });
+}
+// Price Type dropdown: "Price on Request" hides the price input + zeroes the hidden.
+function onPriceTypeChange(){
+  var t=document.getElementById('lPrType');
+  var wrap=document.getElementById('lPrInputWrap');
+  var calc=document.getElementById('lPrCalc');
+  var hint=wrap?wrap.nextElementSibling:null;
+  var hidden=document.getElementById('lPr');
+  var core=document.getElementById('lPrCore');
+  if(!t)return;
+  if(t.value==='onrequest'){
+    if(wrap)wrap.style.display='none';
+    if(hint)hint.style.display='none';
+    if(calc)calc.style.display='none';
+    if(hidden)hidden.value='-1'; // sentinel: "price on request"
+    if(core)core.value='';
+  } else {
+    if(wrap)wrap.style.display='';
+    if(hint)hint.style.display='';
+    if(hidden)hidden.value='';
+    // Re-sync from current core+unit values
+    _syncPriceHidden('lPrCore','lPrUnit','lPr');
+  }
+}
+// Prefill the new split price inputs when editing an existing listing.
+function _prefillPriceInputs(l){
+  var pt=document.getElementById('lPrType');
+  if(l.priceOnRequest||Number(l.price)===-1){
+    if(pt){pt.value='onrequest';onPriceTypeChange();}
+    return;
+  }
+  if(pt)pt.value='expected';
+  // Sale price
+  if(l.price){
+    var p=_rupeesToCore(l.price);
+    var c=document.getElementById('lPrCore');if(c)c.value=p.core;
+    var u=document.getElementById('lPrUnit');if(u)u.value=p.unit;
+    var h=document.getElementById('lPr');if(h)h.value=String(l.price);
+  }
+  // Project min
+  if(l.priceMin){
+    var pm=_rupeesToCore(l.priceMin);
+    var cm=document.getElementById('lPrMinCore');if(cm)cm.value=pm.core;
+    var um=document.getElementById('lPrMinUnit');if(um)um.value=pm.unit;
+    var hm=document.getElementById('lPrMin');if(hm)hm.value=String(l.priceMin);
+  }
+  // Project max
+  if(l.priceMax){
+    var px=_rupeesToCore(l.priceMax);
+    var cx=document.getElementById('lPrMaxCore');if(cx)cx.value=px.core;
+    var ux=document.getElementById('lPrMaxUnit');if(ux)ux.value=px.unit;
+    var hx=document.getElementById('lPrMax');if(hx)hx.value=String(l.priceMax);
+  }
+  if(typeof updatePriceCalc==='function')updatePriceCalc();
+}
+
 function rmImg(i){upImgs.splice(i,1);rPv();}
 
 // ══ LISTING FORM ══
@@ -3167,12 +3366,23 @@ function setLM(m){
   // Rent-specific fields
   ['lRW','lDW','lAvW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='rent'?'':'none';});
   // Buy-specific fields
-  ['lPrW','lStW','lPoW','lReW','lTxnW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=(m==='buy'||m==='project')?'':'none';});
+  ['lPrW','lPoW','lReW','lTxnW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=(m==='buy'||m==='project')?'':'none';});
   // Project-specific fields
   ['lProjW','lCompW','lPrMinW','lPrMaxW','lUnitsW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='project'?'':'none';});
-  // RERA required only for projects (Mumbai/Maharashtra)
+  // RERA required indicator — shown for projects, AND for buy listings whose
+  // transaction type is "New Booking" (legally required by RERA in MH).
+  refreshReraRequired();
+}
+
+// Read current state and toggle the RERA-required asterisk accordingly.
+// Called from setLM (mode change) AND from lTxn change handler.
+function refreshReraRequired(){
   var reReq=document.getElementById('lReReq');
-  if(reReq)reReq.style.display=m==='project'?'':'none';
+  if(!reReq)return;
+  var lTxnEl=document.getElementById('lTxn');
+  var txn=lTxnEl?lTxnEl.value:'';
+  var required=lMode==='project'||txn==='New Booking';
+  reReq.style.display=required?'':'none';
 }
 
 // Toggle water source chip selection
@@ -3220,9 +3430,9 @@ async function editListing(id){
   setVal('lAr',l.area||'');
   setVal('lRt',l.rent||'');
   setVal('lDp',l.dep||'');
-  setVal('lPr',l.price||'');
-  setVal('lPrMin',l.priceMin||'');
-  setVal('lPrMax',l.priceMax||'');
+  // Price fields use the new split inputs (core + Lakh/Crore + Price Type)
+  bindPriceInputs();
+  _prefillPriceInputs(l);
   setVal('lRe',l.rera);
   setVal('lOw',l.owner);
   setVal('lCt',l.contact);
@@ -3283,7 +3493,6 @@ async function editListing(id){
   var bd=document.getElementById('lBd');if(bd)bd.value=l.beds||'2';
   var bt=document.getElementById('lBt');if(bt)bt.value=l.baths||'1';
   var po=document.getElementById('lPo');if(po)po.value=l.poss||'';
-  var stEl=document.querySelector('#lStW select#lSt');if(stEl)stEl.value=l.stype||'';
   // Pre-fill tags and amenities
   selTags=l.tags?l.tags.slice():[];
   selAmens=l.amens?l.amens.slice():[];
@@ -3315,7 +3524,9 @@ async function doSub(){
   var owner=getVal('lOw');
   var contact=getVal('lCt');
   var rv=Number(getVal('lRt'))||0;
-  var pv=Number(getVal('lPr'))||0;
+  var pvRaw=getVal('lPr');
+  var priceOnRequest=pvRaw==='-1'||Number(pvRaw)===-1;
+  var pv=priceOnRequest?-1:(Number(pvRaw)||0);
   var le=document.getElementById('lErr');
   var missing=[];
   if(!title)missing.push('Property Title');
@@ -3325,16 +3536,19 @@ async function doSub(){
   if(missing.length){if(le){le.style.display='';le.textContent='Please fill: '+missing.join(', ')+'.';}return;}
   if(contact.replace(/\D/g,'').length<10){if(le){le.style.display='';le.textContent='Please enter a valid 10-digit contact number.';}return;}
   if(lMode==='rent'&&!rv){if(le){le.style.display='';le.textContent='Please enter monthly rent.';}return;}
-  if(lMode==='buy'&&!pv){if(le){le.style.display='';le.textContent='Please enter sale price.';}return;}
+  if(lMode==='buy'&&pv===0){if(le){le.style.display='';le.textContent='Please enter sale price (or choose "Price on Request").';}return;}
   if(lMode==='project'&&!Number(getVal('lPrMin'))){if(le){le.style.display='';le.textContent='Please enter project starting price.';}return;}
-  if(lMode==='project'&&(getVal('lRe')||'').trim().length<5){if(le){le.style.display='';le.textContent='RERA registration number is mandatory for new projects in Mumbai/Maharashtra.';}wizGoto(5);return;}
-  // RERA mandatory for new projects (Mumbai/Maharashtra regulation)
+  // RERA mandatory: new projects (always) AND buy listings with txnType=New Booking
   var reraVal=(getVal('lRe')||'').trim();
-  if(lMode==='project'&&!reraVal){
-    if(le){le.style.display='';le.textContent='RERA registration number is mandatory for all new projects. Please enter the RERA ID.';}
+  var lTxnVal=getVal('lTxn');
+  var reraNeeded=lMode==='project'||(lMode==='buy'&&lTxnVal==='New Booking');
+  if(reraNeeded&&reraVal.length<5){
+    var msg=lMode==='project'
+      ?'RERA registration number is mandatory for new projects in Mumbai/Maharashtra.'
+      :'RERA registration number is mandatory for "New Booking" transactions in Mumbai/Maharashtra.';
+    if(le){le.style.display='';le.textContent=msg;}
     var reraField=document.getElementById('lRe');
     if(reraField){reraField.focus();reraField.scrollIntoView({behavior:'smooth',block:'center'});}
-    // Make sure user is on stage 3 where the field lives
     if(typeof wizGoto==='function')wizGoto(5);
     return;
   }
@@ -3344,7 +3558,6 @@ async function doSub(){
     return;
   }
   if(le)le.style.display='none';
-  var saleTypeEl=document.querySelector('#lStW select#lSt');
   var isProject=lMode==='project';
   var listingData={lf:isProject?'project':lMode,title:title,building:getVal('lBn'),city:city,
     loc:getVal('lLo'),
@@ -3358,7 +3571,7 @@ async function doSub(){
     age:getVal('lAge'),
     furnDetails:_selFurn.slice(),
     rent:rv,dep:Number(getVal('lDp'))||0,price:isProject?(Number(getVal('lPrMin'))||0):pv,
-    stype:saleTypeEl?saleTypeEl.value:'',
+    stype:'', // Deprecated — use txnType instead. Kept blank for new listings; legacy listings retain their value.
     poss:getVal('lPo'),
     rera:getVal('lRe'),
     floor:getVal('lFl'),
@@ -3390,12 +3603,19 @@ async function doSub(){
     unitTypes:isProject?_unitTypes.slice():[]
   };
 
-  // Filter out any pending placeholders before submitting (compression still in flight)
-  var pendingCount=listingData.images.filter(function(im){return im==='__PENDING__';}).length;
+  // Block submit if any photos are still processing or have failed
+  var pendingCount=listingData.images.filter(function(im){return im&&typeof im==='object'&&im.state==='__PENDING__';}).length;
+  var failedCount=listingData.images.filter(function(im){return im&&typeof im==='object'&&im.state==='__FAILED__';}).length;
   if(pendingCount>0){
     toast('Please wait — '+pendingCount+' photo'+(pendingCount>1?'s':'')+' still processing.','e');
     return;
   }
+  if(failedCount>0){
+    toast('You have '+failedCount+' failed photo'+(failedCount>1?'s':'')+'. Click "Remove" or "Retry" on each failed slot before submitting.','e');
+    return;
+  }
+  // Strip non-string entries from images (defensive — the slot system uses objects for state markers)
+  listingData.images=listingData.images.filter(function(im){return im&&typeof im==='string';});
   // Upload images and video to Supabase Storage
   var uploadBtn=document.getElementById('addMBtn');
   var origBtnTxt=uploadBtn?uploadBtn.textContent:'';
@@ -4134,17 +4354,25 @@ function _wizValidate(step){
       var rt=Number((document.getElementById('lRt').value||'').trim());
       if(!rt){showErr('Please enter the monthly rent.');return false;}
     } else if(lMode==='buy'){
-      var pr=Number((document.getElementById('lPr').value||'').trim());
-      if(!pr){showErr('Please enter the sale price.');return false;}
+      var prHidden=document.getElementById('lPr').value;
+      var prRequest=prHidden==='-1'||Number(prHidden)===-1;
+      var pr=Number(prHidden);
+      if(!prRequest&&!pr){showErr('Please enter the sale price (or choose "Price on Request").');return false;}
     } else if(lMode==='project'){
       var pmin=Number((document.getElementById('lPrMin').value||'').trim());
       if(!pmin){showErr('Please enter the project starting price.');return false;}
     }
-    // RERA mandatory for new projects (Mumbai/Maharashtra requirement)
-    if(lMode==='project'){
+    // RERA mandatory for: (a) new projects (always), (b) buy listings with Transaction Type = "New Booking"
+    // Both are legal requirements under MahaRERA for first-sale properties in Mumbai/Maharashtra.
+    var txn=(document.getElementById('lTxn')||{}).value||'';
+    var reraRequired=lMode==='project'||(lMode==='buy'&&txn==='New Booking');
+    if(reraRequired){
       var rera=(document.getElementById('lRe').value||'').trim();
       if(rera.length<5){
-        showErr('RERA registration number is mandatory for new projects. It is a legal requirement in Mumbai/Maharashtra.');
+        var why=lMode==='project'
+          ?'RERA registration number is mandatory for new projects. It is a legal requirement in Mumbai/Maharashtra.'
+          :'RERA registration number is mandatory for "New Booking" transactions. It is a legal requirement in Mumbai/Maharashtra.';
+        showErr(why);
         return false;
       }
     }
@@ -4157,7 +4385,7 @@ function _wizValidate(step){
     if(owner.length<2){showErr('Please enter the owner/broker name.');return false;}
     if(contact.replace(/\D/g,'').length<10){showErr('Please enter a valid contact number (10 digits).');return false;}
     // Photos: require at least 1 (excluding placeholders)
-    var realImgs=upImgs.filter(function(im){return im&&im!=='__PENDING__';});
+    var realImgs=upImgs.filter(function(im){return im&&typeof im==='string'&&im!=='__PENDING__';});
     if(!realImgs.length){showErr('Please add at least one photo of the property.');return false;}
     return true;
   }
@@ -5159,6 +5387,15 @@ function openM(id){
       _landmarks=[];renderLandmarks();
       _uploadingVideo=null;_existingVideoUrl='';renderVideoPreview();
       _resetFormMap();
+      // Reset split price inputs and Price Type dropdown
+      ['lPrCore','lPrMinCore','lPrMaxCore','lPr','lPrMin','lPrMax'].forEach(function(id){
+        var el=document.getElementById(id);if(el)el.value='';
+      });
+      ['lPrUnit','lPrMinUnit','lPrMaxUnit','lPrType'].forEach(function(id){
+        var el=document.getElementById(id);if(el)el.selectedIndex=0;
+      });
+      bindPriceInputs();
+      onPriceTypeChange();
       setLM(cu.role==='builder'?'project':'rent');
       var lo=document.getElementById('lOw'),lc=document.getElementById('lCt'),le=document.getElementById('lErr');
       if(lo)lo.value=cu.agency?cu.name+' – '+esc(cu.agency):cu.name;
@@ -5502,16 +5739,34 @@ function acInit(inputId, listId, targetField, opts){
   if(!inp || !lst) return;
   var hiIdx = -1;
   var mode=(opts&&opts.mode)||'all'; // 'city' = only cities; 'locality' = only localities; 'all' = everything
+  // cityRef: id of an input holding the selected city — when present, locality suggestions are scoped to it.
+  var cityRef=(opts&&opts.cityRef)||null;
   inp.setAttribute('autocomplete','off');
 
   inp.addEventListener('input', function(){
     var q = inp.value.trim().toLowerCase();
     hiIdx = -1;
     if(!q){ lst.className='ac-list'; lst.innerHTML=''; return; }
+    // Resolve city scope if any
+    var cityScope='';
+    if(cityRef&&mode==='locality'){
+      var cityEl=document.getElementById(cityRef);
+      cityScope=cityEl?(cityEl.value||'').trim().toLowerCase():'';
+    }
     var matches = INDIAN_CITIES.filter(function(c){
       if(c.n.toLowerCase().indexOf(q) < 0) return false;
       if(mode==='city') return _isCity(c);
-      if(mode==='locality') return !_isCity(c);
+      if(mode==='locality'){
+        if(_isCity(c))return false;
+        // If a city is selected, only suggest localities of that city.
+        // c.s is the parent city/state. Match if it equals the selected city, OR
+        // (for tier-2/3 cities like 'Lucknow') if the city itself contains it.
+        if(cityScope){
+          var parent=(c.s||'').toLowerCase();
+          if(parent!==cityScope&&parent.indexOf(cityScope)<0&&cityScope.indexOf(parent)<0)return false;
+        }
+        return true;
+      }
       return true;
     }).sort(function(a,b){
       var ai = a.n.toLowerCase().indexOf(q);
@@ -5695,11 +5950,30 @@ initBudgetDropdowns();
 acInit('hrc','ac-hrc','hrc',{mode:'city'});      // Hero rent - city only
 acInit('hbc','ac-hbc','hbc',{mode:'city'});      // Hero buy - city only
 acInit('fCity','ac-fCity','fCity',{mode:'city'}); // Browse rent city
-acInit('fLoc','ac-fLoc','fLoc',{mode:'locality'}); // Browse rent locality
+acInit('fLoc','ac-fLoc','fLoc',{mode:'locality',cityRef:'fCity'}); // Browse rent locality (scoped to fCity)
 acInit('fBCity','ac-fBCity','fBCity',{mode:'city'}); // Browse buy city
-acInit('fBLoc','ac-fBLoc','fBLoc',{mode:'locality'}); // Browse buy locality
+acInit('fBLoc','ac-fBLoc','fBLoc',{mode:'locality',cityRef:'fBCity'}); // Browse buy locality (scoped to fBCity)
 acInit('lCy','ac-lCy','lCy',{mode:'city'});     // Listing form city
-acInit('lLo','ac-lLo','lLo',{mode:'locality'});     // Listing form locality
+// City inputs auto-clear their associated locality input when changed,
+// preventing the cross-city locality bug (e.g. Mumbai city + Jubilee Hills locality).
+['lCy','fCity','fBCity'].forEach(function(cityId){
+  var cityEl=document.getElementById(cityId);
+  if(!cityEl)return;
+  // Map city input id → locality input id
+  var locId=cityId==='lCy'?'lLo':(cityId==='fCity'?'fLoc':'fBLoc');
+  cityEl.addEventListener('change',function(){
+    var locEl=document.getElementById(locId);
+    if(locEl&&locEl.value){
+      locEl.value='';
+      // If the autocomplete dropdown is open, close it
+      var listId='ac-'+locId;
+      var lst=document.getElementById(listId);
+      if(lst){lst.className='ac-list';lst.innerHTML='';}
+    }
+  });
+});
+
+acInit('lLo','ac-lLo','lLo',{mode:'locality',cityRef:'lCy'});     // Listing form locality (scoped to lCy)
 
 // ══ BOOTSTRAP ══
 // Restore Supabase Auth session, load favorites, then render homepage.

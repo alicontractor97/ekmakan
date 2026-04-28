@@ -62,7 +62,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="app.css?v=20260426-102520"/>
+<link rel="stylesheet" href="app.css?v=20260428-075425"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -490,7 +490,7 @@
           <div class="fs"><h4>Bedrooms</h4><div class="chips" id="fBB"></div></div>
           <div class="fs"><h4>Area (sq.ft)</h4><div class="rr"><input type="number" id="fAmn" placeholder="Min" oninput="dRender()"/><span class="rsep">–</span><input type="number" id="fAmx" placeholder="Max" oninput="dRender()"/></div></div>
           <div class="fs"><h4>Possession</h4><div class="chips" id="fBPo"></div></div>
-          <div class="fs"><h4>Sale Type</h4><div class="chips" id="fBST"></div></div>
+          <div class="fs"><h4>Transaction Type</h4><div class="chips" id="fBST"></div></div>
           <div class="fs"><h4>Furnishing</h4><div class="chips" id="fBF"></div></div>
           <div class="fs"><h4>Facing</h4><div class="chips" id="fBFc"></div></div>
           <div class="fs"><h4>Floor</h4><div class="chips" id="fBFl"></div></div>
@@ -887,7 +887,7 @@
         <div class="fg"><label class="flbl">Out of Total Floors</label><input class="fi" type="number" id="lFlTot" placeholder="12" min="1"/></div>
         <div class="fg"><label class="flbl">Facing</label><select class="fi" id="lFc"><option value="">Any</option><option>North</option><option>South</option><option>East</option><option>West</option><option>North-East</option><option>North-West</option><option>South-East</option><option>South-West</option></select></div>
         <div class="fg"><label class="flbl">Property Ownership <span class="info-bubble" data-tip="Freehold: full unrestricted ownership. Leasehold: ownership for a fixed term (typically 99 years), then reverts. Co-op Society: ownership of shares in a society that owns the building. Power of Attorney: legal authorisation, not full ownership.">i</span></label><select class="fi" id="lOwn"><option value="">Select</option><option>Freehold</option><option>Leasehold</option><option>Co-operative Society</option><option>Power of Attorney</option></select></div>
-        <div class="fg" id="lTxnW" style="display:none;"><label class="flbl">Transaction Type <span class="info-bubble" data-tip="Resale: previously owned. New Booking: first sale by builder. Builder Resale: builder selling unsold inventory.">i</span></label><select class="fi" id="lTxn"><option value="">Select</option><option>Resale</option><option>New Booking</option><option>Builder Resale</option></select></div>
+        <div class="fg" id="lTxnW" style="display:none;"><label class="flbl">Transaction Type <span class="info-bubble" data-tip="Resale: previously owned. New Booking: first sale by builder (RERA required). Builder Resale: builder selling unsold inventory.">i</span></label><select class="fi" id="lTxn" onchange="refreshReraRequired()"><option value="">Select</option><option>Resale</option><option>New Booking</option><option>Builder Resale</option></select></div>
       </div>
     </div>
 
@@ -953,12 +953,46 @@
         <div class="fg" id="lRW"><label class="flbl">Monthly Rent (₹) *</label><input class="fi" type="number" id="lRt" placeholder="25000"/></div>
         <div class="fg" id="lDW"><label class="flbl">Deposit (₹)</label><input class="fi" type="number" id="lDp" placeholder="50000"/></div>
         <div class="fg s2" id="lPrW" style="display:none;">
-          <label class="flbl">Sale Price (₹) * <span class="info-bubble" data-tip="Enter the all-inclusive sale price. Government charges (stamp duty, registration ~5-7%) and applicable GST will be calculated separately for the buyer.">i</span></label>
-          <input class="fi" type="number" id="lPr" placeholder="9500000 (e.g. ₹95 Lakh)" oninput="updatePriceCalc()"/>
-          <div id="lPrCalc" style="font-size:11px;color:var(--mu);margin-top:6px;line-height:1.55;display:none;padding:8px 10px;background:var(--cr);border-radius:6px;border:1px dashed var(--sa);"></div>
+          <label class="flbl">Sale Price * <span class="info-bubble" data-tip="Enter the all-inclusive sale price. Government charges (stamp duty, registration ~5-7%) and applicable GST will be calculated separately for the buyer.">i</span></label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+            <select class="fi" id="lPrType" onchange="onPriceTypeChange()" style="width:auto;flex:0 0 auto;min-width:170px;">
+              <option value="expected">Expected Price</option>
+              <option value="onrequest">Price on Request</option>
+            </select>
+          </div>
+          <div id="lPrInputWrap" style="display:flex;gap:8px;align-items:stretch;">
+            <input class="fi" type="number" id="lPrCore" placeholder="95" min="0" step="0.01" oninput="updatePriceCalc()" style="flex:1;min-width:0;"/>
+            <select class="fi" id="lPrUnit" onchange="updatePriceCalc()" style="width:auto;flex:0 0 auto;min-width:110px;">
+              <option value="lakh" selected>Lakhs (₹)</option>
+              <option value="cr">Crores (₹)</option>
+            </select>
+          </div>
+          <div style="font-size:11px;color:var(--mu);margin-top:5px;line-height:1.45;">Type just the digits. E.g. <strong style="color:var(--ink);">95 Lakhs</strong> = ₹95,00,000 &middot; <strong style="color:var(--ink);">2.5 Crores</strong> = ₹2,50,00,000.</div>
+          <input type="hidden" id="lPr"/>
+          <div id="lPrCalc" style="font-size:11px;color:var(--mu);margin-top:8px;line-height:1.55;display:none;padding:8px 10px;background:var(--cr);border-radius:6px;border:1px dashed var(--sa);"></div>
         </div>
-        <div class="fg" id="lPrMinW" style="display:none;"><label class="flbl">Starting Price (₹) *</label><input class="fi" type="number" id="lPrMin" placeholder="5000000"/></div>
-        <div class="fg" id="lPrMaxW" style="display:none;"><label class="flbl">Maximum Price (₹)</label><input class="fi" type="number" id="lPrMax" placeholder="20000000"/></div>
+        <div class="fg" id="lPrMinW" style="display:none;">
+          <label class="flbl">Starting Price *</label>
+          <div style="display:flex;gap:6px;align-items:stretch;">
+            <input class="fi" type="number" id="lPrMinCore" placeholder="50" min="0" step="0.01" style="flex:1;min-width:0;"/>
+            <select class="fi" id="lPrMinUnit" style="width:auto;flex:0 0 auto;min-width:90px;">
+              <option value="lakh" selected>Lakhs</option>
+              <option value="cr">Crores</option>
+            </select>
+          </div>
+          <input type="hidden" id="lPrMin"/>
+        </div>
+        <div class="fg" id="lPrMaxW" style="display:none;">
+          <label class="flbl">Maximum Price</label>
+          <div style="display:flex;gap:6px;align-items:stretch;">
+            <input class="fi" type="number" id="lPrMaxCore" placeholder="2" min="0" step="0.01" style="flex:1;min-width:0;"/>
+            <select class="fi" id="lPrMaxUnit" style="width:auto;flex:0 0 auto;min-width:90px;">
+              <option value="lakh">Lakhs</option>
+              <option value="cr" selected>Crores</option>
+            </select>
+          </div>
+          <input type="hidden" id="lPrMax"/>
+        </div>
         <div class="fg s2" id="lUnitsW" style="display:none;">
           <label class="flbl">Unit Configurations <span style="color:var(--mu);font-weight:400;">(optional — helps buyers compare)</span></label>
           <div style="font-size:11px;color:var(--mu);margin-bottom:8px;">Add each available configuration. E.g. "3 BHK, 1450 sq.ft, ₹85L – ₹1.2Cr"</div>
@@ -967,7 +1001,6 @@
         </div>
         <div class="fg" id="lAvW"><label class="flbl">Availability</label><select class="fi" id="lAv"><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
         <div class="fg" id="lPoW" style="display:none;"><label class="flbl">Possession</label><select class="fi" id="lPo"><option>Ready to Move</option><option>Under Construction</option><option>Within 6 Months</option><option>Within 1 Year</option></select></div>
-        <div class="fg" id="lStW" style="display:none;"><label class="flbl">Sale Type <span class="info-bubble" data-tip="First Owner: bought new from a builder, never lived in / barely used. Resale: previously owned and lived in.">i</span></label><select class="fi" id="lSt"><option>First Owner</option><option>Resale</option></select></div>
         <div class="fg" id="lProjW" style="display:none;"><label class="flbl">Project Status *</label><select class="fi" id="lProj"><option>New Launch</option><option>Under Construction</option><option>Ready to Move</option><option>Completed</option></select></div>
         <div class="fg" id="lCompW" style="display:none;"><label class="flbl">Expected Completion</label><input class="fi" type="month" id="lComp"/></div>
         <div class="fg s2" id="lReW" style="display:none;"><label class="flbl">RERA Number <span id="lReReq" style="color:var(--red);font-weight:700;display:none;">*</span> <span class="info-bubble" data-tip="RERA registration is mandatory for all new construction and resale projects in Mumbai/Maharashtra. Format: P51800012345 or RERA/MH/2024/001. Required for new projects.">i</span></label><input class="fi" type="text" id="lRe" placeholder="P51800012345 or RERA/MH/2024/001"/></div>
@@ -1340,11 +1373,11 @@
   </div>
 </div>
 
-<script src="app.js?v=20260426-102520" defer></script>
+<script src="app.js?v=20260428-075425" defer></script>
 <script>
 // Build version stamp — replaced by build script. Used to detect when a new
 // deploy has landed so we can auto-reload the page for users.
-window.__BUILD_VERSION__ = '20260426-102520';
+window.__BUILD_VERSION__ = '20260428-075425';
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
