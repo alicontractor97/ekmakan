@@ -1158,9 +1158,9 @@ async function renderHome(){
   var ls=(await gL()).filter(function(l){return l.status==='approved';});
   var rentals=ls.filter(function(l){return l.lf==='rent';});
   var sales=ls.filter(function(l){return l.lf==='buy';});
-  if(hfr)hfr.innerHTML=rentals.length?rentals.slice(0,3).map(pCard).join('')
+  if(hfr)hfr.innerHTML=rentals.length?rentals.slice(0,4).map(pCardCompact).join('')
     :'<div class="mk-empty"><div class="mk-empty-icon"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg></div><div class="mk-empty-title">No rental listings yet</div><div class="mk-empty-sub">Be the first to <span onclick="openM(\'addM\')" style="color:var(--t);cursor:pointer;font-weight:700;">post a rental listing</span>!</div></div>';
-  if(hfb)hfb.innerHTML=sales.length?sales.slice(0,3).map(pCard).join('')
+  if(hfb)hfb.innerHTML=sales.length?sales.slice(0,4).map(pCardCompact).join('')
     :'<div class="mk-empty"><div class="mk-empty-icon"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg></div><div class="mk-empty-title">No properties for sale yet</div><div class="mk-empty-sub">Be the first to <span onclick="openM(\'addM\')" style="color:var(--t);cursor:pointer;font-weight:700;">list a property for sale</span>!</div></div>';
 }
 function goCityBrowse(name){
@@ -1223,6 +1223,60 @@ function adminLoadMore(tab){
 }
 
 // ══ PROPERTY CARD — 99acres style ══
+// Compact card for homepage strips ("Rentals ready for you" / "Properties for purchase").
+// Vertical layout: image on top with price overlay, brief details below.
+// Inspired by 99acres' "Recommended Properties" thumbnail strip.
+function pCardCompact(l){
+  var ir=l.lf==='rent';
+  var isP=l.lf==='project'||l.isProject;
+  var fv=favs.indexOf(l.id)>=0;
+  var hasImgs=l.images&&l.images.length>0;
+  var disp=hasImgs?(cu?l.images:l.images.slice(0,2)):[];
+  // Price label
+  var priceLbl;
+  if(isP){
+    priceLbl=l.priceMin?'Starts '+fmtPriceHTML(l.priceMin):fmtPriceHTML(l.price||0);
+  } else if(ir){
+    priceLbl=fmtRentHTML(l.rent)+' <span class="cc-price-unit">/mo</span>';
+  } else {
+    priceLbl=fmtPriceHTML(l.price);
+  }
+  var depLbl='';
+  if(ir&&l.dep)depLbl='<div class="cc-dep">Deposit &#8377;'+l.dep.toLocaleString('en-IN')+'</div>';
+  // Verified pill (top-left)
+  var verifiedPill=l.verified?'<div class="cc-verified"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg> Verified</div>':'';
+  // Heart (top-right)
+  var heartHTML='<button class="cc-heart" onclick="event.stopPropagation();event.preventDefault();togFav('+l.id+',this)" aria-label="Save to favorites" aria-pressed="'+(fv?'true':'false')+'"><svg class="icn icn-sm" aria-hidden="true"><use href="#'+(fv?'i-heart-fill':'i-heart')+'"/></svg></button>';
+  // Image
+  var imgInner=hasImgs
+    ?'<img loading="lazy" decoding="async" src="'+disp[0]+'" alt="'+escAttr(l.title)+'"/>'
+    :'<div class="cc-no-img"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-home"/></svg></div>';
+  // Posted-by line: "Posted by Owner · 2 days ago"
+  var roleLabel=l.urole==='owner'?'Owner':l.urole==='broker'?'Broker':l.urole==='builder'?'Builder':'Lister';
+  var posted=l.postedAt?_relativeTime(l.postedAt):'';
+  var subtitle=(l.beds||'?')+' BHK '+(l.type||'Apartment')+', '+(l.baths||1)+' Bath'+(l.baths>1?'s':'');
+  var locLine=(l.building?'In <strong>'+esc(l.building)+'</strong>, ':'In <strong>')
+    +esc((l.loc?l.loc:l.city||'—'))+(l.building?'':'</strong>')
+    +(l.building&&l.city&&l.loc?', '+esc(l.city):(l.building&&l.city?', '+esc(l.city):''));
+  return '<a class="cc-link" href="'+_listingUrl(l.id)+'" onclick="return _cardClick(event,'+l.id+')" target="_blank" rel="noopener">'
+    +'<div class="cc">'
+      +'<div class="cc-img">'
+        +verifiedPill
+        +heartHTML
+        +imgInner
+        +'<div class="cc-price-overlay"><span class="cc-price">&#8377; '+priceLbl.replace('&#8377;','').trim()+'</span>'+depLbl+'</div>'
+      +'</div>'
+      +'<div class="cc-body">'
+        +'<div class="cc-title">'+esc(subtitle)+'</div>'
+        +'<div class="cc-loc">'+locLine+'</div>'
+        +'<div class="cc-foot">'
+          +'<span class="cc-poster">Posted by '+esc(roleLabel)+'</span>'
+          +(posted?'<span class="cc-posted">'+esc(posted)+'</span>':'')
+        +'</div>'
+      +'</div>'
+    +'</div></a>';
+}
+
 function pCard(l){
   var ir=l.lf==='rent';
   var isP=l.lf==='project'||l.isProject;
@@ -1340,8 +1394,7 @@ function pCard(l){
       +(posterName?'<span class="pc-poster-name"><span class="pc-poster-avatar">'+esc(posterInitial)+'</span>'+esc(posterName.length>22?posterName.slice(0,22)+'…':posterName)+'</span>':'')
     +'</div>'
     +'<div class="pc-footer-cta">'
-      +'<button class="pc-btn-outline" onclick="event.stopPropagation();event.preventDefault();oCnt('+l.id+')">'+(cu?'View Number':'Sign in for Number')+'</button>'
-      +'<button class="pc-btn-fill '+(ir?'':'buy')+'" onclick="event.stopPropagation();event.preventDefault();oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-phone"/></svg> Contact</button>'
+      +'<button class="pc-btn-fill" onclick="event.stopPropagation();event.preventDefault();oCnt('+l.id+')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> '+(cu?'Contact':'Sign in to Contact')+'</button>'
     +'</div>'
   +'</div>';
 
@@ -1390,6 +1443,69 @@ async function cSlide(id,dir){
   _cIdx[id]=((_cIdx[id]||0)+dir+len)%len;
   var img=document.getElementById('ci'+id);
   if(img){img.style.opacity='0.6';img.src=imgs[_cIdx[id]];setTimeout(function(){img.style.opacity='1';},150);}
+}
+
+// ── AUTO-ROTATE CAROUSELS ──
+// Every 2 seconds, advance each card's image to the next photo (wrapping around).
+// Pauses when:
+//   • user hovers the card (so they can read details)
+//   • the browser tab is hidden (saves CPU/battery)
+//   • the listings page isn't visible
+// Singleton — runs once for the lifetime of the page.
+var _autoCarouselTimer=null;
+var _carouselPausedFor={}; // map of listing id → true while hovered
+function _startAutoCarousels(){
+  if(_autoCarouselTimer)return;
+  _autoCarouselTimer=setInterval(async function(){
+    if(document.hidden)return;
+    // Only rotate when there's at least one carousel image visible on the page
+    var imgs=document.querySelectorAll('img[id^="ci"]');
+    if(!imgs.length)return;
+    var ls=null; // lazy-load listings only if we have rotations to do
+    for(var i=0;i<imgs.length;i++){
+      var imgEl=imgs[i];
+      var idStr=imgEl.id.replace(/^ci/,'');
+      var listingId=Number(idStr);
+      if(!listingId)continue;
+      if(_carouselPausedFor[listingId])continue;
+      if(!ls)ls=await gL();
+      var l=ls.find(function(x){return x.id===listingId;});
+      if(!l||!l.images||l.images.length<=1)continue;
+      var visiblePhotos=cu?l.images.length:Math.min(2,l.images.length);
+      if(visiblePhotos<=1)continue;
+      _cIdx[listingId]=((_cIdx[listingId]||0)+1)%visiblePhotos;
+      imgEl.style.opacity='0.6';
+      imgEl.src=(cu?l.images:l.images.slice(0,2))[_cIdx[listingId]];
+      // Use closure to bind the right element
+      (function(el){setTimeout(function(){el.style.opacity='1';},150);})(imgEl);
+    }
+  },2000);
+  // Pause individual cards on hover. Delegate from document so it works for
+  // dynamically-rendered cards.
+  document.addEventListener('mouseenter',function(e){
+    var card=e.target.closest&&e.target.closest('.pc, .cc');
+    if(!card)return;
+    var imgEl=card.querySelector('img[id^="ci"]');
+    if(!imgEl)return;
+    var lid=Number(imgEl.id.replace(/^ci/,''));
+    if(lid)_carouselPausedFor[lid]=true;
+  },true);
+  document.addEventListener('mouseleave',function(e){
+    var card=e.target.closest&&e.target.closest('.pc, .cc');
+    if(!card)return;
+    var imgEl=card.querySelector('img[id^="ci"]');
+    if(!imgEl)return;
+    var lid=Number(imgEl.id.replace(/^ci/,''));
+    if(lid)_carouselPausedFor[lid]=false;
+  },true);
+}
+// Kick it off on first load
+if(typeof window!=='undefined'){
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',_startAutoCarousels);
+  } else {
+    _startAutoCarousels();
+  }
 }
 
 // ══ BROWSE ══

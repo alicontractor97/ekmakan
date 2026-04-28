@@ -514,6 +514,114 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
   body.notif-open::after{content:'';position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;}
 }
 
+/* Compact thumbnail card — used on homepage strips ("Rentals ready for you") */
+.cc-link{text-decoration:none;color:inherit;display:block;}
+.cc{
+  background:var(--wh);
+  border-radius:10px;
+  border:1px solid var(--sa);
+  overflow:hidden;
+  cursor:pointer;
+  box-shadow:0 1px 2px rgba(13,42,38,.04);
+  transition:box-shadow .2s,border-color .2s,transform .2s;
+  display:flex;flex-direction:column;
+  height:100%;
+}
+.cc:hover{
+  border-color:var(--tl);
+  box-shadow:0 4px 14px rgba(13,42,38,.08);
+  transform:translateY(-2px);
+}
+.cc-img{
+  position:relative;
+  width:100%;aspect-ratio:4/3;
+  background:#f3f3f3;overflow:hidden;
+}
+.cc-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s;}
+.cc:hover .cc-img img{transform:scale(1.04);}
+.cc-no-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--mu);background:linear-gradient(135deg,var(--tl),var(--cr));}
+
+.cc-verified{
+  position:absolute;top:10px;left:10px;
+  display:inline-flex;align-items:center;gap:4px;
+  background:#3a7d44;color:#fff;
+  font-family:'DM Sans',sans-serif;
+  font-size:10.5px;font-weight:800;
+  padding:5px 10px;border-radius:6px;
+  letter-spacing:.4px;text-transform:uppercase;
+  box-shadow:0 2px 6px rgba(0,0,0,.18);
+  z-index:3;
+}
+.cc-verified .icn{width:11px;height:11px;}
+
+.cc-heart{
+  position:absolute;top:10px;right:10px;
+  background:rgba(0,0,0,.55);border:none;cursor:pointer;
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  z-index:3;color:#fff;transition:all .2s;
+}
+.cc-heart:hover{background:rgba(0,0,0,.8);}
+.cc-heart[aria-pressed="true"]{background:#fff;color:#d9534f;}
+.cc-heart .icn{width:15px;height:15px;}
+
+.cc-price-overlay{
+  position:absolute;bottom:10px;left:10px;
+  background:#fff;border-radius:6px;
+  padding:6px 12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.12);
+  font-family:'DM Sans',sans-serif;
+  z-index:2;
+}
+.cc-price{
+  font-size:14px;font-weight:800;color:var(--ink);
+  letter-spacing:-.2px;display:block;line-height:1.2;
+}
+.cc-price-unit{font-size:11px;font-weight:600;color:var(--mu);}
+.cc-dep{font-size:10.5px;color:var(--mu);font-weight:600;margin-top:1px;}
+
+.cc-body{
+  padding:12px 14px;
+  display:flex;flex-direction:column;gap:5px;
+  flex:1;
+}
+.cc-title{
+  font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:700;
+  color:var(--ink);line-height:1.3;letter-spacing:-.1px;
+}
+.cc-loc{
+  font-family:'DM Sans',sans-serif;
+  font-size:12px;color:var(--mu);
+  line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;
+  overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.cc-loc strong{color:var(--ink);font-weight:600;}
+.cc-foot{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:auto;padding-top:8px;
+  font-family:'DM Sans',sans-serif;
+  font-size:11.5px;color:var(--mu);
+}
+.cc-poster{font-weight:500;}
+.cc-posted{color:var(--gr);font-weight:700;}
+
+/* Override .g3 layout WHEN it contains compact cards (homepage strips).
+   Direct child selector — only the strip's own grid, not browse cards. */
+#hFR.g3,#hFB.g3{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:16px;
+}
+@media (max-width: 720px){
+  #hFR.g3,#hFB.g3{grid-template-columns:repeat(2,1fr);gap:12px;}
+}
+@media (max-width: 480px){
+  #hFR.g3,#hFB.g3{grid-template-columns:1fr;}
+}
+
 /* PROPERTY CARD — 99acres-style horizontal layout */
 .pc{
   background:var(--wh);
@@ -553,11 +661,18 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .pc-blur{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:4;padding:14px;}
 .pc-blur p{font-size:11.5px;color:#fff;text-align:center;line-height:1.4;font-weight:500;}
 
-/* Carousel arrows — visible on hover */
-.arr{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.55);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3;transition:all .15s;opacity:0;}
-.pc:hover .arr{opacity:1;}
-.arr:hover{background:rgba(0,0,0,.85);transform:translateY(-50%) scale(1.08);}
-.arr.l{left:8px;}.arr.r{right:8px;}
+/* Carousel arrows — always visible with strong contrast for clarity */
+.arr{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.25);
+  color:#fff;width:36px;height:36px;border-radius:50%;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  z-index:3;transition:all .15s;opacity:.92;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);
+}
+.arr:hover{background:rgba(0,0,0,.92);transform:translateY(-50%) scale(1.1);opacity:1;}
+.arr .icn{width:16px;height:16px;}
+.arr.l{left:10px;}.arr.r{right:10px;}
 
 /* Top-left image badge — absorbs the type/Verified pill */
 .pc-img-badge{
@@ -735,18 +850,16 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 }
 .pc-btn-outline:hover{background:var(--tl);}
 .pc-btn-fill{
-  padding:9px 18px;border:none;border-radius:7px;
+  padding:10px 22px;border:none;border-radius:7px;
   font-family:'DM Sans',sans-serif;
-  font-size:12.5px;font-weight:700;
-  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  font-size:13px;font-weight:700;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;
   background:var(--t);color:#fff;
   transition:all .15s;
   box-shadow:0 1px 3px rgba(18,90,81,.18);
   white-space:nowrap;
 }
 .pc-btn-fill:hover{background:var(--td);box-shadow:0 3px 10px rgba(18,90,81,.25);}
-.pc-btn-fill.buy{background:var(--g);}
-.pc-btn-fill.buy:hover{background:#a07830;}
 .pc-btn-fill .icn{width:13px;height:13px;}
 
 /* Mobile / narrow screens */
