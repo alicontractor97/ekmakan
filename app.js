@@ -15,13 +15,17 @@ const STYP=['Resale','New Booking','Builder Resale'];
 const FACE=['North','South','East','West','North-East','North-West'];
 const FLOR=['Ground','1st-2nd','3rd-5th','5th-10th','10th+'];
 
+// Cities shown on the homepage tile grid. For launch, Mumbai is the only
+// active market — everything else is "Coming Soon" (non-clickable, dimmed,
+// shows a clear badge so visitors aren't confused). When we expand, flip the
+// `active` flag and the tiles become live links.
 const CITIES=[
-  {name:'Mumbai',img:'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=600&q=80&auto=format&fit=crop',count:'4,200+'},
-  {name:'Hyderabad',img:'https://images.unsplash.com/photo-1569511166187-f63a0a7ed7cf?w=600&q=80&auto=format&fit=crop',count:'3,100+'},
-  {name:'Bengaluru',img:'https://images.unsplash.com/photo-1596178060810-72f53ce9a65c?w=600&q=80&auto=format&fit=crop',count:'2,800+'},
-  {name:'Delhi',img:'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600&q=80&auto=format&fit=crop',count:'1,900+'},
-  {name:'Chennai',img:'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&auto=format&fit=crop',count:'1,200+'},
-  {name:'Pune',img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80&auto=format&fit=crop',count:'980+'}
+  {name:'Mumbai',img:'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=600&q=80&auto=format&fit=crop',active:true},
+  {name:'Bengaluru',img:'https://images.unsplash.com/photo-1596178060810-72f53ce9a65c?w=600&q=80&auto=format&fit=crop',active:false},
+  {name:'Hyderabad',img:'https://images.unsplash.com/photo-1569511166187-f63a0a7ed7cf?w=600&q=80&auto=format&fit=crop',active:false},
+  {name:'Delhi',img:'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600&q=80&auto=format&fit=crop',active:false},
+  {name:'Pune',img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80&auto=format&fit=crop',active:false},
+  {name:'Chennai',img:'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&auto=format&fit=crop',active:false}
 ];
 
 // SEED — removed (data now in Supabase)
@@ -34,38 +38,6 @@ const CITIES=[
 
 // SEED_RPT — removed (data now in Supabase)
 
-const SEED_FAV=[
-  {uid:2001,lid:13},
-  {uid:2002,lid:15},
-  {uid:2003,lid:17},
-  {uid:2004,lid:20},
-  {uid:2005,lid:22},
-  {uid:2006,lid:24},
-  {uid:2007,lid:27},
-  {uid:2008,lid:29},
-  {uid:2009,lid:31},
-  {uid:2010,lid:34},
-  {uid:2011,lid:36},
-  {uid:2012,lid:38},
-  {uid:2013,lid:41},
-  {uid:2014,lid:43},
-  {uid:2015,lid:45},
-  {uid:2016,lid:48},
-  {uid:2017,lid:50},
-  {uid:2018,lid:52},
-  {uid:2019,lid:55},
-  {uid:2020,lid:57},
-  {uid:2021,lid:59},
-  {uid:2022,lid:62},
-  {uid:2023,lid:64},
-  {uid:2024,lid:66},
-  {uid:2025,lid:69},
-  {uid:2026,lid:12},
-  {uid:2027,lid:14},
-  {uid:2028,lid:16},
-  {uid:2029,lid:19},
-  {uid:2030,lid:21}
-];
 
 // ══ SUPABASE ══
 const SUPABASE_URL='https://nzpuhmktxtexbicrszlr.supabase.co';
@@ -1229,9 +1201,16 @@ async function renderHome(){
   var cc=document.getElementById('cityCds');
   if(cc){
     cc.innerHTML=CITIES.map(function(c){
-      return '<div class="city-cd" onclick="goCityBrowse(\''+c.name+'\')">'
+      var clickable=c.active===true;
+      var clickAttr=clickable?'onclick="goCityBrowse(\''+c.name+'\')"':'';
+      var classes='city-cd'+(clickable?'':' city-cd-soon');
+      var badge=clickable
+        ?''
+        :'<div class="city-soon-badge">Coming Soon</div>';
+      return '<div class="'+classes+'" '+clickAttr+'>'
         +'<img loading="lazy" decoding="async" src="'+c.img+'" alt="'+c.name+'"/>'
-        +'<div class="city-ov"><span>'+c.name+'</span><small>'+c.count+' listings</small></div>'
+        +badge
+        +'<div class="city-ov"><span>'+c.name+'</span></div>'
         +'</div>';
     }).join('');
   }

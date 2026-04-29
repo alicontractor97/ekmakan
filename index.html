@@ -62,7 +62,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="app.css?v=20260429-122418"/>
+<link rel="stylesheet" href="app.css?v=20260429-185030"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -292,12 +292,6 @@
         <div class="hero-badge"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;margin-right:4px;"><use href="#i-sparkle"/></svg> One Home for Every Family · ekmakan.com</div>
         <h1>Find a home that<br/><em>truly welcomes you</em></h1>
         <p class="hero-sub">Discover verified homes where every family is welcomed. Rent or buy with confidence — no barriers, no questions asked.</p>
-        <div class="stats-strip">
-          <div class="ss"><div class="ss-n">12,400+</div><div class="ss-l">Listings</div></div>
-          <div class="ss"><div class="ss-n">28</div><div class="ss-l">Cities</div></div>
-          <div class="ss"><div class="ss-n">3,800+</div><div class="ss-l">Families Housed</div></div>
-          <div class="ss"><div class="ss-n">96%</div><div class="ss-l">Satisfaction</div></div>
-        </div>
       </div>
       <div class="hero-right">
       <div class="srch-box">
@@ -307,7 +301,7 @@
         </div>
         <!-- RENT SEARCH -->
         <div id="hfr">
-          <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hrc" name="search" placeholder="Mumbai, Hyderabad, Delhi…" autocomplete="new-password"/><div class="ac-list" id="ac-hrc"></div></div></div>
+          <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hrc" name="search" placeholder="Mumbai" autocomplete="new-password"/><div class="ac-list" id="ac-hrc"></div></div></div>
           <div class="srow srow-sec"><span class="slbl">Type</span><select class="sinp" id="hrt"><option value="">Any type</option><option>Apartment</option><option>Flat</option><option>House</option><option>Villa</option><option>PG / Room</option></select></div>
           <div class="srow srow-sec"><span class="slbl">Max Rent</span><div style="flex:1;display:flex;align-items:center;gap:0;height:36px;">
 <input type="hidden" id="hrr" value="0"/>
@@ -321,7 +315,7 @@
         </div>
         <!-- BUY SEARCH -->
         <div id="hfb" style="display:none;">
-          <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hbc" name="search" placeholder="Bengaluru, Pune, Mumbai…" autocomplete="new-password"/><div class="ac-list" id="ac-hbc"></div></div></div>
+          <div class="srow"><span class="slbl">City</span><div class="ac-wrap"><input class="sinp" type="text" id="hbc" name="search" placeholder="Mumbai" autocomplete="new-password"/><div class="ac-list" id="ac-hbc"></div></div></div>
           <div class="srow srow-sec"><span class="slbl">Type</span>
             <div class="ms-wrap">
               <button type="button" class="sinp ms-btn" id="hbtBtn" onclick="toggleMS('hbtMenu')"><span id="hbtLabel">Any type</span><svg class="icn icn-sm" aria-hidden="true" style="opacity:.6;"><use href="#i-chevron-right"/></svg></button>
@@ -421,16 +415,6 @@
   </div>
 
   <!-- Testimonials -->
-  <div class="sec">
-    <div class="sec-tag">Stories</div>
-    <h2>What families say</h2>
-    <div class="test-grid">
-      <div class="test"><q>I had been turned down repeatedly by other listings for personal reasons that had nothing to do with my ability to pay. On Ek Makān, I found a home in days — without a single awkward conversation.</q><div class="test-av"><div class="av-name-only">Arshad Hussain</div><div class="av-loc">Mumbai · Renter</div></div></div>
-      <div class="test"><q>I listed here because I believe everyone deserves a home. The platform made it so easy and my tenants have been wonderful.</q><div class="test-av"><div class="av-name-only">Kavitha Reddy</div><div class="av-loc">Hyderabad · Owner</div></div></div>
-      <div class="test"><q>I found a RERA-registered 3 BHK with the amenities I needed in under 10 minutes. This platform understands what we actually look for.</q><div class="test-av"><div class="av-name-only">Salman Shaikh</div><div class="av-loc">Bengaluru · Buyer</div></div></div>
-    </div>
-  </div>
-
   <!-- Join -->
   <div class="sec sec-dk">
     <div class="sec-tag">Join Ek Makān</div>
@@ -480,7 +464,7 @@
       </div>
       <div class="fp-body">
         <div id="rFilts">
-          <div class="fs"><h4>City</h4><div class="fc-wrap"><input type="text" id="fCity" name="city-search" placeholder="Mumbai, Bengaluru…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fCity"></div></div></div>
+          <div class="fs"><h4>City</h4><div class="fc-wrap"><input type="text" id="fCity" name="city-search" placeholder="Mumbai" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fCity"></div></div></div>
           <div class="fs"><h4>Locality</h4><div class="fc-wrap"><input type="text" id="fLoc" name="loc-search" placeholder="Andheri West, Koramangala…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fLoc"></div></div></div>
           <div class="fs"><h4>Monthly Rent (₹)</h4><div class="rr"><input type="number" id="fRmn" placeholder="Min" oninput="dRender()"/><span class="rsep">–</span><input type="number" id="fRmx" placeholder="Max" oninput="dRender()"/></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;"><span onclick="setRentPreset(0,10000)" class="preset-chip">Up to 10K</span><span onclick="setRentPreset(0,25000)" class="preset-chip">Up to 25K</span><span onclick="setRentPreset(0,50000)" class="preset-chip">Up to 50K</span><span onclick="setRentPreset(0,100000)" class="preset-chip">Up to 1L</span><span onclick="setRentPreset(0,500000)" class="preset-chip">Up to 5L</span></div></div>
           <div class="fs"><h4>Property Type</h4><div class="chips" id="fRT"></div></div>
@@ -491,7 +475,7 @@
           <div class="fs"><h4>More</h4><div class="chips"><div class="ck" id="ckV" onclick="togBool('ver',this)">✓ Verified</div><div class="ck" id="ckR" onclick="togBool('rer',this)">RERA ✓</div></div></div>
         </div>
         <div id="bFilts" style="display:none;">
-          <div class="fs"><h4>City</h4><div class="fc-wrap"><input type="text" id="fBCity" name="city-search-b" placeholder="Mumbai, Bengaluru…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fBCity"></div></div></div>
+          <div class="fs"><h4>City</h4><div class="fc-wrap"><input type="text" id="fBCity" name="city-search-b" placeholder="Mumbai" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fBCity"></div></div></div>
           <div class="fs"><h4>Locality</h4><div class="fc-wrap"><input type="text" id="fBLoc" name="loc-search-b" placeholder="Andheri West, Koramangala…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fBLoc"></div></div></div>
           <div class="fs"><h4>Budget (₹)</h4><div class="rr"><select id="fBmn" onchange="syncBudget('fBmn','fBmx');dRender()"><option value="">Min</option></select><span class="rsep">–</span><select id="fBmx" onchange="syncBudget('fBmn','fBmx');dRender()"><option value="">Max</option></select></div></div>
           <div class="fs"><h4>Property Type</h4><div class="chips" id="fBT"></div></div>
@@ -1175,9 +1159,9 @@
       <div style="color:rgba(255,255,255,.5);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Cities</div>
       <div style="display:flex;flex-direction:column;gap:7px;">
         <span onclick="goCityBrowse('Mumbai')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Mumbai</span>
-        <span onclick="goCityBrowse('Hyderabad')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Hyderabad</span>
-        <span onclick="goCityBrowse('Bengaluru')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Bengaluru</span>
-        <span onclick="goCityBrowse('Delhi')" style="cursor:pointer;color:rgba(255,255,255,.6);transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Delhi</span>
+        <span style="color:rgba(255,255,255,.35);cursor:default;display:flex;align-items:center;gap:6px;">Bengaluru <span style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:3px;font-weight:700;letter-spacing:.4px;">SOON</span></span>
+        <span style="color:rgba(255,255,255,.35);cursor:default;display:flex;align-items:center;gap:6px;">Hyderabad <span style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:3px;font-weight:700;letter-spacing:.4px;">SOON</span></span>
+        <span style="color:rgba(255,255,255,.35);cursor:default;display:flex;align-items:center;gap:6px;">Delhi <span style="font-size:9.5px;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:3px;font-weight:700;letter-spacing:.4px;">SOON</span></span>
       </div>
     </div>
     <div>
@@ -1476,11 +1460,11 @@
   </div>
 </div>
 
-<script src="app.js?v=20260429-122418" defer></script>
+<script src="app.js?v=20260429-185030" defer></script>
 <script>
 // Build version stamp — replaced by build script. Used to detect when a new
 // deploy has landed so we can auto-reload the page for users.
-window.__BUILD_VERSION__ = '20260429-122418';
+window.__BUILD_VERSION__ = '20260429-185030';
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
