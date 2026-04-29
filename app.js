@@ -40,9 +40,9 @@ const CITIES=[
 
 
 // ══ SUPABASE ══
-const SUPABASE_URL='https://nzpuhmktxtexbicrszlr.supabase.co';
-const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56cHVobWt0eHRleGJpY3JzemxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMzgwMDUsImV4cCI6MjA5MTkxNDAwNX0.ij9vgnFl4DEBsr85b500YIBcEQ0JZQD4zd6ZZ2g-eEA';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+// Supabase client (`sb`) and credentials are now defined in common.js, which
+// is loaded before app.js. Don't re-initialize here — that would create two
+// clients and break auth state continuity.
 
 // ══ TURNSTILE CAPTCHA ══
 // Replace with your real sitekey from Cloudflare Dashboard → Turnstile → Add Widget
@@ -143,7 +143,9 @@ function _cacheValid(w){return _cacheTime[w]&&(Date.now()-_cacheTime[w])<CACHE_T
 function _clr(w){if(!w||w==='l'){_cacheL=null;_cacheTime.l=0;}if(!w||w==='i'){_cacheI=null;_cacheTime.i=0;}if(!w||w==='u'){_cacheU=null;_cacheTime.u=0;}if(!w||w==='r'){_cacheR=null;_cacheTime.r=0;}}
 
 // ══ STATE ══
-let cu=null, bMode='rent', hMode='rent', lMode='rent', actL=null;
+// `cu` is declared in common.js — do NOT redeclare here, that would shadow
+// the shared global and break the auth listener.
+let bMode='rent', hMode='rent', lMode='rent', actL=null;
 let upImgs=[], selTags=[], selAmens=[], favs=[];
 let curAT='ov';
 let fRT=[],fRB=[],fRF=[],fRA=[];
@@ -386,27 +388,8 @@ async function go(pg){
   else if(pg==='lister') await renderLister();
   else if(pg==='admin'){curAT='ov';document.querySelectorAll('.atab').forEach(function(b,i){b.classList.toggle('on',i===0);});await renderAdmin('ov');}
 }
-function upNav(){
-  var show=function(id){var e=document.getElementById(id);if(e)e.style.display='';};
-  var hide=function(id){var e=document.getElementById(id);if(e)e.style.display='none';};
-  var set=function(id,h){var e=document.getElementById(id);if(e)e.innerHTML=h;};
-  if(cu){
-    hide('nLg');hide('nRg');show('nLo');show('nG');show('nB');show('nNotifWrap');
-    set('nG','Hi, '+esc(cu.name));
-    set('nB',
-      cu.role==='broker'?'<span class="brk-b"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-broker"/></svg> Broker</span>':
-      cu.role==='owner'?'<span class="own-b"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-owner"/></svg> Owner</span>':
-      cu.role==='builder'?'<span class="brk-b" style="background:rgba(218,165,32,.15);color:#c58600;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-sparkle"/></svg> Builder</span>':
-      cu.role==='admin'?'<span style="background:rgba(240,208,112,.2);color:#f0d070;font-size:11px;font-weight:700;padding:2px 9px;border-radius:50px;">Admin</span>':'');
-    hide('nD');hide('nL');hide('nA');
-    if(cu.role==='user'){show('nD');hide('nPost');}
-    else if(cu.role==='broker'||cu.role==='owner'||cu.role==='builder'){show('nL');show('nPost');}
-    else if(cu.role==='admin'){show('nA');hide('nPost');}
-  } else {
-    show('nLg');show('nRg');hide('nLo');hide('nG');hide('nB');hide('nNotifWrap');
-    hide('nD');hide('nL');hide('nA');show('nPost');
-  }
-}
+// upNav() is defined in common.js — DO NOT re-declare here. Pages call upNav()
+// directly to refresh the navbar after login/logout/profile changes.
 
 // ══ AUTH ══
 function togglePw(id,btn){
@@ -6144,12 +6127,8 @@ function closeM(id){
 }
 
 // ══ TOAST ══
-function toast(msg,type){
-  type=type||'s';
-  var el=document.getElementById('toast');if(!el)return;
-  el.innerHTML=msg;el.className='show '+type;
-  setTimeout(function(){el.className='';},3200);
-}
+// toast() is defined in common.js — kept here as a comment so future readers
+// know not to redeclare it.
 
 // ══ QUICK ACTION HELPERS ══
 // Reset all browse filters back to defaults — used by QA buttons so that
@@ -6694,29 +6673,39 @@ acInit('lCy','ac-lCy','lCy',{mode:'city'});     // Listing form city
 acInit('lLo','ac-lLo','lLo',{mode:'locality',cityRef:'lCy'});     // Listing form locality (scoped to lCy)
 
 // ══ BOOTSTRAP ══
-// Restore Supabase Auth session, load favorites, then render homepage.
-// Also detect password recovery tokens in the URL hash.
+// Auth bootstrap (getSession, profile fetch, cu population) is now owned by
+// common.js — it runs as soon as common.js is parsed and exposes a promise
+// `_authReady` that resolves once `cu` is hydrated (or null if not signed in).
+//
+// We await that promise here, then do the app-specific follow-up: load favs,
+// load notifications, refresh the navbar, and render the right page.
 (async function(){
   try{
-    // Check for recovery token BEFORE getSession — Supabase client
-    // will auto-process the hash fragment and establish a session.
+    // Check for recovery token BEFORE waiting on _authReady — Supabase client
+    // will auto-process the hash fragment and establish a session, which then
+    // flows into the auth bootstrap in common.js.
     var isRecovery=_checkRecoveryToken();
 
-    var {data:{session}}=await sb.auth.getSession();
-    if(session){
-      var {data:profile}=await sb.from('users').select('id,name,email,phone,role,agency,license_no,joined_at,verified,is_trusted').eq('id',session.user.id).single();
-      if(profile){
-        cu={id:profile.id,name:profile.name,email:profile.email,phone:profile.phone||'',role:profile.role,agency:profile.agency||'',lic:profile.license_no||'',joinedAt:profile.joined_at?(profile.joined_at+'').split('T')[0]:'',verified:profile.verified||false};
-        await loadFavs();
-        await loadNotifs();
-        upNav();
-      }
+    // Wait for common.js to finish its session check + cu population.
+    if(typeof _authReady!=='undefined')await _authReady;
+
+    if(cu){
+      // App-specific follow-up that common.js doesn't know about.
+      await loadFavs();
+      await loadNotifs();
+      // common.js already called upNav() once at end of bootstrap. Calling it
+      // again is harmless and ensures consistency if anything mutated cu since.
+      upNav();
     }
-    // If this is a password recovery redirect, show the update modal
-    if(isRecovery&&session){
+    // If this is a password recovery redirect, show the update modal.
+    // Note: common.js's auth listener also opens this modal on PASSWORD_RECOVERY.
+    // The duplicate-open is idempotent (classList.add('open') twice = once).
+    if(isRecovery&&cu){
       openM('pwUpdateM');
     }
-  }catch(e){}
+  }catch(e){
+    console.warn('App bootstrap error:',e&&e.message);
+  }
   // If there's a deep-link hash (e.g. #dashboard, #lister, #admin, #listing/42),
   // route to that page directly instead of rendering home first.
   var hasDeepLink=window.location.hash&&/^#(listing\/\d+|home|browse|dashboard|lister|admin)$/.test(window.location.hash);
@@ -6726,14 +6715,9 @@ acInit('lLo','ac-lLo','lLo',{mode:'locality',cityRef:'lCy'});     // Listing for
     await renderHome();
   }
 })();
-// Listen for auth state changes (token refresh, sign-out in another tab, recovery)
-sb.auth.onAuthStateChange(function(ev,session){
-  if(ev==='SIGNED_OUT'){cu=null;upNav();}
-  if(ev==='PASSWORD_RECOVERY'){
-    // Supabase fires this event when a recovery token is processed
-    openM('pwUpdateM');
-  }
-});
+// Auth state listener (SIGNED_OUT, PASSWORD_RECOVERY) is now wired up in
+// common.js. Don't add another listener here — Supabase fires both, which
+// would cause duplicate side-effects (e.g. modal opening twice).
 // Poll for new notifications every 60 seconds
 // Poll notifications every 20s for near-real-time updates
 setInterval(function(){if(cu)loadNotifs();},20000);

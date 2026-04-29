@@ -31,6 +31,10 @@
   Cache-Control: no-cache, must-revalidate
   CDN-Cache-Control: no-store
 
+/common.js
+  Cache-Control: no-cache, must-revalidate
+  CDN-Cache-Control: no-store
+
 /app.css
   Cache-Control: no-cache, must-revalidate
   CDN-Cache-Control: no-store
