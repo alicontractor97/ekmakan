@@ -3710,22 +3710,63 @@ function setLM(m){
   if(wcR)wcR.classList.toggle('on',m==='rent');
   if(wcB)wcB.classList.toggle('on',m==='buy');
   if(wcP)wcP.classList.toggle('on',m==='project');
-  // Rent-specific fields
-  ['lRW','lDW','lAvW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='rent'?'':'none';});
-  // Buy-specific fields
-  ['lPrW','lPoW','lReW','lTxnW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=(m==='buy'||m==='project')?'':'none';});
-  // Project-specific fields
-  ['lProjW','lCompW','lPrMinW','lPrMaxW','lUnitsW','lAcreageW','lTowersW','lPaymentW','lSchemesW','lBookingW'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display=m==='project'?'':'none';});
+
+  // Apply data-mode-show / data-mode-hide attributes across the wizard.
+  // data-mode-show="rent buy" → only show when current mode is one of those.
+  // data-mode-hide="project"  → hide when current mode matches.
+  document.querySelectorAll('[data-mode-show]').forEach(function(el){
+    var allowed=el.getAttribute('data-mode-show').split(/\s+/);
+    el.style.display=allowed.indexOf(m)>=0?'':'none';
+  });
+  document.querySelectorAll('[data-mode-hide]').forEach(function(el){
+    var blocked=el.getAttribute('data-mode-hide').split(/\s+/);
+    if(blocked.indexOf(m)>=0)el.style.display='none';
+    else if(el.style.display==='none')el.style.display=''; // un-hide
+  });
+
   // Builder-only side-rail in Stage 6 (Media)
   var rail=document.getElementById('bMediaRail');
   if(rail)rail.style.display=m==='project'?'':'none';
-  // RERA required indicator — shown for projects, AND for buy listings whose
-  // transaction type is "New Booking" (legally required by RERA in MH).
+
+  // Update wizard step labels + pane headings/descriptions for project mode
+  var stepLabels=m==='project'
+    ?['Intent','Identity','Inventory','Amenities','Pricing','Media']
+    :['Intent','Basics','Specs','Features','Pricing','Media'];
+  document.querySelectorAll('.wiz-step').forEach(function(s,i){
+    var lbl=s.querySelector('.wiz-lbl');
+    if(lbl&&stepLabels[i])lbl.textContent=stepLabels[i];
+  });
+  // Pane titles & descriptions
+  function setText(id,txt){var e=document.getElementById(id);if(e)e.textContent=txt;}
+  if(m==='project'){
+    setText('lStage2Title','Project identity & legal');
+    setText('lStage2Desc','Project name, builder, location, RERA registration, and project scale.');
+    setText('lStage3Title','Inventory & configurations');
+    setText('lStage3Desc','Add each BHK type with carpet area, price range, and inventory status.');
+    setText('lStage5Title','Pricing & payment plans');
+    setText('lStage5Desc','Project starting price, breakup format, payment schemes, and booking amount.');
+    setText('lTlLabel','Project Name *');
+    setText('lBnLabel','Builder / Company Name *');
+    var tl=document.getElementById('lTl');if(tl)tl.placeholder='e.g. Lodha Park, Prestige Falcon City';
+    var bn=document.getElementById('lBn');if(bn)bn.placeholder='e.g. Lodha Group, Prestige Estates';
+  } else {
+    setText('lStage2Title','Property basics');
+    setText('lStage2Desc','The essentials we need to identify your listing.');
+    setText('lStage3Title','Property specs');
+    setText('lStage3Desc','Size, age, floor — the basics buyers want to know.');
+    setText('lStage5Title','Pricing & availability');
+    setText('lStage5Desc','Set your asking price and timing.');
+    setText('lTlLabel','Property Title *');
+    setText('lBnLabel','Building / Society Name (optional)');
+    var tlR=document.getElementById('lTl');if(tlR)tlR.placeholder='e.g. 3 BHK Apartment, Andheri West';
+    var bnR=document.getElementById('lBn');if(bnR)bnR.placeholder='e.g. Lodha World One, Prestige Falcon City';
+  }
+
+  // RERA required indicator — for projects (always) AND for buy "New Booking"
   refreshReraRequired();
 }
 
 // Read current state and toggle the RERA-required asterisk accordingly.
-// Called from setLM (mode change) AND from lTxn change handler.
 function refreshReraRequired(){
   var reReq=document.getElementById('lReReq');
   if(!reReq)return;
@@ -3784,6 +3825,7 @@ async function editListing(id){
   bindPriceInputs();
   _prefillPriceInputs(l);
   setVal('lRe',l.rera);
+  setVal('lRe2',l.rera); // project mode uses lRe2 in stage 2
   setVal('lOw',l.owner);
   setVal('lCt',l.contact);
   setVal('lDs',l.desc);
@@ -3836,6 +3878,9 @@ async function editListing(id){
   // Project-specific
   if(l.completion)setVal('lComp',l.completion.substring(0,7));
   var projEl=document.getElementById('lProj');if(projEl)projEl.value=l.projectStatus||'New Launch';
+  // Project Type uses the same property_type column; default to 'Residential Apartments' for projects
+  var projTypeEl=document.getElementById('lProjType');
+  if(projTypeEl)projTypeEl.value=l.isProject?(l.type||'Residential Apartments'):'Residential Apartments';
   _unitTypes=l.unitTypes?l.unitTypes.slice():[];
   renderUnits();
   // Builder project field prefills
@@ -3910,7 +3955,8 @@ async function doSub(){
     return;
   }
   // RERA mandatory: new projects (always) AND buy listings with txnType=New Booking
-  var reraVal=(getVal('lRe')||'').trim();
+  // For projects, the RERA field is `lRe2` (stage 2). For buy, it's `lRe` (stage 5).
+  var reraVal=lMode==='project'?(getVal('lRe2')||'').trim():(getVal('lRe')||'').trim();
   var lTxnVal=getVal('lTxn');
   var reraNeeded=lMode==='project'||(lMode==='buy'&&lTxnVal==='New Booking');
   if(reraNeeded&&reraVal.length<5){
@@ -3918,9 +3964,9 @@ async function doSub(){
       ?'RERA registration number is mandatory for new projects in Mumbai/Maharashtra.'
       :'RERA registration number is mandatory for "New Booking" transactions in Mumbai/Maharashtra.';
     if(le){le.style.display='';le.textContent=msg;}
-    var reraField=document.getElementById('lRe');
+    var reraField=document.getElementById(lMode==='project'?'lRe2':'lRe');
     if(reraField){reraField.focus();reraField.scrollIntoView({behavior:'smooth',block:'center'});}
-    if(typeof wizGoto==='function')wizGoto(5);
+    if(typeof wizGoto==='function')wizGoto(lMode==='project'?2:5);
     return;
   }
   // RERA format sanity check (loose — accepts both old "RERA/MH/.." and new "P51800.." formats)
@@ -3932,9 +3978,9 @@ async function doSub(){
   var isProject=lMode==='project';
   var listingData={lf:isProject?'project':lMode,title:title,building:getVal('lBn'),city:city,
     loc:getVal('lLo'),
-    type:getVal('lTp')||'Apartment',
-    beds:getVal('lBd')||'2',
-    baths:Number(getVal('lBt'))||1,
+    type:lMode==='project'?(getVal('lProjType')||'Residential Apartments'):(getVal('lTp')||'Apartment'),
+    beds:lMode==='project'?'0':(getVal('lBd')||'2'),
+    baths:lMode==='project'?0:(Number(getVal('lBt'))||1),
     area:Number(getVal('lAr'))||0,
     carpetArea:Number(getVal('lArC'))||0,
     builtArea:Number(getVal('lAr'))||0,
@@ -3944,12 +3990,12 @@ async function doSub(){
     rent:rv,dep:Number(getVal('lDp'))||0,price:isProject?(Number(getVal('lPrMin'))||0):pv,
     stype:'', // Deprecated — use txnType instead. Kept blank for new listings; legacy listings retain their value.
     poss:getVal('lPo'),
-    rera:getVal('lRe'),
+    rera:reraVal,
     floor:getVal('lFl'),
     floorNo:getVal('lFlNo')!==''?Number(getVal('lFlNo')):null,
     totalFloors:getVal('lFlTot')?Number(getVal('lFlTot')):null,
     facing:getVal('lFc'),
-    txnType:(lMode==='buy'||lMode==='project')?getVal('lTxn'):'',
+    txnType:lMode==='project'?'New Booking':(lMode==='buy'?getVal('lTxn'):''),
     ownership:getVal('lOwn'),
     water:_selWater.join(','),
     backup:getVal('lBackup'),
@@ -4775,10 +4821,27 @@ function _wizValidate(step){
     if(title.length<3){showErr('Please enter a property title (at least 3 characters).');return false;}
     if(city.length<2){showErr('Please enter a city.');return false;}
     if(pin&&!/^[0-9]{6}$/.test(pin)){showErr('PIN code must be 6 digits.');return false;}
+    // Project mode: builder name + RERA + project status all required
+    if(lMode==='project'){
+      var builder=(document.getElementById('lBn').value||'').trim();
+      if(builder.length<2){showErr('Please enter the builder / company name.');return false;}
+      var rera2=(document.getElementById('lRe2').value||'').trim();
+      if(rera2.length<5){showErr('RERA registration number is mandatory for new projects.');return false;}
+    }
     return true;
   }
   if(step===3){
-    // Specs — all optional. Just sanity-check floor numbers if entered.
+    if(lMode==='project'){
+      // Project: at least one unit configuration with BHK + min price
+      if(!_unitTypes||!_unitTypes.length){
+        showErr('Please add at least one unit configuration.');
+        return false;
+      }
+      var bad=_unitTypes.filter(function(u){return !u.bhk||(!u.priceMin&&!u.price_min_core);});
+      if(bad.length){showErr('Each unit configuration needs a BHK type and at least a minimum price.');return false;}
+      return true;
+    }
+    // Rent/buy specs — all optional. Just sanity-check floor numbers if entered.
     var fn=document.getElementById('lFlNo').value;
     var ft=document.getElementById('lFlTot').value;
     if(fn&&ft&&Number(fn)>Number(ft)){
@@ -4805,17 +4868,13 @@ function _wizValidate(step){
       var pmin=Number((document.getElementById('lPrMin').value||'').trim());
       if(!pmin){showErr('Please enter the project starting price.');return false;}
     }
-    // RERA mandatory for: (a) new projects (always), (b) buy listings with Transaction Type = "New Booking"
-    // Both are legal requirements under MahaRERA for first-sale properties in Mumbai/Maharashtra.
+    // RERA mandatory for: (a) new projects (always — checked in stage 2), (b) buy listings with Transaction Type = "New Booking"
     var txn=(document.getElementById('lTxn')||{}).value||'';
-    var reraRequired=lMode==='project'||(lMode==='buy'&&txn==='New Booking');
+    var reraRequired=lMode==='buy'&&txn==='New Booking';
     if(reraRequired){
       var rera=(document.getElementById('lRe').value||'').trim();
       if(rera.length<5){
-        var why=lMode==='project'
-          ?'RERA registration number is mandatory for new projects. It is a legal requirement in Mumbai/Maharashtra.'
-          :'RERA registration number is mandatory for "New Booking" transactions. It is a legal requirement in Mumbai/Maharashtra.';
-        showErr(why);
+        showErr('RERA registration number is mandatory for "New Booking" transactions. It is a legal requirement in Mumbai/Maharashtra.');
         return false;
       }
     }
@@ -5826,7 +5885,7 @@ function openM(id){
       if(wcP)wcP.style.display=cu.role==='builder'?'':'none';
       _unitTypes=[];renderUnits();
       // Reset builder project fields
-      ['lAcreage','lTowers','lBooking','lBrochure','lMasterPlan'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+      ['lAcreage','lTowers','lBooking','lBrochure','lMasterPlan','lRe2','lProjType'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
       var brkDef=document.querySelector('input[name="lBreakup"][value="all_inclusive"]');
       if(brkDef)brkDef.checked=true;
       document.querySelectorAll('input[name="lScheme"]').forEach(function(c){c.checked=false;});

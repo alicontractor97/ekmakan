@@ -62,7 +62,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="app.css?v=20260428-182931"/>
+<link rel="stylesheet" href="app.css?v=20260429-120403"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -885,11 +885,11 @@
 
     <!-- STAGE 2: Basics -->
     <div class="wiz-pane" data-pane="2">
-      <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;">Property basics</h3>
-      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">The essentials we need to identify your listing.</p>
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;" id="lStage2Title">Property basics</h3>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;" id="lStage2Desc">The essentials we need to identify your listing.</p>
       <div class="fg2">
-        <div class="fg s2"><label class="flbl">Property Title *</label><input class="fi" type="text" id="lTl" placeholder="e.g. 3 BHK Apartment, Andheri West"/></div>
-        <div class="fg s2"><label class="flbl">Building / Society Name <span style="color:var(--mu);font-weight:400;">(optional)</span></label><input class="fi" type="text" id="lBn" placeholder="e.g. Lodha World One, Prestige Falcon City"/></div>
+        <div class="fg s2"><label class="flbl" id="lTlLabel">Property Title *</label><input class="fi" type="text" id="lTl" placeholder="e.g. 3 BHK Apartment, Andheri West"/></div>
+        <div class="fg s2"><label class="flbl" id="lBnLabel">Building / Society Name <span style="color:var(--mu);font-weight:400;">(optional)</span></label><input class="fi" type="text" id="lBn" placeholder="e.g. Lodha World One, Prestige Falcon City"/></div>
         <div class="fg"><label class="flbl">City *</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lCy" name="listing-city" placeholder="Mumbai" autocomplete="new-password"/><div class="ac-list" id="ac-lCy"></div></div></div>
         <div class="fg"><label class="flbl">Locality</label><div class="ac-wrap" style="position:relative;"><input class="fi" type="text" id="lLo" placeholder="Andheri West" autocomplete="off"/><div class="ac-list" id="ac-lLo"></div></div></div>
         <div class="fg"><label class="flbl">Street / Road <span style="color:var(--mu);font-weight:400;font-size:11px;">(optional, for map accuracy)</span></label><input class="fi" type="text" id="lAddr" placeholder="e.g. Linking Road"/></div>
@@ -907,17 +907,25 @@
             </div>
           </div>
         </div>
-        <div class="fg"><label class="flbl">Property Type *</label><select class="fi" id="lTp"><option>Apartment</option><option>Builder Floor</option><option>Independent House</option><option>Villa</option><option>1 RK / Studio</option><option>Plot</option><option>Farm House</option><option>Serviced Apartment</option><option>PG / Room</option><option>Other</option></select></div>
-        <div class="fg"><label class="flbl">Bedrooms *</label><select class="fi" id="lBd"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6+</option></select></div>
+        <!-- Unit-level fields — hidden for project listings -->
+        <div class="fg" data-mode-hide="project"><label class="flbl">Property Type *</label><select class="fi" id="lTp"><option>Apartment</option><option>Builder Floor</option><option>Independent House</option><option>Villa</option><option>1 RK / Studio</option><option>Plot</option><option>Farm House</option><option>Serviced Apartment</option><option>PG / Room</option><option>Other</option></select></div>
+        <div class="fg" data-mode-hide="project"><label class="flbl">Bedrooms *</label><select class="fi" id="lBd"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6+</option></select></div>
+        <!-- Project-only fields — RERA, Status, Possession, Acreage, Towers -->
+        <div class="fg" data-mode-show="project"><label class="flbl">Project Type *</label><select class="fi" id="lProjType"><option>Residential Apartments</option><option>Villa Community</option><option>Plotted Development</option><option>Mixed Use</option><option>Commercial</option><option>Township</option></select></div>
+        <div class="fg" id="lProjW2" data-mode-show="project"><label class="flbl">Project Status *</label><select class="fi" id="lProj"><option>New Launch</option><option>Under Construction</option><option>Ready to Move</option><option>Completed</option></select></div>
+        <div class="fg" id="lCompW2" data-mode-show="project"><label class="flbl">Possession Date</label><input class="fi" type="month" id="lComp"/></div>
+        <div class="fg s2" id="lReW2" data-mode-show="project"><label class="flbl">RERA Number <span style="color:var(--red);font-weight:700;">*</span> <span class="info-bubble" data-tip="MahaRERA registration is mandatory for all new projects. Format: P51800012345.">i</span></label><input class="fi" type="text" id="lRe2" placeholder="P51800012345"/></div>
+        <div class="fg" data-mode-show="project"><label class="flbl">Total Acreage <span style="color:var(--mu);font-weight:400;font-size:11px;">(acres)</span></label><input class="fi" type="number" id="lAcreage" placeholder="e.g. 4.5" step="0.1" min="0"/></div>
+        <div class="fg" data-mode-show="project"><label class="flbl">Total Towers</label><input class="fi" type="number" id="lTowers" placeholder="e.g. 6" min="1"/></div>
       </div>
     </div>
 
-    <!-- STAGE 3: Property details -->
-    <!-- STAGE 3: Property specs (size, age, floor, ownership) -->
+    <!-- STAGE 3: Property specs (rent/buy) OR Inventory (project) -->
     <div class="wiz-pane" data-pane="3">
-      <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;">Property specs</h3>
-      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Size, age, floor — the basics buyers want to know.</p>
-      <div class="fg2">
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;" id="lStage3Title">Property specs</h3>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;" id="lStage3Desc">Size, age, floor — the basics buyers want to know.</p>
+      <!-- Rent/Buy specs — hidden in project mode -->
+      <div class="fg2" data-mode-hide="project">
         <div class="fg"><label class="flbl">Bathrooms</label><select class="fi" id="lBt"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
         <div class="fg"><label class="flbl">Age of Property</label><select class="fi" id="lAge"><option value="">Select</option><option>Under Construction</option><option>New (0-1 years)</option><option>1-5 years</option><option>5-10 years</option><option>10-20 years</option><option>20+ years</option></select></div>
         <div class="fg"><label class="flbl">Carpet Area (sq.ft) <span style="color:var(--mu);font-weight:400;font-size:11px;">usable space</span></label><input class="fi" type="number" id="lArC" placeholder="950" oninput="updatePriceCalc()"/></div>
@@ -929,6 +937,15 @@
         <div class="fg"><label class="flbl">Property Ownership <span class="info-bubble" data-tip="Freehold: full unrestricted ownership. Leasehold: ownership for a fixed term (typically 99 years), then reverts. Co-op Society: ownership of shares in a society that owns the building. Power of Attorney: legal authorisation, not full ownership.">i</span></label><select class="fi" id="lOwn"><option value="">Select</option><option>Freehold</option><option>Leasehold</option><option>Co-operative Society</option><option>Power of Attorney</option></select></div>
         <div class="fg" id="lTxnW" style="display:none;"><label class="flbl">Transaction Type <span class="info-bubble" data-tip="Resale: previously owned. New Booking: first sale by builder (RERA required). Builder Resale: builder selling unsold inventory.">i</span></label><select class="fi" id="lTxn" onchange="refreshReraRequired()"><option value="">Select</option><option>Resale</option><option>New Booking</option><option>Builder Resale</option></select></div>
       </div>
+      <!-- Project inventory — only shown in project mode (the inventory table is the "specs" for a project) -->
+      <div data-mode-show="project">
+        <div class="fg s2" id="lUnitsW2">
+          <label class="flbl">Unit Inventory <span style="color:var(--red);">*</span></label>
+          <div style="font-size:11.5px;color:var(--mu);margin-bottom:10px;line-height:1.5;">Add each <strong>BHK type</strong> available in the project with its <strong>carpet area range</strong>, <strong>price range</strong>, and <strong>inventory status</strong>. Buyers compare configurations side-by-side on the listing page.</div>
+          <div id="lUnits"></div>
+          <button type="button" onclick="addUnit()" class="inv-add-btn">+ Add unit configuration</button>
+        </div>
+      </div>
     </div>
 
     <!-- STAGE 4: Features (furnishings, utilities, amenities, landmarks, inclusion) -->
@@ -936,9 +953,9 @@
       <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;">Features &amp; surroundings</h3>
       <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Furnishings, utilities, amenities and what's nearby.</p>
       <div class="fg2">
-        <div class="fg"><label class="flbl">Furnishing</label><select class="fi" id="lFn" onchange="renderFurnishingItems()"><option value="">Select</option><option>Unfurnished</option><option>Semi-Furnished</option><option>Fully Furnished</option></select></div>
+        <div class="fg" data-mode-hide="project"><label class="flbl">Furnishing</label><select class="fi" id="lFn" onchange="renderFurnishingItems()"><option value="">Select</option><option>Unfurnished</option><option>Semi-Furnished</option><option>Fully Furnished</option></select></div>
         <div class="fg"><label class="flbl">Power Backup <span class="info-bubble" data-tip="None: no backup. Partial: common areas only. Full Backup: every unit has uninterrupted power. Generator/Inverter: type of backup source.">i</span></label><select class="fi" id="lBackup"><option value="">Select</option><option>None</option><option>Partial (common areas)</option><option>Full Backup</option><option>Generator</option><option>Inverter</option></select></div>
-        <div class="fg s2" id="lFnDetailsW" style="display:none;">
+        <div class="fg s2" id="lFnDetailsW" style="display:none;" data-mode-hide="project">
           <label class="flbl">What's Included? <span style="color:var(--mu);font-weight:400;font-size:11px;">tick everything that comes with the property</span></label>
           <div id="lFnDetails" class="furn-grid" style="margin-top:6px;"></div>
         </div>
@@ -985,14 +1002,16 @@
       </div>
     </div>
 
-    <!-- STAGE 5: Pricing & legal (rent OR sale OR project + RERA + availability) -->
+    <!-- STAGE 5: Pricing & legal (rent OR sale OR project payment plans) -->
     <div class="wiz-pane" data-pane="5">
-      <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;">Pricing &amp; availability</h3>
-      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;">Set your asking price and timing.</p>
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:6px;" id="lStage5Title">Pricing &amp; availability</h3>
+      <p style="font-size:13px;color:var(--mu);margin-bottom:18px;" id="lStage5Desc">Set your asking price and timing.</p>
       <div class="fg2">
-        <div class="fg" id="lRW"><label class="flbl">Monthly Rent (₹) *</label><input class="fi" type="number" id="lRt" placeholder="25000"/></div>
-        <div class="fg" id="lDW"><label class="flbl">Deposit (₹)</label><input class="fi" type="number" id="lDp" placeholder="50000"/></div>
-        <div class="fg s2" id="lPrW" style="display:none;">
+        <!-- Rent fields -->
+        <div class="fg" id="lRW" data-mode-show="rent"><label class="flbl">Monthly Rent (₹) *</label><input class="fi" type="number" id="lRt" placeholder="25000"/></div>
+        <div class="fg" id="lDW" data-mode-show="rent"><label class="flbl">Deposit (₹)</label><input class="fi" type="number" id="lDp" placeholder="50000"/></div>
+        <!-- Sale (buy) fields -->
+        <div class="fg s2" id="lPrW" data-mode-show="buy">
           <label class="flbl">Sale Price * <span class="info-bubble" data-tip="Enter the all-inclusive sale price. Government charges (stamp duty, registration ~5-7%) and applicable GST will be calculated separately for the buyer.">i</span></label>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
             <select class="fi" id="lPrType" onchange="onPriceTypeChange()" style="width:auto;flex:0 0 auto;min-width:170px;">
@@ -1011,7 +1030,13 @@
           <input type="hidden" id="lPr"/>
           <div id="lPrCalc" style="font-size:11px;color:var(--mu);margin-top:8px;line-height:1.55;display:none;padding:8px 10px;background:var(--cr);border-radius:6px;border:1px dashed var(--sa);"></div>
         </div>
-        <div class="fg" id="lPrMinW" style="display:none;">
+        <!-- Buy-only: RERA + Possession -->
+        <div class="fg" id="lAvWrap" data-mode-show="rent"><label class="flbl">Availability</label><select class="fi" id="lAv"><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
+        <div class="fg" id="lPoWrap" data-mode-show="buy"><label class="flbl">Possession</label><select class="fi" id="lPo"><option>Ready to Move</option><option>Under Construction</option><option>Within 6 Months</option><option>Within 1 Year</option></select></div>
+        <div class="fg s2" id="lReWrap" data-mode-show="buy"><label class="flbl">RERA Number <span id="lReReq" style="color:var(--red);font-weight:700;display:none;">*</span> <span class="info-bubble" data-tip="RERA registration is mandatory for resale of new construction. Format: P51800012345.">i</span></label><input class="fi" type="text" id="lRe" placeholder="P51800012345"/></div>
+
+        <!-- Project (builder) — Price range + payment plans + booking amount -->
+        <div class="fg" id="lPrMinW" data-mode-show="project">
           <label class="flbl">Starting Price *</label>
           <div style="display:flex;gap:6px;align-items:stretch;">
             <input class="fi" type="number" id="lPrMinCore" placeholder="50" min="0" step="0.01" style="flex:1;min-width:0;"/>
@@ -1022,7 +1047,7 @@
           </div>
           <input type="hidden" id="lPrMin"/>
         </div>
-        <div class="fg" id="lPrMaxW" style="display:none;">
+        <div class="fg" id="lPrMaxW" data-mode-show="project">
           <label class="flbl">Maximum Price</label>
           <div style="display:flex;gap:6px;align-items:stretch;">
             <input class="fi" type="number" id="lPrMaxCore" placeholder="2" min="0" step="0.01" style="flex:1;min-width:0;"/>
@@ -1033,24 +1058,14 @@
           </div>
           <input type="hidden" id="lPrMax"/>
         </div>
-        <div class="fg s2" id="lUnitsW" style="display:none;">
-          <label class="flbl">Inventory &amp; Configurations <span style="color:var(--red);">*</span></label>
-          <div style="font-size:11.5px;color:var(--mu);margin-bottom:10px;line-height:1.5;">Add each BHK type with its <strong>carpet area range</strong>, <strong>price range</strong>, and <strong>inventory status</strong>. Buyers compare configurations side-by-side on the listing page.</div>
-          <div id="lUnits"></div>
-          <button type="button" onclick="addUnit()" class="inv-add-btn">+ Add unit configuration</button>
-        </div>
-        <!-- Builder-only: project scale -->
-        <div class="fg" id="lAcreageW" style="display:none;"><label class="flbl">Total Acreage <span style="color:var(--mu);font-weight:400;font-size:11px;">(acres)</span></label><input class="fi" type="number" id="lAcreage" placeholder="e.g. 4.5" step="0.1" min="0"/></div>
-        <div class="fg" id="lTowersW" style="display:none;"><label class="flbl">Total Towers <span style="color:var(--mu);font-weight:400;font-size:11px;">(buildings in complex)</span></label><input class="fi" type="number" id="lTowers" placeholder="e.g. 6" min="1"/></div>
-        <!-- Builder-only: payment plans -->
-        <div class="fg s2" id="lPaymentW" style="display:none;">
+        <div class="fg s2" id="lPaymentW" data-mode-show="project">
           <label class="flbl">Price Breakup Format</label>
           <div class="seg-toggle">
             <label class="seg-opt"><input type="radio" name="lBreakup" value="all_inclusive" checked/><span>All-inclusive <small>(taxes &amp; charges included)</small></span></label>
             <label class="seg-opt"><input type="radio" name="lBreakup" value="basic_plus_govt"/><span>Basic + Govt charges separate</span></label>
           </div>
         </div>
-        <div class="fg s2" id="lSchemesW" style="display:none;">
+        <div class="fg s2" id="lSchemesW" data-mode-show="project">
           <label class="flbl">Payment Schemes <span style="color:var(--mu);font-weight:400;font-size:11px;">(check all that apply)</span></label>
           <div class="chk-grid">
             <label class="chk-opt"><input type="checkbox" name="lScheme" value="10_90"/><span><strong>10:90 Scheme</strong><small>10% on booking, 90% on possession</small></span></label>
@@ -1060,12 +1075,7 @@
             <label class="chk-opt"><input type="checkbox" name="lScheme" value="possession_linked"/><span><strong>Possession-Linked</strong><small>20% now, 80% on possession</small></span></label>
           </div>
         </div>
-        <div class="fg" id="lBookingW" style="display:none;"><label class="flbl">Booking Amount <span style="color:var(--mu);font-weight:400;font-size:11px;">(initial token)</span></label><div style="display:flex;gap:0;align-items:stretch;"><span class="fi" style="flex:0 0 auto;width:50px;border-radius:8px 0 0 8px;border-right:none;background:var(--cr);color:var(--ink);font-weight:700;display:flex;align-items:center;justify-content:center;">&#8377;</span><input class="fi" type="number" id="lBooking" placeholder="100000" min="0" style="border-radius:0 8px 8px 0;"/></div></div>
-        <div class="fg" id="lAvW"><label class="flbl">Availability</label><select class="fi" id="lAv"><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
-        <div class="fg" id="lPoW" style="display:none;"><label class="flbl">Possession</label><select class="fi" id="lPo"><option>Ready to Move</option><option>Under Construction</option><option>Within 6 Months</option><option>Within 1 Year</option></select></div>
-        <div class="fg" id="lProjW" style="display:none;"><label class="flbl">Project Status *</label><select class="fi" id="lProj"><option>New Launch</option><option>Under Construction</option><option>Ready to Move</option><option>Completed</option></select></div>
-        <div class="fg" id="lCompW" style="display:none;"><label class="flbl">Possession Date</label><input class="fi" type="month" id="lComp"/></div>
-        <div class="fg s2" id="lReW" style="display:none;"><label class="flbl">RERA Number <span id="lReReq" style="color:var(--red);font-weight:700;display:none;">*</span> <span class="info-bubble" data-tip="RERA registration is mandatory for all new construction and resale projects in Mumbai/Maharashtra. Format: P51800012345 or RERA/MH/2024/001. Required for new projects.">i</span></label><input class="fi" type="text" id="lRe" placeholder="P51800012345 or RERA/MH/2024/001"/></div>
+        <div class="fg" id="lBookingW" data-mode-show="project"><label class="flbl">Booking Amount <span style="color:var(--mu);font-weight:400;font-size:11px;">(initial token)</span></label><div style="display:flex;gap:0;align-items:stretch;"><span class="fi" style="flex:0 0 auto;width:50px;border-radius:8px 0 0 8px;border-right:none;background:var(--cr);color:var(--ink);font-weight:700;display:flex;align-items:center;justify-content:center;">&#8377;</span><input class="fi" type="number" id="lBooking" placeholder="100000" min="0" style="border-radius:0 8px 8px 0;"/></div></div>
       </div>
     </div>
 
@@ -1465,11 +1475,11 @@
   </div>
 </div>
 
-<script src="app.js?v=20260428-182931" defer></script>
+<script src="app.js?v=20260429-120403" defer></script>
 <script>
 // Build version stamp — replaced by build script. Used to detect when a new
 // deploy has landed so we can auto-reload the page for users.
-window.__BUILD_VERSION__ = '20260428-182931';
+window.__BUILD_VERSION__ = '20260429-120403';
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
