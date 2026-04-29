@@ -1641,13 +1641,15 @@ function dRender(){
 
 function setBMode(m){
   bMode=m;
-  _projectsOnly=false;
-  var bmr=document.getElementById('bmr'),bmb=document.getElementById('bmb');
+  _projectsOnly=m==='project';
+  var bmr=document.getElementById('bmr'),bmb=document.getElementById('bmb'),bmp=document.getElementById('bmp');
   var rf=document.getElementById('rFilts'),bf=document.getElementById('bFilts');
   if(bmr)bmr.className='bm-btn'+(m==='rent'?' ar':'');
   if(bmb)bmb.className='bm-btn'+(m==='buy'?' ab':'');
+  if(bmp)bmp.className='bm-btn'+(m==='project'?' ap':'');
+  // Show buy filters for project mode too (price ranges, possession, RERA all apply)
   if(rf)rf.style.display=m==='rent'?'':'none';
-  if(bf)bf.style.display=m==='buy'?'':'none';
+  if(bf)bf.style.display=(m==='buy'||m==='project')?'':'none';
   renderBrowse();
 }
 
@@ -1714,12 +1716,19 @@ async function renderBrowse(){
   // before we synchronously rebuild the grid (which can hog the main thread).
   await new Promise(function(r){requestAnimationFrame(function(){r();});});
   var allApproved=(await gL()).filter(function(l){return l.status==='approved';});
-  // If "New Projects" mode is on, show only project listings; otherwise filter out projects from rent/buy
+  // Three modes:
+  //  • project — show only builder/project listings
+  //  • rent / buy — show non-project listings of that type
   var ls;
-  if(_projectsOnly){
-    ls=allApproved.filter(function(l){return l.lf==='project'||l.isProject;});
+  if(bMode==='project'||_projectsOnly){
+    // New Projects tab: strictly only listings flagged as projects
+    // (lf='project' set when builder uses "New Project" wizard mode).
+    // We also include any listing where isProject=true as a defensive fallback for
+    // legacy data, but require either condition — buy/rent listings never qualify.
+    ls=allApproved.filter(function(l){return l.lf==='project'||l.isProject===true;});
   } else {
-    ls=allApproved.filter(function(l){return l.lf===bMode&&!l.isProject&&l.lf!=='project';});
+    // Rent/Buy tabs explicitly exclude project listings to prevent crossover.
+    ls=allApproved.filter(function(l){return l.lf===bMode&&l.lf!=='project'&&l.isProject!==true;});
   }
   var hasAnyFilters=false;
   // Keyword search — matches across title, city, locality, description, owner, type
@@ -1749,14 +1758,17 @@ async function renderBrowse(){
     if(fRF.length){ls=ls.filter(function(l){return fRF.indexOf(l.furnish)>=0;});hasAnyFilters=true;}
     if(fRA.length){ls=ls.filter(function(l){return fRA.every(function(a){return l.amens&&l.amens.indexOf(a)>=0;});});hasAnyFilters=true;}
   } else {
+    // Buy + Project mode share the same filter sidebar (city, locality, price range, area, type, BHK, etc.)
+    // For projects, l.price is usually 0; use priceMin instead.
     var c2=gv('fBCity'),lo2=gv('fBLoc'),mn2=Number(gv('fBmn'))||0;
     var mx2raw=Number(gv('fBmx'))||0;
     var mx2=mx2raw===-1?Infinity:(mx2raw||Infinity);
     var amn=Number(gv('fAmn'))||0,amx=Number(gv('fAmx'))||Infinity;
+    var priceOf=function(l){return l.lf==='project'||l.isProject?(l.priceMin||l.price||0):(l.price||0);};
     if(c2){ls=ls.filter(function(l){return l.city.toLowerCase().indexOf(c2.toLowerCase())>=0;});hasAnyFilters=true;}
     if(lo2){ls=ls.filter(function(l){return _matchLocality(l.loc,lo2);});hasAnyFilters=true;}
-    if(mn2){ls=ls.filter(function(l){return l.price>=mn2;});hasAnyFilters=true;}
-    if(mx2!==Infinity){ls=ls.filter(function(l){return l.price<=mx2;});hasAnyFilters=true;}
+    if(mn2){ls=ls.filter(function(l){return priceOf(l)>=mn2;});hasAnyFilters=true;}
+    if(mx2!==Infinity){ls=ls.filter(function(l){return priceOf(l)<=mx2;});hasAnyFilters=true;}
     if(amn){ls=ls.filter(function(l){return l.area>=amn;});hasAnyFilters=true;}
     if(amx!==Infinity){ls=ls.filter(function(l){return l.area<=amx;});hasAnyFilters=true;}
     if(fBT.length){ls=ls.filter(function(l){return fBT.indexOf(l.type)>=0;});hasAnyFilters=true;}
@@ -4217,6 +4229,170 @@ function showRejectionReason(lid){
 }
 
 // ── LEADS TABLE ──
+var _builderTotals=null;
+
+// Render the builder-specific insights pane shown on the Overview tab.
+// Includes: inventory pipeline (status × counts), sales velocity, BHK demand
+// breakdown from leads, possession timeline, and per-project performance table.
+function _renderBuilderInsights(myL,allInqs,totals){
+  var projects=myL.filter(function(l){return l.isProject||l.lf==='project';});
+  if(!projects.length){
+    return '<div style="background:var(--wh);border-radius:14px;padding:32px;text-align:center;color:var(--mu);border:1px solid var(--lister-border);box-shadow:var(--lister-shadow-sm);margin-top:8px;font-family:\'DM Sans\',sans-serif;">'
+      +'<div style="font-size:36px;color:var(--mu);margin-bottom:6px;"><svg class="icn icn-xl" aria-hidden="true"><use href="#i-building"/></svg></div>'
+      +'<div style="font-family:\'Playfair Display\',serif;font-size:18px;color:var(--ink);margin-bottom:4px;">No projects yet</div>'
+      +'<div style="font-size:13px;line-height:1.55;">Click <strong style="color:var(--t);">+ New Listing</strong> to create your first project. Insights will appear here once your inventory is set up.</div>'
+      +'</div>';
+  }
+  var fmtCr=totals.fmtCr;
+
+  // ── Section 1: Sales Velocity (units booked in last 30/90 days) ──
+  // Approximation: count leads as a proxy for booking interest. Real bookings
+  // would need a sale_event table; for now we count distinct lead listings recently.
+  var now=Date.now();
+  var d30=now-30*86400*1000,d90=now-90*86400*1000;
+  var leadsByListing={},leadsLast30={},leadsLast90={};
+  allInqs.forEach(function(i){
+    if(!i.listingId)return;
+    leadsByListing[i.listingId]=(leadsByListing[i.listingId]||0)+1;
+    var t=i.sentAt?new Date(i.sentAt).getTime():0;
+    if(t>=d30)leadsLast30[i.listingId]=(leadsLast30[i.listingId]||0)+1;
+    if(t>=d90)leadsLast90[i.listingId]=(leadsLast90[i.listingId]||0)+1;
+  });
+  var leads30Total=projects.reduce(function(s,p){return s+(leadsLast30[p.id]||0);},0);
+  var leads90Total=projects.reduce(function(s,p){return s+(leadsLast90[p.id]||0);},0);
+  var leadsAllTotal=projects.reduce(function(s,p){return s+(leadsByListing[p.id]||0);},0);
+
+  // ── Section 2: BHK Demand from leads ──
+  // For each project, look at its unit configurations and weight by lead count.
+  var bhkLeadCount={};
+  projects.forEach(function(p){
+    var leads=leadsByListing[p.id]||0;
+    if(!leads||!p.unitTypes)return;
+    // Distribute proportionally across BHK types (approximation)
+    var totalUnits=p.unitTypes.reduce(function(s,u){return s+(Number(u.units_total)||0);},0);
+    p.unitTypes.forEach(function(u){
+      var weight=totalUnits>0?(Number(u.units_total||0)/totalUnits):(1/p.unitTypes.length);
+      var bhk=u.bhk||'Other';
+      bhkLeadCount[bhk]=(bhkLeadCount[bhk]||0)+leads*weight;
+    });
+  });
+  var bhkSorted=Object.keys(bhkLeadCount).sort(function(a,b){return bhkLeadCount[b]-bhkLeadCount[a];});
+  var bhkMax=bhkSorted.length?bhkLeadCount[bhkSorted[0]]:1;
+
+  // ── Section 3: Possession timeline ──
+  var nowYear=new Date().getFullYear();
+  var possSlots={'Ready':0,'2026':0,'2027':0,'2028+':0};
+  projects.forEach(function(p){
+    if(p.projectStatus==='Ready to Move'||p.projectStatus==='Completed'){possSlots['Ready']++;return;}
+    if(!p.completion){possSlots['Ready']++;return;}
+    var d=new Date(p.completion);if(isNaN(d)){possSlots['Ready']++;return;}
+    var y=d.getFullYear();
+    if(y<=2026)possSlots['2026']++;
+    else if(y===2027)possSlots['2027']++;
+    else possSlots['2028+']++;
+  });
+
+  // ── Section 4: Project status breakdown ──
+  var statusSlots={'New Launch':0,'Under Construction':0,'Ready to Move':0,'Completed':0};
+  projects.forEach(function(p){
+    var st=p.projectStatus||'New Launch';
+    if(statusSlots[st]==null)statusSlots[st]=0;
+    statusSlots[st]++;
+  });
+
+  // ── Section 5: Per-project performance table ──
+  var projTable=projects.map(function(p){
+    var inv=0,avail=0;
+    (p.unitTypes||[]).forEach(function(u){
+      inv+=Number(u.units_total||0);
+      avail+=Number(u.units_available||0);
+    });
+    var sold=Math.max(0,inv-avail);
+    var pct=inv>0?Math.round(sold/inv*100):0;
+    var leadsP=leadsByListing[p.id]||0;
+    var convRate=leadsP>0?Math.round(sold/leadsP*100):0;
+    var statusClass=p.status==='approved'?'gr':p.status==='pending'?'wa':'rj';
+    var statusLbl=p.status==='approved'?'Live':p.status==='pending'?'Pending':p.status==='rejected'?'Rejected':p.status;
+    return '<tr>'
+      +'<td><strong>'+esc(p.title||'Untitled')+'</strong><div style="font-size:11px;color:var(--mu);">'+esc((p.loc?p.loc+', ':'')+p.city)+'</div></td>'
+      +'<td><span class="b-pp-pill b-pp-'+statusClass+'">'+statusLbl+'</span></td>'
+      +'<td><div class="b-pp-prog"><div class="b-pp-prog-bar" style="width:'+pct+'%;"></div></div><div class="b-pp-prog-lbl">'+sold+' / '+inv+' sold ('+pct+'%)</div></td>'
+      +'<td style="text-align:center;font-weight:700;color:var(--t);">'+leadsP+'</td>'
+      +'<td style="text-align:center;font-weight:700;color:'+(convRate>0?'var(--gr)':'var(--mu)')+';">'+convRate+'%</td>'
+    +'</tr>';
+  }).join('');
+
+  return ''
+    // ── Inventory value header card ──
+    +'<div class="b-insight-card b-insight-hero">'
+      +'<div class="b-insight-hd"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-key"/></svg> Inventory Value</div>'
+      +'<div class="b-insight-grid-3">'
+        +'<div class="b-insight-stat">'
+          +'<div class="b-insight-stat-lbl">Total Listed Value</div>'
+          +'<div class="b-insight-stat-val" style="color:var(--t);">'+fmtCr(totals.inventoryValueMin)+(totals.inventoryValueMax>totals.inventoryValueMin?' &ndash; '+fmtCr(totals.inventoryValueMax):'')+'</div>'
+          +'<div class="b-insight-stat-sub">Across '+projects.length+' project'+(projects.length>1?'s':'')+' &middot; '+totals.totalInventory+' units</div>'
+        +'</div>'
+        +'<div class="b-insight-stat">'
+          +'<div class="b-insight-stat-lbl">Booked Value (est.)</div>'
+          +'<div class="b-insight-stat-val" style="color:#c58600;">'+fmtCr(totals.bookedValueEstimate)+'</div>'
+          +'<div class="b-insight-stat-sub">'+totals.totalSold+' units booked &middot; '+totals.sellThroughPct+'% sell-through</div>'
+        +'</div>'
+        +'<div class="b-insight-stat">'
+          +'<div class="b-insight-stat-lbl">Active Demand</div>'
+          +'<div class="b-insight-stat-val" style="color:var(--gr);">'+leads30Total+'</div>'
+          +'<div class="b-insight-stat-sub">leads in last 30 days &middot; '+leadsAllTotal+' all-time</div>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+
+    // ── Two-up: Project Status + Possession Timeline ──
+    +'<div class="b-insight-row">'
+      +'<div class="b-insight-card">'
+        +'<div class="b-insight-hd"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-building"/></svg> Project Pipeline</div>'
+        +'<div class="b-pipe">'
+          +Object.keys(statusSlots).map(function(k){
+            var c=statusSlots[k];
+            var color=k==='New Launch'?'#c58600':k==='Under Construction'?'#9a7300':k==='Ready to Move'?'var(--gr)':'var(--mu)';
+            return '<div class="b-pipe-row"><span class="b-pipe-lbl">'+k+'</span><span class="b-pipe-bar"><span class="b-pipe-fill" style="width:'+(projects.length>0?c/projects.length*100:0)+'%;background:'+color+';"></span></span><span class="b-pipe-cnt">'+c+'</span></div>';
+          }).join('')
+        +'</div>'
+      +'</div>'
+      +'<div class="b-insight-card">'
+        +'<div class="b-insight-hd"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg> Possession Timeline</div>'
+        +'<div class="b-pipe">'
+          +Object.keys(possSlots).map(function(k){
+            var c=possSlots[k];
+            var lbl=k==='Ready'?'Ready / Completed':'By '+k;
+            return '<div class="b-pipe-row"><span class="b-pipe-lbl">'+lbl+'</span><span class="b-pipe-bar"><span class="b-pipe-fill" style="width:'+(projects.length>0?c/projects.length*100:0)+'%;background:var(--t);"></span></span><span class="b-pipe-cnt">'+c+'</span></div>';
+          }).join('')
+        +'</div>'
+      +'</div>'
+    +'</div>'
+
+    // ── BHK Demand from leads ──
+    +(bhkSorted.length?'<div class="b-insight-card">'
+      +'<div class="b-insight-hd"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-search"/></svg> BHK Demand <span style="font-weight:500;color:var(--mu);font-size:11px;text-transform:none;letter-spacing:0;">(weighted by leads)</span></div>'
+      +'<div class="b-pipe">'
+        +bhkSorted.map(function(b){
+          var c=Math.round(bhkLeadCount[b]);
+          var pct=Math.round(bhkLeadCount[b]/bhkMax*100);
+          return '<div class="b-pipe-row"><span class="b-pipe-lbl">'+esc(b)+'</span><span class="b-pipe-bar"><span class="b-pipe-fill" style="width:'+pct+'%;background:linear-gradient(90deg,var(--t),#daa520);"></span></span><span class="b-pipe-cnt">'+c+'</span></div>';
+        }).join('')
+      +'</div>'
+    +'</div>':'')
+
+    // ── Per-project performance table ──
+    +'<div class="b-insight-card">'
+      +'<div class="b-insight-hd"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-eye"/></svg> Per-Project Performance</div>'
+      +'<div style="overflow-x:auto;">'
+      +'<table class="b-perf-tbl">'
+        +'<thead><tr><th>Project</th><th>Status</th><th>Inventory Progress</th><th>Leads</th><th>Conv. Rate</th></tr></thead>'
+        +'<tbody>'+projTable+'</tbody>'
+      +'</table></div>'
+      +'<div style="font-size:11px;color:var(--mu);margin-top:8px;line-height:1.55;">Conversion rate is units sold per lead — a proxy until direct booking data is integrated.</div>'
+    +'</div>';
+}
+
 async function renderListerLeads(){
   if(!cu)return;
   var wrap=document.getElementById('lLeadsContainer');
@@ -4465,14 +4641,70 @@ async function renderLister(){
       +'</button>';
   }
   if(st){
-    var html=statBox('all','i-home','',myL.length,'var(--t)','Listed')+
-      statBox('approved','i-check','',ap.length,'var(--gr)','Approved')+
-      statBox('pending','','&#9201;',pn.length,'#9a7300','Pending')+
-      statBox('leads','i-phone','',totalLeads,'#c58600','Leads');
-    if(rj.length){
-      html+=statBox('rejected','i-flag','',rj.length,'var(--red)','Rejected');
+    if(isBuilder){
+      // Builder dashboard — project-centric metrics computed from unit_types JSON.
+      // Each project listing's inventory is summed across its unit configurations.
+      var totalInventory=0,totalAvailable=0,totalSold=0,inventoryValueMin=0,inventoryValueMax=0,bookedValueEstimate=0;
+      myL.forEach(function(l){
+        if(!l.isProject&&l.lf!=='project')return;
+        (l.unitTypes||[]).forEach(function(u){
+          var avail=Number(u.units_available||0);
+          var total=Number(u.units_total||0);
+          var pmin=Number(u.priceMin||0);
+          var pmax=Number(u.priceMax||pmin||0);
+          var pmid=pmax>0?(pmin+pmax)/2:pmin;
+          totalInventory+=total;
+          totalAvailable+=avail;
+          totalSold+=Math.max(0,total-avail);
+          inventoryValueMin+=pmin*total;
+          inventoryValueMax+=pmax*total;
+          bookedValueEstimate+=pmid*Math.max(0,total-avail);
+        });
+      });
+      var sellThroughPct=totalInventory>0?Math.round(totalSold/totalInventory*100):0;
+      function fmtCr(v){
+        if(!v)return '\u20B90';
+        if(v>=10000000)return '\u20B9'+(v/10000000).toFixed(2).replace(/\.?0+$/,'')+' Cr';
+        if(v>=100000)return '\u20B9'+(v/100000).toFixed(2).replace(/\.?0+$/,'')+' L';
+        return '\u20B9'+v.toLocaleString('en-IN');
+      }
+      var html=''
+        +statBox('all','i-building','',myL.length,'var(--t)','Projects')
+        +statBox('approved','i-check','',ap.length,'var(--gr)','Live')
+        +statBox('pending','','&#9201;',pn.length,'#9a7300','Pending')
+        +statBox('leads','i-phone','',totalLeads,'#c58600','Leads');
+      // Inventory stat box — the core builder metric (non-clickable info card)
+      html+='<div class="lister-stat-box" style="text-align:center;background:linear-gradient(135deg,#fff8e5,#fff4cc);border-radius:14px;padding:20px 14px;border:1px solid rgba(218,165,32,.3);font-family:\'DM Sans\',sans-serif;">'
+        +'<div style="font-size:20px;color:#c58600;margin-bottom:4px;"><svg class="icn icn-lg" aria-hidden="true"><use href="#i-key"/></svg></div>'
+        +'<div style="font-family:\'Playfair Display\',serif;font-size:32px;font-weight:700;color:#8a6100;line-height:1;letter-spacing:-.5px;">'+totalAvailable+'</div>'
+        +'<div style="font-size:11.5px;color:#8a6100;margin-top:6px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;">Units Available</div>'
+        +'<div style="font-size:10.5px;color:#8a6100;margin-top:3px;font-weight:600;">of '+totalInventory+' total &middot; '+sellThroughPct+'% sold</div>'
+        +'</div>';
+      if(rj.length){
+        html+=statBox('rejected','i-flag','',rj.length,'var(--red)','Rejected');
+      }
+      st.innerHTML=html;
+      // Stash totals for the insights pane below
+      _builderTotals={totalInventory:totalInventory,totalAvailable:totalAvailable,totalSold:totalSold,inventoryValueMin:inventoryValueMin,inventoryValueMax:inventoryValueMax,bookedValueEstimate:bookedValueEstimate,sellThroughPct:sellThroughPct,fmtCr:fmtCr};
+    } else {
+      var html=statBox('all','i-home','',myL.length,'var(--t)','Listed')+
+        statBox('approved','i-check','',ap.length,'var(--gr)','Approved')+
+        statBox('pending','','&#9201;',pn.length,'#9a7300','Pending')+
+        statBox('leads','i-phone','',totalLeads,'#c58600','Leads');
+      if(rj.length){
+        html+=statBox('rejected','i-flag','',rj.length,'var(--red)','Rejected');
+      }
+      st.innerHTML=html;
     }
-    st.innerHTML=html;
+  }
+  // ── BUILDER OVERVIEW: project insights pane ──
+  // Renders inventory pipeline, sales velocity, BHK demand, possession timeline
+  // into the lOverviewExtra slot below the stat boxes.
+  var lOe=document.getElementById('lOverviewExtra');
+  if(lOe&&isBuilder&&_builderTotals){
+    lOe.innerHTML=_renderBuilderInsights(myL,allInqs,_builderTotals);
+  } else if(lOe){
+    lOe.innerHTML='';
   }
   // Render search bar (inside the properties pane, just after the heading; only insert once)
   var lSrch=document.getElementById('lSrch');
@@ -5993,7 +6225,7 @@ function _resetBrowseFilters(){
   });
 }
 
-function qaNewProjects(){_resetBrowseFilters();_projectsOnly=true;bldF();setBMode('buy');go('browse');}
+function qaNewProjects(){_resetBrowseFilters();bldF();setBMode('project');go('browse');}
 function qaPG(){_resetBrowseFilters();fRT=['PG / Room'];bldF();setBMode('rent');go('browse');}
 function qaRERA(){_resetBrowseFilters();fRer=true;bldF();setBMode('buy');go('browse');}
 function qaVerified(){_resetBrowseFilters();fVer=true;bldF();setBMode('rent');go('browse');}
