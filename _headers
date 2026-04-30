@@ -95,6 +95,10 @@
   Cache-Control: no-cache, must-revalidate
   CDN-Cache-Control: no-store
 
+/tenant-profile.js
+  Cache-Control: no-cache, must-revalidate
+  CDN-Cache-Control: no-store
+
 /app.css
   Cache-Control: no-cache, must-revalidate
   CDN-Cache-Control: no-store
