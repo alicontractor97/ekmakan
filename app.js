@@ -347,9 +347,11 @@ async function gInq(){
 async function createInquiry(obj){
   _clr('i');
   var row={listing_id:obj.listingId,listing_title:obj.listingTitle||'',listing_city:obj.listingCity||'',listing_for:obj.lf||'rent',inquirer_name:obj.name,inquirer_phone:obj.phone,inquirer_email:obj.email||'',message:obj.message||'',user_id:obj.uid||(cu?cu.id:null)};
-  var {error}=await sb.from('inquiries').insert(row);
-  if(error){toast('Failed to send inquiry: '+error.message,'e');return false;}
-  return true;
+  // Insert and return the row so the caller can use the inquiry_id for any
+  // follow-up actions (e.g. tenant profile access grant in Stage 3).
+  var {data,error}=await sb.from('inquiries').insert(row).select('id').single();
+  if(error){toast('Failed to send inquiry: '+error.message,'e');return null;}
+  return data;
 }
 // Legacy compatibility — some callers still use sInq pattern
 async function sInq(d){/* no-op: individual writes now use createInquiry */}
@@ -3214,8 +3216,50 @@ async function doInq(){
       return;
     }
   }
-  var ok=await createInquiry({id:Date.now(),listingId:actL.id,listingTitle:actL.title,listingCity:actL.city,lf:actL.lf,contact:actL.contact,name:nm,phone:ph,email:em,message:msg,uid:cu?cu.id:null,sentAt:new Date().toISOString().split('T')[0]});
-  if(!ok)return;
+  // ── Stage 3: Tenant profile consent flow ──
+  // If the user is signed in AND has a tenant profile worth sharing
+  // (verification_level !== 'none'), show a consent screen BEFORE creating
+  // the inquiry. The user must explicitly confirm what's being shared.
+  // If they decline, the inquiry isn't created — they can edit & retry.
+  if(cu&&actL&&typeof showInquiryConsent==='function'){
+    var consentResult=await showInquiryConsent({
+      brokerId:actL.uid,
+      listingId:actL.id,
+      listingTitle:actL.title,
+      inquiryPayload:{nm:nm,ph:ph,em:em,msg:msg}
+    });
+    // showInquiryConsent returns:
+    //   {action:'confirmed', shareProfile:true|false}  → proceed
+    //   {action:'cancelled'}                            → user backed out
+    //   {action:'no_profile'}                           → no profile, proceed normally
+    if(consentResult&&consentResult.action==='cancelled')return;
+    // Pass the share-profile decision through to the inquiry submission
+    return await _submitInquiry(nm,ph,em,msg,consentResult&&consentResult.shareProfile,consentResult&&consentResult.snapshot);
+  }
+  // Fallback (logged-out user, or showInquiryConsent not loaded yet): submit
+  // inquiry immediately, no profile sharing.
+  return await _submitInquiry(nm,ph,em,msg,false,null);
+}
+
+// Internal: actually creates the inquiry row + (optionally) grants profile access.
+// Extracted from doInq so the consent flow can call it after user confirmation.
+async function _submitInquiry(nm,ph,em,msg,shareProfile,consentSnapshot){
+  var inq=await createInquiry({listingId:actL.id,listingTitle:actL.title,listingCity:actL.city,lf:actL.lf,contact:actL.contact,name:nm,phone:ph,email:em,message:msg,uid:cu?cu.id:null,sentAt:new Date().toISOString().split('T')[0]});
+  if(!inq)return; // createInquiry already toasted the error
+  // If user opted to share profile, write the access row via the SECURITY
+  // DEFINER RPC. We do NOT fail the inquiry if this RPC fails — the broker
+  // just won't see the profile data. Worth noting in console for debugging.
+  if(shareProfile&&cu&&inq.id&&actL.uid){
+    try{
+      var {error:gErr}=await sb.rpc('grant_profile_access',{
+        p_inquiry_id:inq.id,
+        p_broker_user_id:actL.uid,
+        p_listing_id:actL.id,
+        p_consent_snapshot:consentSnapshot||{}
+      });
+      if(gErr)console.warn('Profile access grant failed:',gErr.message);
+    }catch(e){console.warn('Profile access RPC error:',e&&e.message);}
+  }
   closeM('cntM');var cm=document.getElementById('cMsg');if(cm)cm.value='';
   toast('Inquiry sent! The owner will contact you. <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-phone"/></svg>');
 }

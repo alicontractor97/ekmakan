@@ -364,3 +364,199 @@ async function submitReport(){
     if(f)f.style.display='';
   },2500);
 }
+
+// ============================================================================
+// TENANT PROFILE CONSENT FLOW (Stage 3)
+// ============================================================================
+// Used by doInq() in app.js. Shows the user exactly what data their tenant
+// profile will share with the broker before the inquiry is created.
+//
+// Returns a Promise that resolves to:
+//   {action: 'confirmed', shareProfile: true,  snapshot: {...}}  — proceed, share
+//   {action: 'confirmed', shareProfile: false}                    — proceed, don't share
+//   {action: 'cancelled'}                                          — back out, don't submit
+//   {action: 'no_profile'}                                         — no profile worth sharing
+//
+// The snapshot stored alongside the access row captures the redacted profile
+// at the moment of consent — so we can prove, even years later, what the
+// tenant actually agreed to share, even if the schema or our redaction logic
+// changes.
+// ============================================================================
+
+async function _buildConsentSnapshot(){
+  // Read tenant_profile + landlord_refs and build the same shape that
+  // get_redacted_tenant_profile would return. We mirror the SQL function's
+  // logic in JS so the consent screen shows EXACTLY what the broker will see.
+  if(!cu)return null;
+  var {data:prof}=await sb.from('tenant_profiles').select('*').eq('user_id',cu.id).maybeSingle();
+  if(!prof||prof.verification_level==='none')return null;
+  var {data:refs}=await sb.from('tenant_landlord_refs').select('verified,verification_outcome').eq('user_id',cu.id);
+  var refsArr=refs||[];
+  var verified=refsArr.filter(function(r){return r.verified;}).length;
+  var byOutcome={positive:0,mixed:0,negative:0};
+  refsArr.forEach(function(r){
+    if(r.verification_outcome&&byOutcome.hasOwnProperty(r.verification_outcome))byOutcome[r.verification_outcome]++;
+  });
+  var dv=prof.doc_verifications||{};
+  // Income band — same logic as the SQL function
+  var inc=prof.monthly_income;
+  var band=null;
+  if(inc!=null){
+    if(inc<25000)band='Under ₹25k/mo';
+    else if(inc<50000)band='₹25k – 50k/mo';
+    else if(inc<100000)band='₹50k – 1L/mo';
+    else if(inc<200000)band='₹1L – 2L/mo';
+    else if(inc<500000)band='₹2L – 5L/mo';
+    else band='Above ₹5L/mo';
+  }
+  // PAN mask — XXXXX + last chars
+  var maskedPan=null;
+  if(prof.pan_number&&prof.pan_number.length>=5){
+    maskedPan='XXXXX'+prof.pan_number.slice(5);
+  }
+  return {
+    verification_level:prof.verification_level,
+    pan_masked:maskedPan,
+    pan_verified:dv.pan_doc==='verified',
+    num_occupants:prof.num_occupants,
+    occupants_relationship:prof.occupants_relationship,
+    marital_status:prof.marital_status,
+    has_pets:prof.has_pets,
+    pet_details:prof.pet_details,
+    smokes:prof.smokes,
+    employer_name:prof.employer_name,
+    role_title:prof.role_title,
+    employment_type:prof.employment_type,
+    monthly_income_band:band,
+    joined_date:prof.joined_date,
+    docs:{
+      employment_letter_verified:dv.employment_letter==='verified',
+      salary_slips_verified:dv.salary_slip_1==='verified'||dv.salary_slip_2==='verified'||dv.salary_slip_3==='verified',
+      itr_verified:dv.itr_y1==='verified'||dv.itr_y2==='verified'
+    },
+    landlord_refs:{
+      total:refsArr.length,
+      verified:verified,
+      positive:byOutcome.positive,
+      mixed:byOutcome.mixed,
+      negative:byOutcome.negative
+    },
+    self_intro:prof.self_intro,
+    profile_updated_at:prof.updated_at,
+    admin_verified_at:prof.verified_at
+  };
+}
+
+function _consentTierBadge(level){
+  var colors={none:'#999',bronze:'#cd7f32',silver:'#999',gold:'#daa520',platinum:'#9b59b6'};
+  var labels={none:'Not Verified',bronze:'Bronze',silver:'Silver',gold:'Gold',platinum:'Platinum'};
+  return '<span style="display:inline-flex;align-items:center;gap:6px;background:'+(colors[level]||'#999')+';color:#fff;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:700;">'+
+    '<svg class="icn icn-sm" aria-hidden="true"><use href="#i-check"/></svg>'+
+    (labels[level]||'Not Verified')+
+  '</span>';
+}
+
+function _consentRow(label,value){
+  // Skip undefined/null/empty-string. Booleans are always shown (even false).
+  if(value==null||value==='')return '';
+  if(value===true)value='Yes';
+  if(value===false)value='No';
+  return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--sa);"><span style="color:var(--mu);font-size:13px;">'+_escCommon(String(label))+'</span><span style="font-weight:600;font-size:13px;">'+_escCommon(String(value))+'</span></div>';
+}
+
+async function showInquiryConsent(opts){
+  // Build a fresh snapshot of what the broker would see.
+  var snapshot=await _buildConsentSnapshot();
+  if(!snapshot){
+    // No profile or no Bronze tier yet — proceed without sharing
+    return {action:'no_profile'};
+  }
+  return new Promise(function(resolve){
+    // Remove any existing consent modal so we don't stack
+    var existing=document.getElementById('inquiryConsentM');
+    if(existing)existing.remove();
+
+    var verifBadge=_consentTierBadge(snapshot.verification_level);
+    var maritalLabels={single:'Single',married:'Married',divorced:'Divorced',widowed:'Widowed',prefer_not:'Prefer not to say'};
+    var empTypeLabels={full_time:'Full-time',part_time:'Part-time',contract:'Contract',self_employed:'Self-employed',student:'Student',unemployed:'Unemployed'};
+
+    // Build the redacted preview rows. Empty values are omitted by _consentRow.
+    var basicRows=
+      _consentRow('Occupants',snapshot.num_occupants)+
+      _consentRow('Relationship',snapshot.occupants_relationship)+
+      _consentRow('Marital status',maritalLabels[snapshot.marital_status]||snapshot.marital_status)+
+      _consentRow('Has pets',snapshot.has_pets)+
+      (snapshot.has_pets&&snapshot.pet_details?_consentRow('Pet details',snapshot.pet_details):'')+
+      _consentRow('Smokes',snapshot.smokes);
+
+    var empRows=
+      _consentRow('Employer',snapshot.employer_name)+
+      _consentRow('Role',snapshot.role_title)+
+      _consentRow('Employment type',empTypeLabels[snapshot.employment_type]||snapshot.employment_type)+
+      _consentRow('Monthly income',snapshot.monthly_income_band)+
+      _consentRow('Joined on',snapshot.joined_date);
+
+    var idRows=
+      _consentRow('PAN (masked)',snapshot.pan_masked)+
+      _consentRow('PAN verified',snapshot.pan_verified);
+
+    var docRows=
+      _consentRow('Employment letter verified',snapshot.docs.employment_letter_verified)+
+      _consentRow('Salary slips verified',snapshot.docs.salary_slips_verified)+
+      _consentRow('ITR verified',snapshot.docs.itr_verified);
+
+    var refRows=snapshot.landlord_refs.total>0?
+      _consentRow('References on file',snapshot.landlord_refs.total)+
+      _consentRow('Verified references',snapshot.landlord_refs.verified)
+      :'';
+
+    var introRow=snapshot.self_intro?
+      '<div style="margin-top:10px;font-size:13px;background:var(--cr);padding:10px;border-radius:8px;"><strong>Your intro:</strong><br/>'+_escCommon(snapshot.self_intro)+'</div>'
+      :'';
+
+    var modalHTML=
+      '<div id="inquiryConsentM" class="mo open" onclick="if(event.target===event.currentTarget)window._consentResolve&&window._consentResolve({action:\'cancelled\'});">'+
+        '<div class="mb" style="max-width:560px;max-height:90vh;overflow-y:auto;">'+
+          '<div class="mh">'+
+            '<div>'+
+              '<h2 style="font-family:Playfair Display,serif;font-size:20px;">Share your tenant profile?</h2>'+
+              '<p style="font-size:12px;color:var(--mu);margin-top:2px;">Sending an inquiry to '+_escCommon(opts.listingTitle||'this listing')+'</p>'+
+            '</div>'+
+            '<button class="mc" onclick="window._consentResolve&&window._consentResolve({action:\'cancelled\'})" aria-label="Close"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button>'+
+          '</div>'+
+          '<div style="background:var(--cr);padding:14px;border-radius:10px;margin-bottom:14px;">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
+              '<strong style="font-size:13px;">Your verification:</strong>'+verifBadge+
+            '</div>'+
+            '<p style="font-size:12px;color:var(--mu);line-height:1.5;margin:0;">The broker will see the redacted preview below. They will <strong>NOT</strong> see your religion, dietary preference, alcohol preference, exact income, full PAN, document files, or landlord phone numbers. You can revoke this access anytime from your dashboard.</p>'+
+          '</div>'+
+          (basicRows?'<details open style="margin-bottom:10px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;">Basic Information</summary><div>'+basicRows+'</div></details>':'')+
+          (empRows?'<details open style="margin-bottom:10px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;">Employment</summary><div>'+empRows+'</div></details>':'')+
+          (idRows?'<details style="margin-bottom:10px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;">Identity</summary><div>'+idRows+'</div></details>':'')+
+          (docRows?'<details style="margin-bottom:10px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;">Documents</summary><div>'+docRows+'</div></details>':'')+
+          (refRows?'<details style="margin-bottom:10px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;">Landlord References</summary><div>'+refRows+'</div></details>':'')+
+          introRow+
+          '<div class="al ali" style="margin:14px 0;font-size:12px;line-height:1.5;">'+
+            '<strong><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-lock"/></svg> What broker will see:</strong> the fields above only. '+
+            '<strong>Never shared:</strong> religion, dietary preference, alcohol preference, exact income, full PAN, document files, landlord phone numbers.'+
+          '</div>'+
+          '<div style="display:flex;flex-direction:column;gap:8px;">'+
+            '<button class="btn btn-bl" onclick="window._consentResolve&&window._consentResolve({action:\'confirmed\',shareProfile:true,snapshot:window._consentSnapshot})">Send inquiry &amp; share profile</button>'+
+            '<button class="btn-link" style="background:none;border:none;color:var(--mu);font-size:13px;text-decoration:underline;cursor:pointer;font-family:DM Sans,sans-serif;padding:8px;" onclick="window._consentResolve&&window._consentResolve({action:\'cancelled\'})">Cancel — don\'t send the inquiry</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+
+    document.body.insertAdjacentHTML('beforeend',modalHTML);
+    // Stash the snapshot so the buttons can attach it to the resolution.
+    window._consentSnapshot=snapshot;
+    // Wrap resolve to clean up on any path
+    window._consentResolve=function(result){
+      var m=document.getElementById('inquiryConsentM');
+      if(m)m.remove();
+      delete window._consentResolve;
+      delete window._consentSnapshot;
+      resolve(result);
+    };
+  });
+}
