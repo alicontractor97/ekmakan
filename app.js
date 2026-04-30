@@ -1031,9 +1031,11 @@ function resetSessionState(){
   try{sessionStorage.clear();}catch(e){}
   // Rebuild filter chips UI to reflect cleared state
   if(typeof bldF==='function')bldF();
-  // If we were on the browse page, refresh the grid so it reflects cleared state
+  // Refresh the grid if we're on a browse view — either the SPA's #pg-browse
+  // when active, OR the standalone browse.html (data-page="browse").
   var activeBrowse=document.getElementById('pg-browse');
-  if(activeBrowse&&activeBrowse.classList.contains('active')&&typeof renderBrowse==='function'){
+  var isBrowsePage=document.body&&document.body.getAttribute('data-page')==='browse';
+  if(((activeBrowse&&activeBrowse.classList.contains('active'))||isBrowsePage)&&typeof renderBrowse==='function'){
     renderBrowse();
   }
 }
@@ -1095,36 +1097,34 @@ function stepRent(dir){
   lbl.textContent=fmtRent(next);
 }
 function doHS(){
-  // Reset all browse filters first so the hero search produces a clean result
-  // (without inheriting filters from prior QA-strip clicks or browse state)
-  _resetBrowseFilters();
-  bMode=hMode;go('browse');
+  // Build a URL with all the hero search filters and navigate to /browse.
+  // Using a real URL means the search result is bookmarkable, shareable, and
+  // crawlable — and it works the same whether the user is on the SPA or any
+  // other page that imports app.js.
+  var params=new URLSearchParams();
+  params.set('lf',hMode);
   if(hMode==='rent'){
     var c=document.getElementById('hrc').value;
     var t=document.getElementById('hrt').value;
     var r=document.getElementById('hrr').value;
     var b=document.getElementById('hrb').value;
-    var fc=document.getElementById('fCity');if(fc&&c)fc.value=c;
-    if(t)fRT=[t];
-    var frx=document.getElementById('fRmx');if(frx&&r&&Number(r)>0)frx.value=r;
-    if(b)fRB=[b];
+    if(c)params.set('city',c);
+    if(t)params.append('type',t);
+    if(r&&Number(r)>0)params.set('rmax',r);
+    if(b)params.append('beds',b);
   } else {
     var c2=document.getElementById('hbc').value;
-    // Multi-select types
     var tBoxes=document.querySelectorAll('#hbtMenu input[type="checkbox"]:checked');
-    var types=[];tBoxes.forEach(function(cb){types.push(cb.value);});
-    // Min/Max budget from dropdown values (exact numbers, -1 = 100Cr+ sentinel)
     var bgMin=Number(document.getElementById('hbbMin').value)||0;
     var bgMaxRaw=Number(document.getElementById('hbbMax').value)||0;
-    var bgMax=bgMaxRaw===-1?Infinity:bgMaxRaw;
     var b2=document.getElementById('hbd').value;
-    var fc2=document.getElementById('fBCity');if(fc2&&c2)fc2.value=c2;
-    if(types.length)fBT=types;
-    var fbmn=document.getElementById('fBmn');if(fbmn)fbmn.value=bgMin>0?bgMin:'';
-    var fbx=document.getElementById('fBmx');if(fbx)fbx.value=bgMax===Infinity?'-1':(bgMax>0?bgMax:'');
-    if(b2)fBB=[b2];
+    if(c2)params.set('city',c2);
+    tBoxes.forEach(function(cb){params.append('type',cb.value);});
+    if(bgMin>0)params.set('bmin',String(bgMin));
+    if(bgMaxRaw)params.set('bmax',String(bgMaxRaw));
+    if(b2)params.append('beds',b2);
   }
-  bldF();renderBrowse();
+  window.location.href='/browse?'+params.toString();
 }
 
 // ══ MULTI-SELECT DROPDOWN ══
@@ -1281,9 +1281,10 @@ function hcrScroll(gridId,dir){
   }
 }
 function goCityBrowse(name){
-  _resetBrowseFilters();
-  var fc=document.getElementById('fCity');if(fc)fc.value=name;
-  setBMode('rent');go('browse');
+  // Navigate to the real /browse page with city pre-filtered. Using a real
+  // URL means the resulting page is crawlable (e.g. /browse?lf=rent&city=Mumbai
+  // becomes a category landing page Google can index for "Mumbai rentals").
+  window.location.href='/browse?lf=rent&city='+encodeURIComponent(name);
 }
 
 // ══ BROWSE PAGINATION ══
@@ -2266,8 +2267,9 @@ async function togFav(id,btn){
   }
   // Sync detail-view shortlist button if it's open for this listing
   if(_currentDetailId===id)updateShortlistBtnState();
-  // Re-render browse to show updated heart state on cards
-  if(document.querySelector('.page#pg-browse.active'))await renderBrowse();
+  // Re-render browse to show updated heart state on cards (works on both SPA and browse.html)
+  var isBrowse=document.querySelector('.page#pg-browse.active')||(document.body&&document.body.getAttribute('data-page')==='browse');
+  if(isBrowse&&typeof renderBrowse==='function')await renderBrowse();
 }
 
 // ══ DETAIL-VIEW SHORTLIST ══
@@ -4176,7 +4178,7 @@ async function renderDash(){
       +'<span class="pill '+pillClass+'">'+typeLbl+'</span>'
       +'<div class="li-ac" onclick="event.stopPropagation()">'+actionBtn+'</div>'
       +'</div>';
-  }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No inquiries yet. <a href="/#browse" style="color:var(--t);font-weight:700;text-decoration:none;">Browse rentals</a> or <a href="/#browse" style="color:var(--g);font-weight:700;text-decoration:none;">properties for sale</a> to get started.</div>';
+  }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No inquiries yet. <a href="/browse?lf=rent" style="color:var(--t);font-weight:700;text-decoration:none;">Browse rentals</a> or <a href="/browse?lf=buy" style="color:var(--g);font-weight:700;text-decoration:none;">properties for sale</a> to get started.</div>';
   var dsav=document.getElementById('dSav');
   if(dsav)dsav.innerHTML=saved.length?'<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:22px 0 12px;">Saved Properties</h2><div class="g3">'+saved.map(pCard).join('')+'</div>':'';
 }
@@ -6280,10 +6282,13 @@ function _resetBrowseFilters(){
   });
 }
 
-function qaNewProjects(){_resetBrowseFilters();bldF();setBMode('project');go('browse');}
-function qaPG(){_resetBrowseFilters();fRT=['PG / Room'];bldF();setBMode('rent');go('browse');}
-function qaRERA(){_resetBrowseFilters();fRer=true;bldF();setBMode('buy');go('browse');}
-function qaVerified(){_resetBrowseFilters();fVer=true;bldF();setBMode('rent');go('browse');}
+// Quick-action CTAs from the homepage. Each navigates to /browse with the
+// right URL params so the destination is bookmarkable, shareable, and
+// crawlable — a "PG/Hostel" landing page, a "RERA-verified buys" page, etc.
+function qaNewProjects(){window.location.href='/browse?lf=project';}
+function qaPG(){window.location.href='/browse?lf=rent&type=PG+%2F+Room';}
+function qaRERA(){window.location.href='/browse?lf=buy&rer=1';}
+function qaVerified(){window.location.href='/browse?lf=rent&ver=1';}
 
 function toggleSMore(mode){
   var btn=document.getElementById('smore-'+mode);
@@ -6815,7 +6820,7 @@ acInit('lLo','ac-lLo','lLo',{mode:'locality',cityRef:'lCy'});     // Listing for
     return;
   }
   // SPA path: backward-compat redirects for old SPA hash deep links →
-  // canonical clean URLs introduced in Sessions 2 and 3.
+  // canonical clean URLs introduced in Sessions 2, 3, 5.
   if(window.location.hash){
     var oldListingMatch=window.location.hash.match(/^#listing\/(\d+)$/);
     if(oldListingMatch){
@@ -6830,9 +6835,13 @@ acInit('lLo','ac-lLo','lLo',{mode:'locality',cityRef:'lCy'});     // Listing for
       window.location.replace('/lister');
       return;
     }
+    if(window.location.hash==='#browse'){
+      window.location.replace('/browse');
+      return;
+    }
   }
-  // Hash deep links that DON'T have a real page yet (admin still in SPA, browse/home).
-  var hasDeepLink=window.location.hash&&/^#(home|browse|admin)$/.test(window.location.hash);
+  // Hash deep links that DON'T have a real page yet (admin still in SPA, home).
+  var hasDeepLink=window.location.hash&&/^#(home|admin)$/.test(window.location.hash);
   if(hasDeepLink){
     handleHashRoute();
   } else {

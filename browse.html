@@ -4,37 +4,50 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <!--
-  dashboard.html — "My Account" page for regular users (Session 3 of MPA refactor).
+  browse.html — filterable listings page (Session 5 of MPA refactor).
 
-  Route-guarded: requires cu.role === 'user'. If the visitor isn't signed in,
-  common.js's requireAuth() bounces them to /?openLogin=1&next=/dashboard so
-  they get the login modal and return here after sign-in. If they ARE signed
-  in but with a different role (broker/owner/builder/admin), requireAuth
-  redirects them to the SPA homepage — they have a different dashboard.
+  Lives at /browse. Reads ?lf=rent|buy|project from the URL on load and
+  initializes the corresponding view. Backward-compat: old #browse hash links
+  redirect here.
 
-  This page reuses common.js + app.js (which provides renderDash, gInq, gL,
-  loadFavs, etc.). It opts out of the SPA bootstrap via <body data-page="dashboard">.
+  Crawlable: this is the main category page where Google indexes the platform's
+  inventory. Each filter combo can be a separate URL (e.g. /browse?lf=rent&city=Mumbai),
+  giving search engines distinct landing pages for "Mumbai rentals", "Mumbai 3 BHK", etc.
 
-  Crawler-unfriendly intentionally: this is private user data behind auth, and
-  the noindex meta tag tells search engines to ignore it.
+  Reuses common.js + app.js (renderBrowse, gL, mapL, bldF, setBMode, etc.).
+  Opts out of the SPA bootstrap via <body data-page="browse">. The page-specific
+  bootstrap script reads URL params, sets the right mode, builds filter chips,
+  and triggers the first render.
 -->
-<meta name="description" content="Manage your account on Ek Makān."/>
-<meta name="robots" content="noindex,nofollow"/>
+<meta name="description" content="Browse properties for rent and sale on Ek Makān — India's inclusive property platform."/>
+<meta name="robots" content="index,follow,max-image-preview:large"/>
+<meta name="googlebot" content="index,follow"/>
 <meta name="theme-color" content="#125a51"/>
 <meta name="referrer" content="strict-origin-when-cross-origin"/>
 
+<meta property="og:site_name" content="Ek Makān"/>
+<meta property="og:title" id="ogTitle" content="Browse Properties · Ek Makān"/>
+<meta property="og:description" id="ogDesc" content="Find your next home — verified listings, no discrimination, no broker games."/>
+<meta property="og:type" content="website"/>
+<meta property="og:locale" content="en_IN"/>
+<meta property="og:image" content="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect fill='%23125a51' width='1200' height='630'/%3E%3Ctext x='600' y='300' text-anchor='middle' font-family='Georgia,serif' font-size='120' font-weight='700' fill='white'%3EEk%20Mak%C4%81n%3C/text%3E%3C/svg%3E"/>
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" id="twTitle" content="Browse Properties · Ek Makān"/>
+<meta name="twitter:description" id="twDesc" content="Find your next home — verified, inclusive, no surprises."/>
+
 <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23125a51'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Georgia,serif' font-size='38' font-weight='700' fill='%23f0d080'%3EM%3C/text%3E%3C/svg%3E"/>
 
-<title>My Account · Ek Makān</title>
+<title id="pageTitle">Browse Properties · Ek Makān</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="app.css?v=20260430-115512"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
-<body data-page="dashboard">
+<body data-page="browse">
 
-<!-- SVG sprite — copied verbatim from index.html so icon references resolve. -->
+<!-- SVG sprite -->
 <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
   <defs>
     <symbol id="i-buy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -185,12 +198,10 @@
 <noscript>
 <div style="padding:40px 24px;max-width:640px;margin:40px auto;font-family:Georgia,serif;text-align:center;background:#f9f5ee;border:1px solid #e8dcc8;border-radius:16px;color:#1a1a1a;">
   <h1 style="font-size:32px;margin-bottom:12px;color:#125a51;">Ek Makān</h1>
-  <p>This page requires JavaScript. Please enable JavaScript and reload.</p>
+  <p>Listings require JavaScript to load. Please enable JavaScript and reload.</p>
 </div>
 </noscript>
 
-<!-- Navbar — same shape as listing.html. Login button preserved for the
-     edge case where session expires; logout button is the primary control. -->
 <nav>
   <a href="/" style="text-decoration:none;color:inherit;cursor:pointer;display:flex;flex-direction:column;justify-content:center;padding:8px 0;">
     <div class="logo"><span>Ek</span> Makān</div>
@@ -199,25 +210,79 @@
   <div class="nl">
     <span id="nG" style="font-size:13px;color:rgba(255,255,255,.75);padding:0 5px;display:none;"></span>
     <span id="nB" style="display:none;"></span>
+    <button class="nlk" id="nD" style="display:none;" onclick="window.location.href='/dashboard'">My Account</button>
+    <button class="nlk" id="nL" style="display:none;" onclick="window.location.href='/lister'">My Listings</button>
     <button class="nlk" id="nA" style="display:none;color:#f0d070;font-weight:700;" onclick="window.location.href='/#admin'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-settings"/></svg> Admin</button>
-    <button class="btn-nav-login" id="nLg" onclick="window.location.href='/?openLogin=1&next=/dashboard'">Login</button>
-    <button class="btn-nav-signup" id="nRg" onclick="window.location.href='/?openSignup=1&next=/dashboard'">Sign Up</button>
+    <button class="btn-nav-login" id="nLg" onclick="window.location.href='/?openLogin=1&next='+encodeURIComponent(window.location.pathname+window.location.search)">Login</button>
+    <button class="btn-nav-signup" id="nRg" onclick="window.location.href='/?openSignup=1&next='+encodeURIComponent(window.location.pathname+window.location.search)">Sign Up</button>
     <button class="btn-nav-logout" id="nLo" style="display:none;" onclick="doLogout()">Logout</button>
+    <button class="btn-nav-post" id="nPost" onclick="window.location.href='/?openPost=1'">Post Property <span class="free-tag">FREE</span></button>
   </div>
 </nav>
 
-<!-- Content shell — exact same DOM IDs as the SPA's #pg-dashboard so renderDash
-     writes to the right places without changes. -->
-<main style="padding:40px 60px;background:var(--cr);min-height:calc(100vh - 100px);">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
-    <h1 style="font-family:'Playfair Display',serif;font-size:26px;">My Account</h1>
-    <button class="btn btn-o btn-sm" onclick="openEditProfile()">&#9998; Edit Profile</button>
+<!--
+  Browse content shell — exact same DOM IDs as #pg-browse in index.html so
+  renderBrowse() writes to the right places without changes. The IDs (bGrid,
+  bCount, fCity, fLoc, fRT, fRB, etc.) are read by app.js's filter system.
+-->
+<main class="page" style="display:block;">
+  <div class="list-topbar" id="listTopbar">
+    <div class="browse-mode">
+      <button class="bm-btn ar" id="bmr" onclick="setBMode('rent')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-rent"/></svg> Rent</button>
+      <button class="bm-btn" id="bmb" onclick="setBMode('buy')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-key"/></svg> Buy</button>
+      <button class="bm-btn" id="bmp" onclick="setBMode('project')"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-building"/></svg> New Projects</button>
+    </div>
+    <span id="bCount"></span>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <div style="position:relative;">
+        <input type="text" id="bSearch" name="q" placeholder="Search listings…" oninput="dRender()" style="font-size:13px;padding:7px 12px 7px 30px;border:1px solid var(--sa);border-radius:8px;font-family:'DM Sans',sans-serif;width:180px;background:var(--wh);" autocomplete="off"/>
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--mu);pointer-events:none;"><svg class="icn icn-sm" aria-hidden="true" style="color:var(--mu);"><use href="#i-search"/></svg></span>
+      </div>
+      <label style="font-size:12px;color:var(--mu);">Sort:</label>
+      <select class="sort-sel" id="bSort" onchange="renderBrowse()"><option value="new">Newest</option><option value="pa">Price: Low&rarr;High</option><option value="pd">Price: High&rarr;Low</option><option value="aa">Area: Largest</option><option value="ad">Area: Smallest</option></select>
+      <button onclick="document.getElementById('fp').classList.toggle('mob-open')" id="mobFBtn" style="display:none;background:var(--t);color:#fff;border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;align-items:center;gap:5px;">&#9776; Filters</button>
+    </div>
   </div>
-  <p id="dG" style="font-size:13px;color:var(--mu);margin-bottom:22px;"></p>
-  <div class="g4" id="dSt" style="margin-bottom:26px;"></div>
-  <h2 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:12px;">My Inquiries</h2>
-  <div id="dInq"></div>
-  <div id="dSav"></div>
+  <div id="activeChips" class="active-chips"></div>
+  <div class="browse-layout">
+    <div class="filter-panel" id="fp">
+      <div class="fp-head">
+        <h3>Filters</h3>
+        <button onclick="clearAllF()" style="font-size:12px;background:none;border:none;color:var(--t);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:700;">Clear All</button>
+      </div>
+      <div class="fp-body">
+        <div id="rFilts">
+          <div class="fs"><h4>City</h4><div class="fc-wrap"><input type="text" id="fCity" name="city-search" placeholder="Mumbai" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fCity"></div></div></div>
+          <div class="fs"><h4>Locality</h4><div class="fc-wrap"><input type="text" id="fLoc" name="loc-search" placeholder="Andheri West, Bandra…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fLoc"></div></div></div>
+          <div class="fs"><h4>Monthly Rent (&#8377;)</h4><div class="rr"><input type="number" id="fRmn" placeholder="Min" oninput="dRender()"/><span class="rsep">&ndash;</span><input type="number" id="fRmx" placeholder="Max" oninput="dRender()"/></div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;"><span onclick="setRentPreset(0,10000)" class="preset-chip">Up to 10K</span><span onclick="setRentPreset(0,25000)" class="preset-chip">Up to 25K</span><span onclick="setRentPreset(0,50000)" class="preset-chip">Up to 50K</span><span onclick="setRentPreset(0,100000)" class="preset-chip">Up to 1L</span><span onclick="setRentPreset(0,500000)" class="preset-chip">Up to 5L</span></div></div>
+          <div class="fs"><h4>Property Type</h4><div class="chips" id="fRT"></div></div>
+          <div class="fs"><h4>Bedrooms</h4><div class="chips" id="fRB"></div></div>
+          <div class="fs"><h4>Furnishing</h4><div class="chips" id="fRF"></div></div>
+          <div class="fs"><h4>Availability</h4><select id="fAv" class="fi" style="font-size:13px;" onchange="renderBrowse()"><option value="">Any</option><option>Immediate</option><option>Within 1 Month</option><option>Within 3 Months</option></select></div>
+          <div class="fs"><h4>Amenities</h4><div class="amen-chips" id="fRA"></div></div>
+          <div class="fs"><h4>More</h4><div class="chips"><div class="ck" id="ckV" onclick="togBool('ver',this)">&#10003; Verified</div><div class="ck" id="ckR" onclick="togBool('rer',this)">RERA &#10003;</div></div></div>
+        </div>
+        <div id="bFilts" style="display:none;">
+          <div class="fs"><h4>City</h4><div class="fc-wrap"><input type="text" id="fBCity" name="city-search-b" placeholder="Mumbai" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fBCity"></div></div></div>
+          <div class="fs"><h4>Locality</h4><div class="fc-wrap"><input type="text" id="fBLoc" name="loc-search-b" placeholder="Andheri West, Bandra…" oninput="dRender()" autocomplete="new-password"/><div class="ac-list" id="ac-fBLoc"></div></div></div>
+          <div class="fs"><h4>Budget (&#8377;)</h4><div class="rr"><select id="fBmn" onchange="syncBudget('fBmn','fBmx');dRender()"><option value="">Min</option></select><span class="rsep">&ndash;</span><select id="fBmx" onchange="syncBudget('fBmn','fBmx');dRender()"><option value="">Max</option></select></div></div>
+          <div class="fs"><h4>Property Type</h4><div class="chips" id="fBT"></div></div>
+          <div class="fs"><h4>Bedrooms</h4><div class="chips" id="fBB"></div></div>
+          <div class="fs"><h4>Area (sq.ft)</h4><div class="rr"><input type="number" id="fAmn" placeholder="Min" oninput="dRender()"/><span class="rsep">&ndash;</span><input type="number" id="fAmx" placeholder="Max" oninput="dRender()"/></div></div>
+          <div class="fs"><h4>Possession</h4><div class="chips" id="fBPo"></div></div>
+          <div class="fs"><h4>Transaction Type</h4><div class="chips" id="fBST"></div></div>
+          <div class="fs"><h4>Furnishing</h4><div class="chips" id="fBF"></div></div>
+          <div class="fs"><h4>Facing</h4><div class="chips" id="fBFc"></div></div>
+          <div class="fs"><h4>Floor</h4><div class="chips" id="fBFl"></div></div>
+          <div class="fs"><h4>Amenities</h4><div class="amen-chips" id="fBA"></div></div>
+          <div class="fs"><h4>More</h4><div class="chips"><div class="ck" id="ckV2" onclick="togBool('ver',this)">&#10003; Verified</div><div class="ck" id="ckR2" onclick="togBool('rer',this)">RERA &#10003;</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="list-area">
+      <div class="list-grid"><div class="g3" id="bGrid"></div></div>
+    </div>
+  </div>
 </main>
 
 <div id="toast"></div>
@@ -230,48 +295,126 @@
 <script src="app.js?v=20260430-115512" defer></script>
 
 <!--
-  Page-specific bootstrap. The route guard runs first — anyone not logged in
-  as a regular user is redirected away. Then we wait for renderDash to be
-  available (loaded from app.js) and call it.
+  Page-specific bootstrap. Reads ?lf= from the URL, sets the browse mode, builds
+  filter chips, and renders. Subsequent filter changes update the URL via
+  replaceState (Phase 5B — coming next session if useful).
 -->
 <script defer>
 (function(){
+  function getMode(){
+    var qs=new URLSearchParams(window.location.search);
+    var lf=qs.get('lf');
+    if(lf==='rent'||lf==='buy'||lf==='project')return lf;
+    return 'rent'; // default
+  }
+
+  // Apply simple URL params to filter inputs / globals BEFORE first render so
+  // the initial paint already reflects what the user asked for.
+  function applyUrlFilters(mode){
+    var qs=new URLSearchParams(window.location.search);
+    var setVal=function(id,v){var e=document.getElementById(id);if(e&&v!=null)e.value=v;};
+
+    // City + locality (works for both rent and buy panels — use the right one based on mode)
+    var city=qs.get('city')||'';
+    var loc=qs.get('loc')||'';
+    if(mode==='rent'){
+      setVal('fCity',city);setVal('fLoc',loc);
+    } else if(mode==='buy'||mode==='project'){
+      setVal('fBCity',city);setVal('fBLoc',loc);
+    }
+
+    // Sort
+    var sort=qs.get('sort');
+    if(sort)setVal('bSort',sort);
+
+    // Search query
+    var q=qs.get('q');
+    if(q)setVal('bSearch',q);
+
+    // Rent range
+    if(mode==='rent'){
+      setVal('fRmn',qs.get('rmin')||'');
+      setVal('fRmx',qs.get('rmax')||'');
+    }
+
+    // Buy budget range — uses dropdown selects (fBmn / fBmx). Values are
+    // numeric strings; -1 is a sentinel for "100Cr+". setBMode -> populates
+    // the dropdowns first, so we need to set values AFTER bldF/setBMode.
+    // The safest path: stash raw values and re-apply after a microtask.
+    if(mode==='buy'||mode==='project'){
+      var bmin=qs.get('bmin'),bmax=qs.get('bmax');
+      if(bmin||bmax){
+        setTimeout(function(){
+          if(bmin)setVal('fBmn',bmin);
+          if(bmax)setVal('fBmx',bmax);
+          if(typeof renderBrowse==='function')renderBrowse();
+        },0);
+      }
+    }
+
+    // Verified / RERA toggles. fVer/fRer are let-declared in app.js so they
+    // live in script-global scope (NOT on window). We assign directly.
+    if(qs.get('ver')==='1'){
+      try{fVer=true;}catch(e){}
+      var ckV=document.getElementById(mode==='rent'?'ckV':'ckV2');
+      if(ckV)ckV.classList.add('on');
+    }
+    if(qs.get('rer')==='1'){
+      try{fRer=true;}catch(e){}
+      var ckR=document.getElementById(mode==='rent'?'ckR':'ckR2');
+      if(ckR)ckR.classList.add('on');
+    }
+
+    // Property type — params can repeat, e.g. ?type=Apartment&type=Villa.
+    // The filter system uses globals fRT (rent) / fBT (buy). We populate them
+    // before bldF() rebuilds chips so the right chips are pre-selected.
+    var types=qs.getAll('type');
+    if(types.length){
+      try{
+        if(mode==='rent')fRT=types;
+        else if(mode==='buy'||mode==='project')fBT=types;
+      }catch(e){}
+    }
+
+    // Bedrooms — same pattern
+    var beds=qs.getAll('beds');
+    if(beds.length){
+      try{
+        if(mode==='rent')fRB=beds;
+        else if(mode==='buy'||mode==='project')fBB=beds;
+      }catch(e){}
+    }
+  }
+
   async function boot(){
-    // Wait for common.js to finish auth bootstrap and expose requireAuth.
+    // Wait for app.js to expose the helpers we need.
     var tries=0;
-    while(typeof requireAuth!=='function'&&tries<50){
+    while((typeof setBMode!=='function'||typeof renderBrowse!=='function'||typeof bldF!=='function')&&tries<60){
       await new Promise(function(r){setTimeout(r,40);});
       tries++;
     }
-    if(typeof requireAuth!=='function'){
-      // common.js failed to load — bail to homepage so the user isn't stuck.
-      window.location.replace('/');
+    if(typeof setBMode!=='function'){
+      console.warn('app.js helpers not defined — bailing');
       return;
     }
-    // Route guard: only role 'user' belongs here. Other roles get redirected
-    // to /lister (listers) or / (admin uses SPA). requireAuth handles the
-    // not-signed-in case by redirecting to /?openLogin=1&next=/dashboard.
-    try {
-      await requireAuth(['user']);
-    } catch(e) {
-      // requireAuth threw — it already triggered a redirect. Bail.
-      return;
-    }
-    // Wait for app.js to expose renderDash.
-    tries=0;
-    while(typeof renderDash!=='function'&&tries<50){
-      await new Promise(function(r){setTimeout(r,40);});
-      tries++;
-    }
-    if(typeof renderDash!=='function'){
-      console.warn('renderDash not defined — app.js failed to load');
-      return;
-    }
-    // Load favorites + inquiries data, then render.
-    if(typeof loadFavs==='function')await loadFavs();
-    if(typeof loadNotifs==='function')await loadNotifs();
+    // Load favorites + notifs if signed in (so the heart icons render correctly)
+    if(typeof loadFavs==='function'&&typeof cu!=='undefined'&&cu)await loadFavs();
+    if(typeof loadNotifs==='function'&&typeof cu!=='undefined'&&cu)await loadNotifs();
     upNav();
-    await renderDash();
+
+    // Determine mode from URL, populate filter state from URL, then build the
+    // chip filter UI (which reads the globals to know what's pre-selected),
+    // then activate the mode (which also calls renderBrowse).
+    var mode=getMode();
+    applyUrlFilters(mode);
+    bldF();
+    setBMode(mode);
+
+    // Update title to reflect mode (helps SEO + share previews).
+    var modeTitle=mode==='rent'?'Rentals':mode==='buy'?'Properties for Sale':'New Projects';
+    document.title=modeTitle+' · Ek Makān';
+    var ot=document.getElementById('ogTitle');if(ot)ot.setAttribute('content',modeTitle+' · Ek Makān');
+    var tt=document.getElementById('twTitle');if(tt)tt.setAttribute('content',modeTitle+' · Ek Makān');
   }
 
   if(document.readyState==='loading'){
