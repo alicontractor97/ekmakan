@@ -2289,6 +2289,23 @@ function updateShortlistBtnState(){
 }
 
 // ══ VIEW DETAIL ══
+// Page-aware listing opener used by every "click a card to see details" call
+// site (lister dashboard, user dashboard, browse cards, admin lists, etc.).
+// Routes correctly per page:
+//   • SPA (index.html)           → viewL(id) — opens the in-page detail modal
+//   • listing.html (data-page=listing) → viewL(id) — renders inline into #vCnt
+//   • dashboard.html / lister.html → window.location.href='/listing?id=N'
+//     (those pages don't host the listing detail UI)
+function openListing(id){
+  var pageType=document.body&&document.body.getAttribute('data-page');
+  // The SPA and listing.html both have a #vCnt container — viewL writes into it.
+  // Other extracted pages don't, so navigate to the canonical listing URL.
+  if(!pageType||pageType==='spa'||pageType==='listing'){
+    return viewL(id);
+  }
+  window.location.href='/listing?id='+id;
+}
+
 async function viewL(id){
   // Show loading in detail modal
   var vTit=document.getElementById('vTit');
@@ -2994,7 +3011,7 @@ function handleHashRoute(){
   if(listingMatch){
     var lid=Number(listingMatch[1]);
     _navFromHistory=true;
-    viewL(lid);
+    openListing(lid);
     _navFromHistory=false;
     return true;
   }
@@ -3119,7 +3136,7 @@ async function markNotifRead(id){
 async function handleNotifClick(notifId,linkId){
   await markNotifRead(notifId);
   closeNotifPanel();
-  if(linkId)viewL(linkId);
+  if(linkId)openListing(linkId);
 }
 
 function closeNotifPanel(){
@@ -3819,6 +3836,15 @@ function togLT(t){var i=selTags.indexOf(t);if(i>=0)selTags.splice(i,1);else selT
 // ══ LISTING EDIT ══
 // Opens the addM modal pre-filled with existing listing data for editing.
 async function editListing(id){
+  // Page-aware: the edit flow needs the addM wizard. lister.html has it
+  // inlined (Session 4) so editing works inline there. Other extracted pages
+  // (dashboard.html, listing.html) don't have the wizard — bounce to the SPA.
+  // Detect the wizard's presence by querying for #addM rather than the
+  // page-type attribute, so this works regardless of which page hosts it.
+  if(!document.getElementById('addM')){
+    window.location.href='/?editListing='+id;
+    return;
+  }
   var l=(await gL()).find(function(x){return x.id===id;});
   if(!l){toast('Listing not found.','e');return;}
   _editingListingId=id;
@@ -4775,7 +4801,7 @@ async function renderLister(){
           +'<button onclick="event.stopPropagation();editListing('+l.id+')" class="rej-action-btn"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-edit"/></svg> Edit &amp; Resubmit</button>'
         +'</div>'
       +'</div>':'';
-    return '<div class="li" style="cursor:pointer;flex-wrap:wrap;" onclick="viewL('+l.id+')">'
+    return '<div class="li" style="cursor:pointer;flex-wrap:wrap;" onclick="openListing('+l.id+')">'
       +'<div style="display:flex;align-items:center;gap:12px;width:100%;">'
       +thumbH
       +'<div class="li-in"><strong>'+esc(l.title)+'</strong><span>'+esc(l.city)+' &middot; '+pr+' &middot; '+(l.images?l.images.length:0)+' photo(s)</span></div>'
@@ -5781,13 +5807,13 @@ async function renderAdmin(t){
     el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;"><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;">Pending Review ('+pn.length+')</h2>'+_adminExportBtn('pd')+'</div>'
       +(pn.length?pn.map(function(l){
         var thumbH=l.images&&l.images.length
-          ?'<img loading="lazy" decoding="async" src="'+l.images[0]+'" alt="'+escAttr(l.title)+'" style="width:80px;height:72px;object-fit:cover;border-radius:9px;flex-shrink:0;cursor:pointer;" onclick="viewL('+l.id+')" title="Click to preview"/>'
-          :'<div style="width:72px;height:72px;background:var(--tl);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;" onclick="viewL('+l.id+')">'+(l.lf==='buy'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg>':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg>')+'</div>';
+          ?'<img loading="lazy" decoding="async" src="'+l.images[0]+'" alt="'+escAttr(l.title)+'" style="width:80px;height:72px;object-fit:cover;border-radius:9px;flex-shrink:0;cursor:pointer;" onclick="openListing('+l.id+')" title="Click to preview"/>'
+          :'<div style="width:72px;height:72px;background:var(--tl);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;" onclick="openListing('+l.id+')">'+(l.lf==='buy'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg>':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg>')+'</div>';
         var pr=l.lf==='rent'?'&#8377;'+l.rent.toLocaleString('en-IN')+'/mo':fmtPriceHTML(l.price);
         return '<div style="background:var(--wh);border-radius:13px;padding:18px;border:1px solid var(--sa);margin-bottom:13px;">'
           +'<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;">'+thumbH
           +'<div style="flex:1;">'
-          +'<h3 style="font-family:\'Playfair Display\',serif;font-size:16px;margin-bottom:3px;cursor:pointer;color:var(--t);" onclick="viewL('+l.id+')">'+esc(l.title)+' &#8599;</h3>'
+          +'<h3 style="font-family:\'Playfair Display\',serif;font-size:16px;margin-bottom:3px;cursor:pointer;color:var(--t);" onclick="openListing('+l.id+')">'+esc(l.title)+' &#8599;</h3>'
           +'<p style="font-size:12px;color:var(--mu);">'+esc(l.loc)+', '+esc(l.city)+' &middot; '+esc(l.type)+' &middot; '+l.beds+'BHK &middot; '+(l.lf==='buy'?'FOR SALE':'FOR RENT')+'</p>'
           +'<p style="font-weight:700;font-size:14px;color:'+(l.lf==='buy'?'var(--g)':'var(--t)')+';">'+pr+'</p>'
           +'<p style="font-size:12px;margin-top:5px;line-height:1.5;">'+esc(l.desc)+'</p>'
@@ -5797,7 +5823,7 @@ async function renderAdmin(t){
           +'<div style="display:flex;gap:8px;">'
           +'<button class="btn btn-gr btn-sm" onclick="apL('+l.id+')"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg> Approve</button>'
           +'<button class="btn btn-r btn-sm" onclick="rjL('+l.id+')"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-x"/></svg> Reject</button>'
-          +'<button class="btn btn-o btn-sm" onclick="viewL('+l.id+')"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-eye"/></svg> Preview</button>'
+          +'<button class="btn btn-o btn-sm" onclick="openListing('+l.id+')"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-eye"/></svg> Preview</button>'
           +'</div></div>';
       }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:30px;text-align:center;color:var(--mu);border:1px solid var(--sa);">All caught up!</div>');
   }
@@ -5933,12 +5959,12 @@ async function showUserInquiries(uid,name){
         +'<table class="tbl"><thead><tr><th>#</th><th>Listing</th><th>Type</th><th>City</th><th>Message</th><th>Date</th><th>Action</th></tr></thead><tbody>'
         +inqs.map(function(i,n){
           return '<tr><td>'+(n+1)+'</td>'
-            +'<td style="font-size:12px;cursor:pointer;color:var(--t);font-weight:600;" onclick="viewL('+i.listingId+')">'+esc(i.listingTitle)+' &#8599;</td>'
+            +'<td style="font-size:12px;cursor:pointer;color:var(--t);font-weight:600;" onclick="openListing('+i.listingId+')">'+esc(i.listingTitle)+' &#8599;</td>'
             +'<td><span class="pill '+(i.lf==='buy'?'pill-y':'pill-b')+'">'+esc(i.lf||'rent')+'</span></td>'
             +'<td>'+esc(i.listingCity||'—')+'</td>'
             +'<td style="max-width:140px;font-size:12px;color:var(--mu);">'+esc(i.message||'—')+'</td>'
             +'<td style="white-space:nowrap;">'+i.sentAt+'</td>'
-            +'<td><button class="btn btn-sm btn-o" onclick="viewL('+i.listingId+')">View</button></td>'
+            +'<td><button class="btn btn-sm btn-o" onclick="openListing('+i.listingId+')">View</button></td>'
             +'</tr>';
         }).join('')
         +'</tbody></table></div></div>'
@@ -5947,8 +5973,8 @@ async function showUserInquiries(uid,name){
 
 function aRow(l){
   var thumbH=l.images&&l.images.length
-    ?'<img loading="lazy" decoding="async" src="'+l.images[0]+'" alt="'+escAttr(l.title)+'" style="width:44px;height:44px;object-fit:cover;border-radius:7px;flex-shrink:0;cursor:pointer;" onclick="viewL('+l.id+')" title="Preview listing"/>'
-    :'<div style="font-size:26px;cursor:pointer;" onclick="viewL('+l.id+')">'+(l.lf==='buy'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg>':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg>')+'</div>';
+    ?'<img loading="lazy" decoding="async" src="'+l.images[0]+'" alt="'+escAttr(l.title)+'" style="width:44px;height:44px;object-fit:cover;border-radius:7px;flex-shrink:0;cursor:pointer;" onclick="openListing('+l.id+')" title="Preview listing"/>'
+    :'<div style="font-size:26px;cursor:pointer;" onclick="openListing('+l.id+')">'+(l.lf==='buy'?'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-key"/></svg>':'<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg>')+'</div>';
   var pr=l.lf==='rent'?fmtRentHTML(l.rent)+'/mo':fmtPriceHTML(l.price);
   var statusPill='<span class="pill '+(l.status==='approved'?'pill-g':l.status==='pending'?'pill-y':'pill-r')+'"'+(l.status==='rejected'&&l.rejectionReason?' title="Rejection reason: '+escAttr(l.rejectionReason)+'" style="cursor:help;"':'')+'>'+l.status+'</span>';
   var rejectedNote='';
@@ -5960,14 +5986,14 @@ function aRow(l){
   return '<div class="li" style="cursor:default;flex-wrap:wrap;">'
     +'<div style="display:flex;align-items:center;gap:12px;width:100%;">'
     +thumbH
-    +'<div class="li-in" style="cursor:pointer;" onclick="viewL('+l.id+')">'
+    +'<div class="li-in" style="cursor:pointer;" onclick="openListing('+l.id+')">'
     +'<strong style="color:var(--t);">'+esc(l.title)+'</strong>'
     +'<span>'+esc(l.city)+' &middot; '+pr+' &middot; '+esc(l.owner)+(l.agency?' &middot; '+esc(l.agency):'')+'</span>'
     +'</div>'
     +statusPill
     +'<span class="pill '+(l.lf==='rent'?'pill-b':'pill-y')+'" style="font-size:10px;">'+l.lf.toUpperCase()+'</span>'
     +'<div class="li-ac">'
-    +'<button class="btn btn-sm btn-o" onclick="viewL('+l.id+')"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-eye"/></svg> View</button>'
+    +'<button class="btn btn-sm btn-o" onclick="openListing('+l.id+')"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-eye"/></svg> View</button>'
     +(l.status==='pending'?'<button class="btn btn-gr btn-sm" onclick="apL('+l.id+')" aria-label="Approve listing"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg></button><button class="btn btn-r btn-sm" onclick="rjL('+l.id+')" aria-label="Reject listing"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-x"/></svg></button>':'')
     +'<button style="background:transparent;color:var(--red);border:none;font-size:14px;cursor:pointer;padding:3px 5px;" onclick="dlL('+l.id+')" aria-label="Delete listing"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-trash"/></svg></button>'
     +'</div>'
@@ -6036,7 +6062,7 @@ async function rReports(){
         actions='<span style="font-size:12px;color:var(--gr);font-weight:700;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-check"/></svg> Resolved</span>';
       }
       var listingLinkHTML=listingExists
-        ?'<span style="color:var(--t);cursor:pointer;font-weight:600;" onclick="viewL('+r.listingId+')">'+esc(r.listingTitle)+' &#8599;</span>'
+        ?'<span style="color:var(--t);cursor:pointer;font-weight:600;" onclick="openListing('+r.listingId+')">'+esc(r.listingTitle)+' &#8599;</span>'
         :'<span style="color:var(--mu);font-weight:600;text-decoration:line-through;" title="Listing removed">'+esc(r.listingTitle)+'</span> <span style="font-size:10px;color:var(--red);font-weight:700;">(REMOVED)</span>';
       html+='<div style="background:var(--wh);border-radius:13px;border:1px solid '+borderCol+';border-left:4px solid '+leftCol+';padding:18px;margin-bottom:12px;">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px;">'
@@ -6836,6 +6862,10 @@ acInit('lLo','ac-lLo','lLo',{mode:'locality',cityRef:'lCy'});     // Listing for
     openedSomething=true;
   } else if(qs.get('openProfile')==='1'){
     if(typeof openEditProfile==='function')openEditProfile();
+    openedSomething=true;
+  } else if(qs.get('editListing')){
+    var editId=Number(qs.get('editListing'));
+    if(editId>0&&typeof editListing==='function')editListing(editId);
     openedSomething=true;
   }
   if(openedSomething&&window.history&&window.history.replaceState){
