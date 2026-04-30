@@ -4,38 +4,30 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <!--
-  listing.html — standalone listing detail page (Session 2 of MPA refactor).
+  lister.html — "My Listings" dashboard for owners, brokers, and builders
+  (Session 3 of MPA refactor).
 
-  Loaded at /listing?id=42. Unlike the SPA's in-page modal view, this is a
-  real, crawlable page with its own URL. Google indexes the content, share-
-  sheet apps deep-link cleanly, and the URL bar shows what the user sees.
+  Route-guarded: requires cu.role in [owner, broker, builder]. Anyone else
+  gets redirected away.
 
-  This page reuses common.js + app.js (which provides viewL, gL, mapL, oCnt,
-  etc.). It opts out of the SPA bootstrap via <body data-page="listing">, then
-  its own small bootstrap reads ?id= and calls viewL(id).
+  Reuses common.js + app.js (renderLister, gL, gInq, etc.). Opts out of the
+  SPA bootstrap via <body data-page="lister">.
+
+  Note on "+ New Listing" button: the listing wizard modal (addM) lives in
+  index.html only. Clicking the button on this page fires openM('addM') →
+  the modal isn't found → openM's redirect fallback sends the user to
+  /?openPost=1, where the SPA opens the wizard. After saving, the SPA
+  navigates to /lister via go('lister') which currently redirects to the
+  hash route — see Session 4 follow-up to make this fully seamless.
 -->
-<meta name="description" content="View this property on Ek Makān — India's inclusive property platform."/>
-<meta name="robots" content="index,follow,max-image-preview:large"/>
-<meta name="googlebot" content="index,follow"/>
+<meta name="description" content="Manage your property listings on Ek Makān."/>
+<meta name="robots" content="noindex,nofollow"/>
 <meta name="theme-color" content="#125a51"/>
 <meta name="referrer" content="strict-origin-when-cross-origin"/>
 
-<!-- Open Graph (overwritten by listing-page.js once data loads) -->
-<meta property="og:site_name" content="Ek Makān"/>
-<meta property="og:title" id="ogTitle" content="Property on Ek Makān"/>
-<meta property="og:description" id="ogDesc" content="View this property on Ek Makān."/>
-<meta property="og:type" content="website"/>
-<meta property="og:locale" content="en_IN"/>
-<meta property="og:image" id="ogImage" content="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'%3E%3Crect fill='%23125a51' width='1200' height='630'/%3E%3Ctext x='600' y='320' text-anchor='middle' font-family='Georgia,serif' font-size='120' font-weight='700' fill='white'%3EEk%20Mak%C4%81n%3C/text%3E%3C/svg%3E"/>
-
-<meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" id="twTitle" content="Property on Ek Makān"/>
-<meta name="twitter:description" id="twDesc" content="View this property on Ek Makān."/>
-<meta name="twitter:image" id="twImage" content=""/>
-
 <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23125a51'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Georgia,serif' font-size='38' font-weight='700' fill='%23f0d080'%3EM%3C/text%3E%3C/svg%3E"/>
 
-<title id="pageTitle">Loading… · Ek Makān</title>
+<title>My Listings · Ek Makān</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
@@ -44,9 +36,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 </head>
-<body data-page="listing">
+<body data-page="lister">
 
-<!-- SVG sprite — copied verbatim from index.html so icon references resolve -->
+<!-- SVG sprite -->
 <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
   <defs>
     <symbol id="i-buy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -197,13 +189,10 @@
 <noscript>
 <div style="padding:40px 24px;max-width:640px;margin:40px auto;font-family:Georgia,serif;text-align:center;background:#f9f5ee;border:1px solid #e8dcc8;border-radius:16px;color:#1a1a1a;">
   <h1 style="font-size:32px;margin-bottom:12px;color:#125a51;">Ek Makān</h1>
-  <p>This page requires JavaScript to load listing details. Please enable JavaScript and reload.</p>
+  <p>This page requires JavaScript. Please enable JavaScript and reload.</p>
 </div>
 </noscript>
 
-<!-- Navbar — uses real <a href> instead of go() because we're not on the SPA.
-     Login/Signup/Post buttons redirect back to homepage with flags that the
-     SPA bootstrap reads to auto-open the right modal. -->
 <nav>
   <a href="/" style="text-decoration:none;color:inherit;cursor:pointer;display:flex;flex-direction:column;justify-content:center;padding:8px 0;">
     <div class="logo"><span>Ek</span> Makān</div>
@@ -212,26 +201,54 @@
   <div class="nl">
     <span id="nG" style="font-size:13px;color:rgba(255,255,255,.75);padding:0 5px;display:none;"></span>
     <span id="nB" style="display:none;"></span>
-    <button class="nlk" id="nD" style="display:none;" onclick="window.location.href='/dashboard'">My Account</button>
-    <button class="nlk" id="nL" style="display:none;" onclick="window.location.href='/lister'">My Listings</button>
     <button class="nlk" id="nA" style="display:none;color:#f0d070;font-weight:700;" onclick="window.location.href='/#admin'"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-settings"/></svg> Admin</button>
-    <button class="btn-nav-login" id="nLg" onclick="window.location.href='/?openLogin=1&next='+encodeURIComponent(window.location.pathname+window.location.search)">Login</button>
-    <button class="btn-nav-signup" id="nRg" onclick="window.location.href='/?openSignup=1&next='+encodeURIComponent(window.location.pathname+window.location.search)">Sign Up</button>
+    <button class="btn-nav-login" id="nLg" onclick="window.location.href='/?openLogin=1&next=/lister'">Login</button>
+    <button class="btn-nav-signup" id="nRg" onclick="window.location.href='/?openSignup=1&next=/lister'">Sign Up</button>
     <button class="btn-nav-logout" id="nLo" style="display:none;" onclick="doLogout()">Logout</button>
-    <button class="btn-nav-post" id="nPost" onclick="window.location.href='/?openPost=1'">Post Property <span class="free-tag">FREE</span></button>
   </div>
 </nav>
 
-<!-- Listing detail container. viewL() in app.js writes its rendered HTML
-     into #vCnt. Same DOM IDs as the in-page modal in index.html so all
-     existing CSS (and viewL's DOM mutations) work without changes. -->
-<main style="background:var(--cr);min-height:calc(100vh - 100px);">
-  <div style="max-width:1100px;width:100%;margin:0 auto;background:var(--wh);">
-    <div style="padding:14px 24px;border-bottom:1px solid var(--sa);position:sticky;top:0;background:var(--wh);z-index:10;display:flex;align-items:center;gap:12px;">
-      <h2 id="vTit" style="font-size:18px;line-height:1.3;flex:1;font-family:'Playfair Display',serif;margin:0;">Loading…</h2>
-      <button id="vShortlist" onclick="togFavFromDetail()" class="shortlist-btn" aria-pressed="false" aria-label="Shortlist this property"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-heart"/></svg> <span id="vShortlistLbl">Shortlist</span></button>
+<!-- Lister content shell — same structure as #pg-lister in index.html so
+     renderLister() writes to the right places without changes. -->
+<main style="padding:40px 60px;background:var(--lister-bg);min-height:calc(100vh - 100px);">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:3px;">
+        <h1 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;letter-spacing:-.3px;" id="lTit">My Listings</h1>
+        <span id="lBdg"></span>
+      </div>
+      <p id="lGrt" style="font-size:13px;color:var(--mu);"></p>
     </div>
-    <div id="vCnt" style="padding:18px 24px 28px;"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-o btn-sm" onclick="openEditProfile()"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-edit"/></svg> Edit Profile</button>
+      <button class="btn-lister-primary" onclick="postPropertyClick()"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-home"/></svg> + New Listing</button>
+    </div>
+  </div>
+
+  <!-- Tab navigation -->
+  <div class="ltabs" role="tablist">
+    <button class="ltab on" data-ltab="overview" onclick="setListerTab('overview')" role="tab"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-home"/></svg> Overview</button>
+    <button class="ltab" data-ltab="properties" onclick="setListerTab('properties')" role="tab"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-broker"/></svg> Properties</button>
+    <button class="ltab" data-ltab="leads" onclick="setListerTab('leads')" role="tab"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg> Leads</button>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div class="ltab-pane on" data-lpane="overview">
+    <div class="g4" id="lStats" style="margin-bottom:24px;"></div>
+    <div id="lOverviewExtra"></div>
+  </div>
+
+  <!-- PROPERTIES TAB -->
+  <div class="ltab-pane" data-lpane="properties">
+    <div id="lPropsContainer">
+      <h2 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:14px;letter-spacing:-.2px;">My Properties</h2>
+      <div id="lLst"></div>
+    </div>
+  </div>
+
+  <!-- LEADS TAB -->
+  <div class="ltab-pane" data-lpane="leads">
+    <div id="lLeadsContainer"></div>
   </div>
 </main>
 
@@ -239,67 +256,47 @@
 
 <footer style="padding:24px;text-align:center;background:var(--td);color:rgba(255,255,255,.6);font-size:12px;font-family:'DM Sans',sans-serif;">
   <div><span style="color:#fff;font-family:'Playfair Display',serif;font-weight:700;">Ek</span> <span style="font-family:'Playfair Display',serif;color:rgba(255,255,255,.85);">Makān</span> &middot; <a href="/" style="color:rgba(255,255,255,.6);text-decoration:none;">ekmakan.com</a></div>
-  <div style="margin-top:6px;font-size:11px;">© 2026 HAFAR CONTRATECH AI LLP</div>
 </footer>
 
 <script src="common.js?v=20260430-112721" defer></script>
 <script src="app.js?v=20260430-112721" defer></script>
 
 <script defer>
-// Page-specific bootstrap: read ?id=, wait for app.js's viewL helper,
-// render the listing, then patch page title + og:meta from rendered data.
 (function(){
-  function getListingId(){
-    var p=new URLSearchParams(window.location.search);
-    var id=Number(p.get('id'));
-    return Number.isFinite(id)&&id>0?id:null;
-  }
-  function showError(msg){
-    var c=document.getElementById('vCnt');
-    if(c){
-      c.innerHTML='<div style="padding:60px 24px;text-align:center;font-family:\'DM Sans\',sans-serif;">'+
-        '<div style="font-size:42px;color:var(--mu);margin-bottom:14px;">⚠</div>'+
-        '<h2 style="font-family:\'Playfair Display\',serif;color:var(--ink);margin-bottom:6px;">Listing unavailable</h2>'+
-        '<p style="color:var(--mu);">'+msg+'</p>'+
-        '<a href="/" style="display:inline-block;margin-top:18px;padding:10px 22px;background:var(--t);color:#fff;border-radius:8px;text-decoration:none;font-weight:700;">Return home</a>'+
-      '</div>';
-    }
-    var t=document.getElementById('vTit');if(t)t.textContent='Listing unavailable';
-    document.title='Listing unavailable · Ek Makān';
-  }
-  function patchMeta(){
-    var t=document.getElementById('vTit');
-    if(!t||t.textContent==='Loading…')return;
-    var title=t.textContent.trim();
-    if(!title)return;
-    document.title=title+' · Ek Makān';
-    var setMeta=function(id,v){var e=document.getElementById(id);if(e)e.setAttribute('content',v);};
-    setMeta('ogTitle',title+' · Ek Makān');
-    setMeta('twTitle',title+' · Ek Makān');
-    var firstImg=document.querySelector('#vCnt img[src]');
-    if(firstImg&&firstImg.src){
-      setMeta('ogImage',firstImg.src);
-      setMeta('twImage',firstImg.src);
-    }
-  }
   async function boot(){
-    var id=getListingId();
-    if(!id){showError('No listing ID in the URL. The link may be broken.');return;}
-    // Wait for viewL to be available (app.js loads with defer)
     var tries=0;
-    while(typeof viewL!=='function'&&tries<60){
-      await new Promise(function(r){setTimeout(r,50);});
+    while(typeof requireAuth!=='function'&&tries<50){
+      await new Promise(function(r){setTimeout(r,40);});
       tries++;
     }
-    if(typeof viewL!=='function'){showError('Page failed to load. Please refresh.');return;}
-    try {
-      await viewL(id);
-      patchMeta();
-    } catch(e) {
-      console.warn('Listing render failed:',e);
-      showError('Could not load this listing. Please try again.');
+    if(typeof requireAuth!=='function'){
+      window.location.replace('/');
+      return;
     }
+    // Route guard: only owner / broker / builder belong here. Regular users
+    // get bounced to /dashboard, admins to /. requireAuth handles the
+    // not-signed-in case via /?openLogin=1&next=/lister.
+    try {
+      await requireAuth(['owner','broker','builder']);
+    } catch(e) {
+      return;
+    }
+    // Wait for app.js's renderLister.
+    tries=0;
+    while(typeof renderLister!=='function'&&tries<50){
+      await new Promise(function(r){setTimeout(r,40);});
+      tries++;
+    }
+    if(typeof renderLister!=='function'){
+      console.warn('renderLister not defined');
+      return;
+    }
+    if(typeof loadFavs==='function')await loadFavs();
+    if(typeof loadNotifs==='function')await loadNotifs();
+    upNav();
+    await renderLister();
   }
+
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',boot);
   } else {

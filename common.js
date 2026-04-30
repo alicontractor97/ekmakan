@@ -99,10 +99,13 @@ async function requireAuth(allowedRoles){
   // Wait for the initial auth bootstrap (defined below) to finish.
   await _authReady;
   if(!cu){
-    // Not logged in — redirect to home with a hint about why.
-    var redirect='/';
-    if(window.location.pathname!=='/'&&window.location.pathname!=='/index.html'){
-      redirect='/?next='+encodeURIComponent(window.location.pathname+window.location.search);
+    // Not logged in — redirect to home and ask the SPA to pop the login modal.
+    // The SPA's bootstrap reads ?openLogin=1 and ?next= to handle this. After
+    // a successful sign-in, the user is bounced back to where they were.
+    var here=window.location.pathname+window.location.search;
+    var redirect='/?openLogin=1';
+    if(here&&here!=='/'){
+      redirect+='&next='+encodeURIComponent(here);
     }
     window.location.replace(redirect);
     // Throw to halt the caller's downstream code (the redirect is async-ish in browsers).

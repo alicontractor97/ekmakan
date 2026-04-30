@@ -558,9 +558,12 @@ async function doLogin(){
       window.location.href=nextParam;
       return;
     }
+    // Role-based default destination after login. Users go to /dashboard,
+    // owners/brokers/builders to /lister (real pages), admins to the SPA's
+    // hash route since admin.html doesn't exist yet.
     if(cu.role==='admin'){go('admin');toast('Welcome, Admin &#9881;');}
-    else if(cu.role==='user'){go('dashboard');toast('Welcome back, '+esc(cu.name)+'! ');}
-    else{go('lister');toast('Welcome back, '+esc(cu.name)+'! ');}
+    else if(cu.role==='user'){toast('Welcome back, '+esc(cu.name)+'! ');window.location.href='/dashboard';}
+    else{toast('Welcome back, '+esc(cu.name)+'! ');window.location.href='/lister';}
   }catch(err){
     var msg=err.message||'Sign-in failed.';
     if(msg.toLowerCase().includes('invalid login'))msg='Incorrect email or password. Please try again.';
@@ -671,8 +674,8 @@ function doReg(){
         window.location.href=nextParamS;
         return;
       }
-      go(role==='user'?'dashboard':'lister');
       toast('Welcome to Ek Makān, '+esc(nm)+'! <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:var(--g);"><use href="#i-sparkle"/></svg>');
+      window.location.href=role==='user'?'/dashboard':'/lister';
     }catch(err){
       if(btn){btn.disabled=false;btn.textContent=origBtnText;}
       var msg=err.message||'Sign-up failed.';
@@ -735,7 +738,23 @@ function _confirmEmailAs(){
 }
 
 
-async function doLogout(){await sb.auth.signOut();resetSessionState();cu=null;upNav();go('home');toast('Logged out.');}
+async function doLogout(){
+  await sb.auth.signOut();
+  resetSessionState();
+  cu=null;
+  upNav();
+  toast('Logged out.');
+  // Navigate to the homepage. window.location is the right call here since
+  // we may be on dashboard.html, lister.html, listing.html, or the SPA — the
+  // SPA would normally use go('home') but that hash router doesn't exist on
+  // extracted pages.
+  var pageType=document.body&&document.body.getAttribute('data-page');
+  if(pageType&&pageType!=='spa'){
+    window.location.href='/';
+  } else {
+    go('home');
+  }
+}
 
 // ══ PASSWORD RESET ══
 // Step 1: User enters email, we call Supabase to send the recovery email.
@@ -4113,12 +4132,15 @@ async function renderDash(){
     var typeLbl=i.lf==='buy'?'For Sale':'For Rent';
     var pillClass=i.lf==='buy'?'pill-y':'pill-b';
     var rowStyle=listingExists?'cursor:pointer;':'';
-    var clickHandler=listingExists?'onclick="viewL('+i.listingId+')" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'var(--wh)\'"':'';
+    // Use real /listing?id=N navigation rather than the in-page modal — works
+    // identically on the SPA and on dashboard.html (Session 3 of MPA refactor).
+    var listingHref='/listing?id='+i.listingId;
+    var clickHandler=listingExists?'onclick="window.location.href=\''+listingHref+'\'" onmouseover="this.style.background=\'var(--cr)\'" onmouseout="this.style.background=\'var(--wh)\'"':'';
     var titleHTML=listingExists
       ?'<strong style="color:var(--t);">'+esc(i.listingTitle)+' &#8599;</strong>'
       :'<strong style="color:var(--mu);text-decoration:line-through;">'+esc(i.listingTitle)+'</strong> <span style="font-size:10px;color:var(--red);font-weight:700;">(REMOVED)</span>';
     var actionBtn=listingExists
-      ?'<button class="btn btn-sm btn-o" onclick="event.stopPropagation();viewL('+i.listingId+')">View Property</button>'
+      ?'<a class="btn btn-sm btn-o" href="'+listingHref+'" onclick="event.stopPropagation()" style="text-decoration:none;">View Property</a>'
       :'<span style="font-size:11px;color:var(--mu);padding:6px 10px;">No longer listed</span>';
     return '<div class="li" style="'+rowStyle+'" '+clickHandler+'>'
       +'<div style="font-size:28px;">'+icon+'</div>'
@@ -4128,7 +4150,7 @@ async function renderDash(){
       +'<span class="pill '+pillClass+'">'+typeLbl+'</span>'
       +'<div class="li-ac" onclick="event.stopPropagation()">'+actionBtn+'</div>'
       +'</div>';
-  }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No inquiries yet. <span onclick="setBMode(\'rent\');go(\'browse\')" style="color:var(--t);cursor:pointer;font-weight:700;">Browse rentals</span> or <span onclick="setBMode(\'buy\');go(\'browse\')" style="color:var(--g);cursor:pointer;font-weight:700;">properties for sale</span> to get started.</div>';
+  }).join(''):'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No inquiries yet. <a href="/#browse" style="color:var(--t);font-weight:700;text-decoration:none;">Browse rentals</a> or <a href="/#browse" style="color:var(--g);font-weight:700;text-decoration:none;">properties for sale</a> to get started.</div>';
   var dsav=document.getElementById('dSav');
   if(dsav)dsav.innerHTML=saved.length?'<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:22px 0 12px;">Saved Properties</h2><div class="g3">'+saved.map(pCard).join('')+'</div>':'';
 }
@@ -4168,11 +4190,14 @@ var _leadFilters={from:'',to:'',propId:'',type:'',budgetMin:0,budgetMax:0};
 // ── Tab switching for lister portal ──
 function setListerTab(name){
   _listerTab=name||'overview';
-  document.querySelectorAll('#pg-lister .ltab').forEach(function(t){
-    t.classList.toggle('on',t.dataset.ltab===_listerTab);
+  // Scope: on the SPA the lister page is #pg-lister; on lister.html the tabs
+  // live at the document root. Try both — works on whichever we're on.
+  var scope=document.getElementById('pg-lister')||document;
+  scope.querySelectorAll('.ltab').forEach(function(t){
+    if(t.dataset.ltab!==undefined)t.classList.toggle('on',t.dataset.ltab===_listerTab);
   });
-  document.querySelectorAll('#pg-lister .ltab-pane').forEach(function(p){
-    p.classList.toggle('on',p.dataset.lpane===_listerTab);
+  scope.querySelectorAll('.ltab-pane').forEach(function(p){
+    if(p.dataset.lpane!==undefined)p.classList.toggle('on',p.dataset.lpane===_listerTab);
   });
   // Render the right pane on demand (fast: data already in cache)
   if(_listerTab==='leads')renderListerLeads();
@@ -6144,6 +6169,7 @@ function openM(id){
     cntM:'/?openContact='+(typeof actL!=='undefined'&&actL&&actL.id?actL.id:''),
     pwUpdateM:'/?openPwUpdate=1',
     addM:'/?openPost=1',
+    profileM:'/?openProfile=1',
     reportM:null,// reportM is injected on every page by common.js
     viewM:null  // listing.html renders inline — absence here is intentional
   };
@@ -6762,16 +6788,25 @@ acInit('lLo','ac-lLo','lLo',{mode:'locality',cityRef:'lCy'});     // Listing for
     // rendering — app.js's job is just to provide helpers (viewL, gL, etc.).
     return;
   }
-  // SPA path: backward-compat redirect for old shared #listing/42 links →
-  // /listing?id=42 so the URL bar shows the canonical clean URL.
+  // SPA path: backward-compat redirects for old SPA hash deep links →
+  // canonical clean URLs introduced in Sessions 2 and 3.
   if(window.location.hash){
     var oldListingMatch=window.location.hash.match(/^#listing\/(\d+)$/);
     if(oldListingMatch){
       window.location.replace('/listing?id='+oldListingMatch[1]);
       return;
     }
+    if(window.location.hash==='#dashboard'){
+      window.location.replace('/dashboard');
+      return;
+    }
+    if(window.location.hash==='#lister'){
+      window.location.replace('/lister');
+      return;
+    }
   }
-  var hasDeepLink=window.location.hash&&/^#(home|browse|dashboard|lister|admin)$/.test(window.location.hash);
+  // Hash deep links that DON'T have a real page yet (admin still in SPA, browse/home).
+  var hasDeepLink=window.location.hash&&/^#(home|browse|admin)$/.test(window.location.hash);
   if(hasDeepLink){
     handleHashRoute();
   } else {
@@ -6798,6 +6833,9 @@ acInit('lLo','ac-lLo','lLo',{mode:'locality',cityRef:'lCy'});     // Listing for
   } else if(qs.get('openContact')){
     var contactId=Number(qs.get('openContact'));
     if(contactId>0&&typeof oCnt==='function')oCnt(contactId);
+    openedSomething=true;
+  } else if(qs.get('openProfile')==='1'){
+    if(typeof openEditProfile==='function')openEditProfile();
     openedSomething=true;
   }
   if(openedSomething&&window.history&&window.history.replaceState){
