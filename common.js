@@ -232,6 +232,30 @@ function injectSharedModals(){
     document.body.appendChild(rpt);
   }
 
+  // ── Contact / Inquiry modal ──
+  // Used by oCnt() to send an inquiry to a listing's owner. Injected on
+  // pages that don't ship it inline (index.html does, listing.html doesn't).
+  // Field IDs (cInfo, cNm, cPh, cEm, cMsg, cCnt) match what app.js's oCnt()
+  // and doInq() read — DO NOT rename.
+  if(!document.getElementById('cntM')){
+    var cnt=document.createElement('div');
+    cnt.id='cntM';
+    cnt.className='mo';
+    cnt.setAttribute('onclick',"ovcM(event,'cntM')");
+    cnt.innerHTML=
+      '<div class="mb">'+
+        '<div class="mh"><h2>Send Inquiry</h2><button class="mc" onclick="closeM(\'cntM\')" aria-label="Close dialog"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button></div>'+
+        '<div id="cInfo" class="al ali" style="margin-bottom:14px;"></div>'+
+        '<div class="fg"><label class="flbl">Your Name *</label><input class="fi" type="text" id="cNm"/></div>'+
+        '<div class="fg"><label class="flbl">Phone *</label><input class="fi" type="tel" id="cPh"/></div>'+
+        '<div class="fg"><label class="flbl">Email</label><input class="fi" type="email" id="cEm"/></div>'+
+        '<div class="fg"><label class="flbl">Message</label><textarea class="fi" id="cMsg" placeholder="Hi, I\'m interested in this property…"></textarea></div>'+
+        '<button class="btn btn-bl" onclick="doInq()">Send Inquiry</button>'+
+        '<p id="cCnt" style="text-align:center;font-size:12px;color:var(--mu);margin-top:10px;"></p>'+
+      '</div>';
+    document.body.appendChild(cnt);
+  }
+
   // ── Toast root ──
   // Required by toast() — make sure every page has one.
   if(!document.getElementById('toast')){

@@ -549,6 +549,15 @@ async function doLogin(){
     await loadFavs();
     await loadNotifs();
     closeM('authM');upNav();
+    // If the user landed on the homepage from a deep link (e.g. clicked
+    // Contact on listing.html when logged out and got bounced here to log in),
+    // the URL has ?next=/listing?id=42. Send them back there after sign-in.
+    // Same-origin only — never honor an absolute or external URL.
+    var nextParam=new URLSearchParams(window.location.search).get('next');
+    if(nextParam&&/^\/[\w\-\/?=&%.]*$/.test(nextParam)){
+      window.location.href=nextParam;
+      return;
+    }
     if(cu.role==='admin'){go('admin');toast('Welcome, Admin &#9881;');}
     else if(cu.role==='user'){go('dashboard');toast('Welcome back, '+esc(cu.name)+'! ');}
     else{go('lister');toast('Welcome back, '+esc(cu.name)+'! ');}
@@ -656,6 +665,12 @@ function doReg(){
       _clr('u');
       if(btn){btn.disabled=false;btn.textContent=origBtnText;}
       closeM('authM');upNav();
+      // Same ?next= redirect logic as login — return user to where they came from
+      var nextParamS=new URLSearchParams(window.location.search).get('next');
+      if(nextParamS&&/^\/[\w\-\/?=&%.]*$/.test(nextParamS)){
+        window.location.href=nextParamS;
+        return;
+      }
       go(role==='user'?'dashboard':'lister');
       toast('Welcome to Ek Makān, '+esc(nm)+'! <svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:var(--g);"><use href="#i-sparkle"/></svg>');
     }catch(err){
@@ -2558,9 +2573,12 @@ async function viewL(id){
   _currentDetailId=id;
   updateShortlistBtnState();
   // Set URL hash for shareable deep link + push history so Back returns to where we came from.
-  // Skip when we're responding to a Back/Forward event.
+  // Skip when we're responding to a Back/Forward event, OR when we're on a non-SPA
+  // page (listing.html etc.) where the URL is already canonical.
+  var pageType=document.body&&document.body.getAttribute('data-page');
+  var isSpa=!pageType||pageType==='spa';
   var targetHash='#listing/'+id;
-  if(!_navFromHistory&&window.history&&window.history.pushState&&window.location.hash!==targetHash){
+  if(isSpa&&!_navFromHistory&&window.history&&window.history.pushState&&window.location.hash!==targetHash){
     window.history.pushState({listing:id},'',targetHash);
   }
   // Init touch gestures on the image gallery
@@ -2885,7 +2903,11 @@ var _origCloseM=closeM;
 
 // ══ SHARE ══
 function _listingUrl(id){
-  return window.location.origin+window.location.pathname+'#listing/'+id;
+  // Clean URL format: /listing?id=42 (Session 2 of MPA refactor).
+  // Previously this was an in-page hash (#listing/42). The new URL is a real
+  // page that Google's crawler can index, and that share-sheet apps can open
+  // as a deep-link without needing a JS shell.
+  return window.location.origin+'/listing?id='+id;
 }
 // Card click handler — let the anchor target="_blank" do its native job
 // (opens in new tab on left-click, supports cmd/ctrl/middle-click natively).
@@ -6109,7 +6131,30 @@ function openM(id){
   if(id==='addM'&&_editingListingId){
     wizGoto(2);
   }
-  var el=document.getElementById(id);if(el)el.classList.add('open');
+  var el=document.getElementById(id);
+  if(el){
+    el.classList.add('open');
+    return;
+  }
+  // Modal not present on this page (e.g. listing.html doesn't have authM/cntM).
+  // Fall back to redirecting to the homepage with a flag the SPA recognizes.
+  // The SPA's bootstrap reads these params and opens the right modal.
+  var redirectMap={
+    authM:'/?openLogin=1',
+    cntM:'/?openContact='+(typeof actL!=='undefined'&&actL&&actL.id?actL.id:''),
+    pwUpdateM:'/?openPwUpdate=1',
+    addM:'/?openPost=1',
+    reportM:null,// reportM is injected on every page by common.js
+    viewM:null  // listing.html renders inline — absence here is intentional
+  };
+  if(redirectMap[id]){
+    var here=window.location.pathname+window.location.search;
+    var url=redirectMap[id];
+    if(here&&here!=='/'){
+      url+=(url.indexOf('?')>=0?'&':'?')+'next='+encodeURIComponent(here);
+    }
+    window.location.href=url;
+  }
 }
 function closeM(id){
   var el=document.getElementById(id);if(el)el.classList.remove('open');
@@ -6708,11 +6753,58 @@ acInit('lLo','ac-lLo','lLo',{mode:'locality',cityRef:'lCy'});     // Listing for
   }
   // If there's a deep-link hash (e.g. #dashboard, #lister, #admin, #listing/42),
   // route to that page directly instead of rendering home first.
-  var hasDeepLink=window.location.hash&&/^#(listing\/\d+|home|browse|dashboard|lister|admin)$/.test(window.location.hash);
+  // Page-type check (Session 2 of MPA refactor): the SPA hash router and
+  // renderHome() should ONLY run on the SPA index.html, not on extracted pages
+  // like listing.html. Pages opt out by setting data-page on <body>.
+  var pageType=document.body&&document.body.getAttribute('data-page');
+  if(pageType&&pageType!=='spa'){
+    // Extracted page (e.g. listing.html). Its own bootstrap script handles
+    // rendering — app.js's job is just to provide helpers (viewL, gL, etc.).
+    return;
+  }
+  // SPA path: backward-compat redirect for old shared #listing/42 links →
+  // /listing?id=42 so the URL bar shows the canonical clean URL.
+  if(window.location.hash){
+    var oldListingMatch=window.location.hash.match(/^#listing\/(\d+)$/);
+    if(oldListingMatch){
+      window.location.replace('/listing?id='+oldListingMatch[1]);
+      return;
+    }
+  }
+  var hasDeepLink=window.location.hash&&/^#(home|browse|dashboard|lister|admin)$/.test(window.location.hash);
   if(hasDeepLink){
     handleHashRoute();
   } else {
     await renderHome();
+  }
+  // Handle ?openLogin=1, ?openSignup=1, ?openPost=1, ?openContact=42, ?openPwUpdate=1
+  // These flags are set by other pages (listing.html, etc.) when a modal needs
+  // to be opened on the SPA. After processing, we strip the flag from the URL
+  // so reloads don't keep popping the modal.
+  var qs=new URLSearchParams(window.location.search);
+  var openedSomething=false;
+  if(qs.get('openLogin')==='1'){
+    openM('authM');setAT('login');
+    openedSomething=true;
+  } else if(qs.get('openSignup')==='1'){
+    openM('authM');setAT('reg');
+    openedSomething=true;
+  } else if(qs.get('openPwUpdate')==='1'){
+    openM('pwUpdateM');
+    openedSomething=true;
+  } else if(qs.get('openPost')==='1'){
+    if(typeof postPropertyClick==='function')postPropertyClick();
+    openedSomething=true;
+  } else if(qs.get('openContact')){
+    var contactId=Number(qs.get('openContact'));
+    if(contactId>0&&typeof oCnt==='function')oCnt(contactId);
+    openedSomething=true;
+  }
+  if(openedSomething&&window.history&&window.history.replaceState){
+    var keep=[];
+    qs.forEach(function(v,k){if(!/^open/.test(k))keep.push(k+'='+encodeURIComponent(v));});
+    var newUrl=window.location.pathname+(keep.length?'?'+keep.join('&'):'')+window.location.hash;
+    window.history.replaceState(null,'',newUrl);
   }
 })();
 // Auth state listener (SIGNED_OUT, PASSWORD_RECOVERY) is now wired up in
