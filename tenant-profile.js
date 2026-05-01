@@ -804,8 +804,11 @@
   }
 
   // ── Approve modal ──
-  // Pre-checks all requested docs. Tenant may uncheck any to withhold.
-  // Submit calls respond_full_share with the checked subset.
+  // Shows EVERY requested doc, even ones the tenant hasn't uploaded yet.
+  // Uploaded docs are pre-checked; missing docs show an inline upload field
+  // and a warning so the tenant can either upload now or uncheck and skip.
+  // The SQL guard rejects approval if any approved slot has no file, so we
+  // can't accidentally let through an "approved but not uploaded" share.
   window._tp_openApproveModal=async function(requestId){
     // Fetch the request fresh so we have the requested_docs list
     var {data:rows,error}=await sb.from('tenant_full_share_requests')
@@ -820,18 +823,55 @@
     var {data:brokers}=await sb.from('users').select('id,name').eq('id',r.broker_user_id).limit(1);
     var brokerName=(brokers&&brokers[0]&&brokers[0].name)||'broker';
 
+    // Refresh profile data so we know which docs are uploaded right now.
+    // _profile is the IIFE-scoped cache from loadProfile(); reload it.
+    await loadProfile();
+    var p=_profile||{};
+    var slotToUrlCol={
+      pan_doc:'pan_doc_url',
+      employment_letter:'employment_letter_url',
+      salary_slip_1:'salary_slip_1_url',
+      salary_slip_2:'salary_slip_2_url',
+      salary_slip_3:'salary_slip_3_url',
+      itr_y1:'itr_y1_url',
+      itr_y2:'itr_y2_url'
+    };
+
     var existing=document.getElementById('tpApproveM');if(existing)existing.remove();
     var modal=document.createElement('div');
     modal.id='tpApproveM';
     modal.className='mo open';
 
-    // Render pre-checked checkboxes — tenant can uncheck to withhold
-    var checkboxes=(r.requested_docs||[]).map(function(s){
+    // For each requested slot: if uploaded, render checkbox pre-checked.
+    // If missing, render warning + inline file input + Upload Now button.
+    // The checkbox is unchecked and disabled until upload completes.
+    var rowsHtml=(r.requested_docs||[]).map(function(s){
       var lbl=_DOC_LABELS[s]||s;
-      return '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--sa);border-radius:8px;margin-top:8px;cursor:pointer;">'+
-        '<input type="checkbox" id="tpa_'+s+'" value="'+s+'" checked style="width:18px;height:18px;"/>'+
-        '<span style="flex:1;font-size:13px;">'+_esc(lbl)+'</span>'+
-      '</label>';
+      var col=slotToUrlCol[s];
+      var hasFile=col&&p[col];
+      if(hasFile){
+        return '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--sa);border-radius:8px;margin-top:8px;cursor:pointer;">'+
+          '<input type="checkbox" id="tpa_'+s+'" value="'+s+'" checked style="width:18px;height:18px;"/>'+
+          '<span style="flex:1;font-size:13px;">'+_esc(lbl)+
+            '<span style="font-size:10px;color:var(--gr);font-weight:700;margin-left:8px;background:#d4edda;padding:1px 6px;border-radius:8px;">✓ Uploaded</span>'+
+          '</span>'+
+        '</label>';
+      } else {
+        // Missing doc — show upload affordance
+        return '<div style="border:2px dashed #d9534f;border-radius:8px;padding:10px;margin-top:8px;background:#fef5f5;" id="tpaRow_'+s+'">'+
+          '<div style="display:flex;align-items:center;gap:10px;">'+
+            '<input type="checkbox" id="tpa_'+s+'" value="'+s+'" disabled style="width:18px;height:18px;opacity:.4;"/>'+
+            '<span style="flex:1;font-size:13px;">'+_esc(lbl)+
+              '<span style="font-size:10px;color:#7c1a1a;font-weight:700;margin-left:8px;background:#fde2e2;padding:1px 6px;border-radius:8px;">Not uploaded yet</span>'+
+            '</span>'+
+          '</div>'+
+          '<div style="margin-top:8px;padding-left:28px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'+
+            '<input type="file" id="tpaFile_'+s+'" accept="application/pdf,image/*" style="flex:1;min-width:120px;font-size:11px;"/>'+
+            '<button class="btn btn-bl btn-sm" style="font-size:11px;padding:5px 10px;" onclick="window._tp_inlineUpload(\''+s+'\')">Upload now</button>'+
+          '</div>'+
+          '<p style="font-size:10px;color:var(--mu);margin:6px 0 0 28px;">Or leave unchecked to skip sharing this document.</p>'+
+        '</div>';
+      }
     }).join('');
 
     modal.innerHTML='<div class="mb" style="max-width:560px;max-height:90vh;overflow-y:auto;">'+
@@ -846,8 +886,8 @@
       '<div class="al ali" style="margin-bottom:12px;font-size:12px;line-height:1.5;">'+
         '<strong>What approving means:</strong> The broker will see the actual files, your full PAN, exact monthly income, and employer details. Religion, dietary preference, and landlord phone numbers are <strong>still never shared</strong>. You can revoke anytime, but downloaded files may already be on the broker\'s device.'+
       '</div>'+
-      '<p style="font-size:12px;color:var(--mu);margin-bottom:6px;">Documents to share (uncheck any you don\'t want to share):</p>'+
-      '<div>'+(checkboxes||'<em style="color:var(--mu);">No documents in this request.</em>')+'</div>'+
+      '<p style="font-size:12px;color:var(--mu);margin-bottom:6px;">Documents requested:</p>'+
+      '<div>'+(rowsHtml||'<em style="color:var(--mu);">No documents in this request.</em>')+'</div>'+
       '<div style="display:flex;gap:8px;margin-top:14px;">'+
         '<button class="btn btn-bl" onclick="window._tp_submitApprove('+requestId+')" style="flex:1;">Approve &amp; share selected</button>'+
         '<button class="btn btn-o" onclick="window._tp_closeApproveModal()">Cancel</button>'+
@@ -855,8 +895,28 @@
     '</div>';
     modal.onclick=function(e){if(e.target===modal)window._tp_closeApproveModal();};
     document.body.appendChild(modal);
-    // Stash the requested_docs for the submit handler to iterate over
     window._tp_currentRequestSlots=r.requested_docs||[];
+  };
+
+  // Inline upload from the approve modal — uploads the file, updates the
+  // profile, then reloads the modal so the slot row flips to "uploaded".
+  window._tp_inlineUpload=async function(slot){
+    var f=document.getElementById('tpaFile_'+slot);
+    if(!f||!f.files||!f.files[0]){_say('Choose a file first.','e');return;}
+    var btn=document.querySelector('#tpaRow_'+slot+' button.btn-bl');
+    if(btn){btn.disabled=true;btn.textContent='Uploading…';}
+    var path=await uploadDoc(slot,f.files[0]);
+    if(!path){
+      if(btn){btn.disabled=false;btn.textContent='Upload now';}
+      return;
+    }
+    // Successful upload — re-render the modal so this row flips to "uploaded"
+    // and the checkbox becomes enabled + checked.
+    // Stash the request id from a button to re-open
+    var approveBtn=document.querySelector('#tpApproveM button.btn-bl[onclick*="_tp_submitApprove"]');
+    var match=approveBtn&&approveBtn.getAttribute('onclick').match(/_tp_submitApprove\((\d+)\)/);
+    var requestId=match?Number(match[1]):null;
+    if(requestId)await window._tp_openApproveModal(requestId);
   };
 
   window._tp_closeApproveModal=function(){

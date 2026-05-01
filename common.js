@@ -59,10 +59,46 @@ function _escCommon(s){
 // The constraint is firm: when `cu` is non-null, the Login button must NEVER
 // appear, and when `cu` is null, the Dashboard button must NEVER appear. That
 // invariant is enforced here and nowhere else.
+
+// Notification bell — inlined verbatim from index.html so extracted MPA pages
+// (dashboard, lister, listing, browse) get the same bell + dropdown panel.
+// Idempotent: if #nNotifWrap already exists in the page (as on index.html),
+// we leave it alone.
+function injectNotifBell(){
+  if(document.getElementById('nNotifWrap'))return;
+  // Find the nav container that holds the existing user menu items.
+  // Insertion point: right before the avatar/Sign In group. We try a few
+  // selectors to be robust against minor markup differences across pages.
+  var anchor=document.getElementById('nLg')||document.getElementById('nLo')||document.getElementById('nG');
+  if(!anchor||!anchor.parentNode)return;
+  var wrap=document.createElement('div');
+  wrap.id='nNotifWrap';
+  wrap.style.cssText='display:none;position:relative;';
+  wrap.innerHTML=
+    '<button onclick="toggleNotifPanel()" style="background:none;border:none;cursor:pointer;padding:8px;position:relative;color:#fff;display:flex;align-items:center;" title="Notifications" aria-label="Notifications">'+
+      '<svg class="icn icn-lg" aria-hidden="true"><use href="#i-bell"/></svg>'+
+      '<span id="nNotifBadge" style="display:none;position:absolute;top:0;right:0;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:50%;min-width:18px;height:18px;line-height:18px;text-align:center;font-family:\'DM Sans\',sans-serif;"></span>'+
+    '</button>'+
+    '<div id="nNotifPanel" style="display:none;position:absolute;right:0;top:42px;width:360px;max-height:500px;overflow-y:auto;background:var(--wh);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.18);border:1px solid var(--sa);z-index:100;">'+
+      '<div style="padding:14px 18px;border-bottom:1px solid var(--sa);display:flex;justify-content:space-between;align-items:center;">'+
+        '<strong style="font-family:\'Playfair Display\',serif;font-size:15px;color:var(--ink);">Notifications</strong>'+
+        '<button onclick="closeNotifPanel()" style="background:none;border:none;cursor:pointer;color:var(--mu);padding:4px;" title="Close" aria-label="Close"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-close"/></svg></button>'+
+      '</div>'+
+      '<div id="nNotifList"></div>'+
+    '</div>';
+  anchor.parentNode.insertBefore(wrap,anchor);
+}
+
 function upNav(){
   var show=function(id){var e=document.getElementById(id);if(e)e.style.display='';};
   var hide=function(id){var e=document.getElementById(id);if(e)e.style.display='none';};
   var set=function(id,h){var e=document.getElementById(id);if(e)e.innerHTML=h;};
+  // Make sure the notification bell HTML exists in this page's nav. The bell
+  // was originally only inlined in index.html — extracted pages (dashboard,
+  // lister, listing, browse) didn't get it, so notifications appeared to be
+  // "missing" on those pages. injectNotifBell is idempotent: if the wrapper
+  // already exists we skip.
+  injectNotifBell();
   if(cu){
     hide('nLg');hide('nRg');show('nLo');show('nG');show('nB');show('nNotifWrap');
     set('nG','Hi, '+_escCommon(cu.name));

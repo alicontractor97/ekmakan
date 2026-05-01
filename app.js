@@ -4563,18 +4563,27 @@ async function renderListerLeads(){
     }
   }catch(e){console.warn('Tenant profile access fetch failed:',e&&e.message);}
   // ── Stage 6: fetch full-share requests for THIS broker ──
-  // We pick the latest request per inquiry. If the broker requested twice
-  // (denial → re-request), we want the most recent state shown.
-  var fullShareByInquiry={};
+  // We track BOTH the latest approved request (for View Documents) and the
+  // latest non-approved request (pending/denied/revoked, for the action
+  // button). Brokers can have an approved share AND a pending follow-up
+  // simultaneously — e.g. tenant approved PAN+salary, broker now wants ITR.
+  var fullShareApprovedByInquiry={};
+  var fullShareLatestByInquiry={};
   try{
     var {data:fsRows,error:fsErr}=await sb.from('tenant_full_share_requests')
       .select('id,inquiry_id,status,requested_docs,approved_docs,denial_reason,requested_at,responded_at,view_count,download_count,last_viewed_at,last_downloaded_at')
       .eq('broker_user_id',cu.id)
       .order('requested_at',{ascending:false});
     if(!fsErr&&fsRows){
-      // Latest request wins (rows already sorted desc)
+      // First pass — store the most recent approved request per inquiry
+      // (rows are sorted desc, so first wins).
       fsRows.forEach(function(r){
-        if(!fullShareByInquiry[r.inquiry_id])fullShareByInquiry[r.inquiry_id]=r;
+        if(r.status==='approved'&&!fullShareApprovedByInquiry[r.inquiry_id]){
+          fullShareApprovedByInquiry[r.inquiry_id]=r;
+        }
+        if(!fullShareLatestByInquiry[r.inquiry_id]){
+          fullShareLatestByInquiry[r.inquiry_id]=r;
+        }
       });
     }
   }catch(e){console.warn('Full-share request fetch failed:',e&&e.message);}
@@ -4675,28 +4684,43 @@ async function renderListerLeads(){
       actions+='<button class="lead-act-btn" onclick="viewTenantProfile('+access.id+')" style="background:#f3e8d4;color:#7c5a1a;border-color:#daa520;" title="View shared tenant profile">'
         +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg>'
         +'View Profile</button>';
-      // ── Stage 6: full-share button (state-aware) ──
-      // The button only shows when there's an active redacted access row,
-      // because the request RPC requires it as a prerequisite.
-      var fs=fullShareByInquiry[i.id];
-      if(!fs){
-        // No request yet — show "Request Full Documents"
+      // ── Stage 6: full-share buttons (state-aware) ──
+      // The button shows when there's an active redacted access row, because
+      // the request RPC requires it as a prerequisite.
+      // We render TWO things if both apply:
+      //   • View Documents — if there's an approved (non-revoked) share at all
+      //   • A second button for the latest-state — to request more, or reflect
+      //     the latest pending/denied/revoked status.
+      var fsApproved=fullShareApprovedByInquiry[i.id];
+      var fsLatest=fullShareLatestByInquiry[i.id];
+      // 1. If approved share exists (and isn't the same as latest's pending
+      // sibling), always offer the View Documents button.
+      if(fsApproved){
+        actions+='<button class="lead-act-btn" onclick="openFullShareViewer('+fsApproved.id+')" style="background:#d4edda;color:#155724;border-color:#28a745;" title="View / download shared documents">'
+          +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg>'
+          +'View Documents</button>';
+      }
+      // 2. Action button reflects the latest-status request, OR Request
+      // Documents if no request yet.
+      if(!fsLatest){
         actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#e8f4ff;color:#1a5a8a;border-color:#7ab8e0;" title="Request full document access">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Request Documents</button>';
-      } else if(fs.status==='pending'){
+      } else if(fsLatest.status==='pending'){
         actions+='<span class="lead-act-btn" style="background:#fff3cd;color:#856404;border-color:#daa520;cursor:default;" title="Tenant has not responded yet">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-clock"/></svg>'
           +'Awaiting tenant</span>';
-      } else if(fs.status==='approved'){
-        actions+='<button class="lead-act-btn" onclick="openFullShareViewer('+fs.id+')" style="background:#d4edda;color:#155724;border-color:#28a745;" title="View / download shared documents">'
-          +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg>'
-          +'View Documents</button>';
-      } else if(fs.status==='denied'){
+      } else if(fsLatest.status==='approved'){
+        // The latest request is approved — but we already rendered View
+        // Documents above, so offer Request More to ask for additional docs.
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#e8f4ff;color:#1a5a8a;border-color:#7ab8e0;" title="Request additional documents">'
+          +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
+          +'Request more</button>';
+      } else if(fsLatest.status==='denied'){
         actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#fde2e2;color:#7c1a1a;border-color:#d9534f;" title="Tenant declined the previous request — try again">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Request again</button>';
-      } else if(fs.status==='revoked'){
+      } else if(fsLatest.status==='revoked'){
         actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#fde2e2;color:#7c1a1a;border-color:#d9534f;" title="Tenant revoked previous access — request again">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Re-request</button>';
@@ -4889,21 +4913,40 @@ async function openFullShareRequestModal(accessId,inquiryId){
   if(prof.error==='no_profile'){closeFullShareRequest();toast('Tenant has not filled their profile yet.','e');return;}
 
   var avail=prof.doc_availability||{};
-  // Build checkbox rows only for docs the tenant has actually uploaded.
-  var availableSlots=_DOC_SLOT_ORDER.filter(function(s){return avail[s]&&avail[s].uploaded;});
-  if(!availableSlots.length){
-    closeFullShareRequest();
-    toast('Tenant has not uploaded any documents to request.','e');
-    return;
-  }
-  var checkboxRows=availableSlots.map(function(s){
+  // Also fetch existing approved docs for this inquiry, so we can label them
+  // as "Already shared" in the request modal.
+  var alreadyShared={};
+  try{
+    var {data:approvedRows}=await sb.from('tenant_full_share_requests')
+      .select('approved_docs')
+      .eq('broker_user_id',cu.id)
+      .eq('inquiry_id',inquiryId)
+      .eq('status','approved');
+    (approvedRows||[]).forEach(function(r){
+      (r.approved_docs||[]).forEach(function(s){alreadyShared[s]=true;});
+    });
+  }catch(e){console.warn('Approved-share lookup failed:',e&&e.message);}
+  // We render ALL 7 slots, not just uploaded ones — that way broker can
+  // request something the tenant hasn't uploaded yet and the tenant can
+  // upload at approval time. Each slot is annotated with its current state.
+  var checkboxRows=_DOC_SLOT_ORDER.map(function(s){
     var lbl=_DOC_SLOT_LABELS[s].label;
-    var verifiedBadge=avail[s].verified
-      ? '<span style="background:#d4edda;color:#155724;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">✓ Verified</span>'
-      : '<span style="background:#fff3cd;color:#856404;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">⏳ Pending</span>';
-    return '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--sa);border-radius:8px;margin-top:8px;cursor:pointer;">'+
-      '<input type="checkbox" id="fsq_'+s+'" value="'+s+'" style="width:18px;height:18px;"/>'+
-      '<span style="flex:1;font-size:13px;">'+esc(lbl)+verifiedBadge+'</span>'+
+    var state=avail[s]||{uploaded:false,verified:false};
+    var stateBadge='';
+    var disabled='';
+    if(alreadyShared[s]){
+      stateBadge='<span style="background:#d4edda;color:#155724;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">✓ Already shared</span>';
+      disabled='disabled';
+    } else if(state.verified){
+      stateBadge='<span style="background:#d4edda;color:#155724;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">Uploaded · verified</span>';
+    } else if(state.uploaded){
+      stateBadge='<span style="background:#fff3cd;color:#856404;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">Uploaded · pending review</span>';
+    } else {
+      stateBadge='<span style="background:#fde2e2;color:#7c1a1a;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">Not uploaded yet</span>';
+    }
+    return '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--sa);border-radius:8px;margin-top:8px;cursor:'+(disabled?'not-allowed':'pointer')+';opacity:'+(disabled?'.55':'1')+';">'+
+      '<input type="checkbox" id="fsq_'+s+'" value="'+s+'" '+disabled+' style="width:18px;height:18px;"/>'+
+      '<span style="flex:1;font-size:13px;">'+esc(lbl)+stateBadge+'</span>'+
     '</label>';
   }).join('');
 
@@ -4916,9 +4959,9 @@ async function openFullShareRequestModal(accessId,inquiryId){
       '<button class="mc" onclick="closeFullShareRequest()" aria-label="Close"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button>'+
     '</div>'+
     '<div class="al ali" style="margin-bottom:12px;font-size:12px;line-height:1.5;">'+
-      '<strong>How this works:</strong> Pick the documents you actually need. The tenant will see your request, choose which to share (they may share fewer than you ask for), and approve or deny. You will be notified of their decision.'+
+      '<strong>How this works:</strong> Pick the documents you actually need. The tenant will see your request, choose which to share (they may share fewer than you ask for), and approve or deny. If they haven\'t uploaded a document yet, they can upload it during approval.'+
     '</div>'+
-    '<p style="font-size:12px;color:var(--mu);margin-bottom:6px;">Documents the tenant has uploaded:</p>'+
+    '<p style="font-size:12px;color:var(--mu);margin-bottom:6px;">Pick which documents to request:</p>'+
     '<div id="fsqDocList">'+checkboxRows+'</div>'+
     '<div class="fg" style="margin-top:14px;">'+
       '<label class="flbl">Optional message to tenant</label>'+
