@@ -4686,7 +4686,7 @@ async function renderListerLeads(){
     }
     var actions='<div class="lead-actions">';
     if(access){
-      actions+='<button class="lead-act-btn" onclick="viewTenantProfile('+access.id+')" style="background:#f3e8d4;color:#7c5a1a;border-color:#daa520;" title="View shared tenant profile">'
+      actions+='<button class="lead-act-btn" onclick="viewTenantProfile('+access.id+')" style="background:transparent;color:#a07820;border-color:#daa520;" title="View shared tenant profile">'
         +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg>'
         +'View Profile</button>';
       // ── Stage 6: full-share buttons (state-aware) ──
@@ -4701,32 +4701,32 @@ async function renderListerLeads(){
       // 1. If approved share exists (and isn't the same as latest's pending
       // sibling), always offer the View Documents button.
       if(fsApproved){
-        actions+='<button class="lead-act-btn" onclick="openFullShareViewer('+fsApproved.id+')" style="background:#d4edda;color:#155724;border-color:#28a745;" title="View / download shared documents">'
+        actions+='<button class="lead-act-btn" onclick="openFullShareViewer('+fsApproved.id+')" style="background:transparent;color:#1f7a3f;border-color:#28a745;" title="View / download shared documents">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg>'
           +'View Documents</button>';
       }
       // 2. Action button reflects the latest-status request, OR Request
       // Documents if no request yet.
       if(!fsLatest){
-        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#e8f4ff;color:#1a5a8a;border-color:#7ab8e0;" title="Request full document access">'
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:transparent;color:#1a5a8a;border-color:#7ab8e0;" title="Request full document access">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Request Documents</button>';
       } else if(fsLatest.status==='pending'){
-        actions+='<span class="lead-act-btn" style="background:#fff3cd;color:#856404;border-color:#daa520;cursor:default;" title="Tenant has not responded yet">'
+        actions+='<span class="lead-act-btn" style="background:#fff8e1;color:#856404;border-color:#daa520;cursor:default;" title="Tenant has not responded yet">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-clock"/></svg>'
           +'Awaiting tenant</span>';
       } else if(fsLatest.status==='approved'){
         // The latest request is approved — but we already rendered View
         // Documents above, so offer Request More to ask for additional docs.
-        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#e8f4ff;color:#1a5a8a;border-color:#7ab8e0;" title="Request additional documents">'
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:transparent;color:#1a5a8a;border-color:#7ab8e0;" title="Request additional documents">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Request more</button>';
       } else if(fsLatest.status==='denied'){
-        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#fde2e2;color:#7c1a1a;border-color:#d9534f;" title="Tenant declined the previous request — try again">'
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:transparent;color:#9c2a2a;border-color:#d9534f;" title="Tenant declined the previous request — try again">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Request again</button>';
       } else if(fsLatest.status==='revoked'){
-        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#fde2e2;color:#7c1a1a;border-color:#d9534f;" title="Tenant revoked previous access — request again">'
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:transparent;color:#9c2a2a;border-color:#d9534f;" title="Tenant revoked previous access — request again">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Re-request</button>';
       }

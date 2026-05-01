@@ -28,7 +28,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cr);color:var(--ink);}
   main[style*="padding: 40px 60px"],
   .page[style*="padding:40px 60px"],
   .page[style*="padding: 40px 60px"]{
-    padding:24px 16px !important;
+    padding:24px 14px !important;
   }
   /* Inquiry rows: stack action button below content on narrow screens */
   .li{padding:11px 12px;}
@@ -37,8 +37,46 @@ body{font-family:'DM Sans',sans-serif;background:var(--cr);color:var(--ink);}
   .lead-act-btn{max-width:100%;white-space:normal;}
   /* Stats cards row: tighter gap on mobile */
   .g4{gap:10px;}
-  /* Force any element claiming a width >100vw to shrink */
-  body{overflow-x:hidden;}
+
+  /* ── Lead table → card stack on mobile ──
+     The table is ~700px wide minimum (5 columns of business data).
+     Trying to scroll it horizontally on a phone is awkward; converting
+     each row to a stacked card is much more usable. We hide the thead,
+     turn each row into a vertical card with its cell labels generated
+     by data-label CSS attributes. */
+  .leads-table thead{display:none;}
+  .leads-table,.leads-table tbody,.leads-table tr,.leads-table td{display:block;width:auto;}
+  .leads-table tr{
+    background:var(--wh);
+    border:1px solid var(--lister-border);
+    border-radius:10px;
+    margin:10px;
+    padding:6px 0;
+  }
+  .leads-table td{
+    border:none !important;
+    padding:8px 14px !important;
+    position:relative;
+  }
+  .leads-table td:not(:last-child){
+    border-bottom:1px dashed var(--sa) !important;
+  }
+  /* Date cell becomes a small header */
+  .leads-table td:first-child{
+    background:var(--cr);
+    color:var(--mu);
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    padding:6px 14px !important;
+    border-radius:9px 9px 0 0;
+  }
+  .lead-msg{max-width:100%;}
+  /* Action buttons: each takes full width on mobile so they never clip */
+  .lead-actions{flex-direction:column;align-items:stretch;gap:6px;}
+  .lead-act-btn{justify-content:center;padding:9px 12px;font-size:13px;}
+  .lead-act-btn .icn{width:14px;height:14px;}
 }
 /* Tablet: still want some spacing but less than desktop's 60px */
 @media (max-width: 980px) and (min-width: 721px){
@@ -505,7 +543,12 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
   background:var(--wh);
   border:1px solid var(--lister-border);
   border-radius:12px;
-  overflow:hidden;
+  /* overflow-x:auto allows horizontal scroll when the table is wider than
+     the viewport (e.g. on phones in portrait). Previously this was
+     overflow:hidden which silently clipped the table off the right edge —
+     users could only see the first two columns and had no way to scroll. */
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
   box-shadow:var(--lister-shadow-md);
 }
 .leads-table{
@@ -534,12 +577,16 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px
 .lead-act-btn{
   display:inline-flex;align-items:center;gap:5px;
   padding:6px 11px;border-radius:6px;font-size:11.5px;font-weight:700;
-  cursor:pointer;border:none;font-family:inherit;
+  cursor:pointer;
+  /* Default to a transparent border so individual buttons can supply their
+     own border color via inline style without us silently ignoring it. */
+  border:1px solid transparent;
+  font-family:inherit;
   transition:all .15s;text-decoration:none;
 }
 .lead-act-btn .icn{width:13px;height:13px;}
-.lead-act-wa{background:#25d366;color:#fff;}
-.lead-act-wa:hover{background:#1ebe5b;transform:translateY(-1px);box-shadow:0 2px 6px rgba(37,211,102,.3);}
+.lead-act-wa{background:#25d366;color:#fff;border-color:#25d366;}
+.lead-act-wa:hover{background:#1ebe5b;border-color:#1ebe5b;transform:translateY(-1px);box-shadow:0 2px 6px rgba(37,211,102,.3);}
 .lead-act-call{background:transparent;color:var(--t);border:1px solid var(--t);}
 .lead-act-call:hover{background:var(--t);color:#fff;}
 .lead-act-mail{background:transparent;color:var(--mu);border:1px solid var(--sa);}

@@ -62,7 +62,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="app.css?v=20260501-170630"/>
+<link rel="stylesheet" href="app.css?v=20260501-172322"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -1460,8 +1460,8 @@
   </div>
 </div>
 
-<script src="common.js?v=20260501-170630" defer></script>
-<script src="app.js?v=20260501-170630" defer></script>
+<script src="common.js?v=20260501-172322" defer></script>
+<script src="app.js?v=20260501-172322" defer></script>
 <script>
 // Build version stamp — replaced by build script. Used to detect when a new
 // deploy has landed so we can auto-reload the page for users.
@@ -1490,42 +1490,50 @@ if('serviceWorker' in navigator){
 
 // ─── New-version polling ───
 // Every 90s, fetch /version.json and compare to the version this page loaded with.
-// If a new version is live, show a small banner inviting the user to reload, and
-// auto-reload after 8s if they don't dismiss it.
+// If a new version is live, show a small banner inviting the user to reload.
+// User dismissal is honored for the rest of the session — we won't re-prompt
+// until they navigate away and come back.
 (function(){
   if(!window.__BUILD_VERSION__||window.__BUILD_VERSION__==='__'+'VERSION__')return;
   var current=window.__BUILD_VERSION__;
-  var checkInterval=90*1000; // 90 seconds
+  var checkInterval=90*1000;
   var notified=false;
+  // Honor session-level mute (user dismissed once, don't badger them)
+  function _isMuted(){
+    try{return sessionStorage.getItem('ekm_upd_mute')==='1';}catch(e){return false;}
+  }
+  function _muteForSession(){
+    try{sessionStorage.setItem('ekm_upd_mute','1');}catch(e){}
+  }
   function showUpdateBanner(){
     if(notified)return;
+    if(_isMuted())return;
     notified=true;
     var bar=document.createElement('div');
     bar.id='ekm-upd-bar';
     bar.style.cssText='position:fixed;top:0;left:0;right:0;background:#125a51;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;padding:11px 18px;z-index:9999;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,.2);animation:ekm-slide .35s ease-out;';
-    bar.innerHTML='<span>✨ A new version of Ek Makān is available.</span>'
+    bar.innerHTML='<span>A new version of Ek Makān is available.</span>'
       +'<button id="ekm-upd-now" style="background:#fff;color:#125a51;border:none;border-radius:50px;padding:6px 16px;font-weight:700;font-family:inherit;font-size:12.5px;cursor:pointer;">Reload now</button>'
-      +'<button id="ekm-upd-later" style="background:transparent;color:#a8d4cd;border:none;font-family:inherit;font-size:12px;cursor:pointer;text-decoration:underline;">Later</button>';
+      +'<button id="ekm-upd-later" style="background:transparent;color:#a8d4cd;border:none;font-family:inherit;font-size:12px;cursor:pointer;text-decoration:underline;">Dismiss</button>';
     var styleEl=document.createElement('style');
     styleEl.textContent='@keyframes ekm-slide{from{transform:translateY(-100%);}to{transform:translateY(0);}}';
     document.head.appendChild(styleEl);
     document.body.appendChild(bar);
     document.getElementById('ekm-upd-now').onclick=function(){doReload();};
     document.getElementById('ekm-upd-later').onclick=function(){
+      // Mute for the rest of the session — no auto re-show, no 5-min retry.
+      // The user will pick up the new version on their next navigation.
+      _muteForSession();
       bar.remove();
-      // Re-check in 5 minutes — give the user some time but keep the prompt active
-      setTimeout(function(){notified=false;check();},5*60*1000);
     };
-    // Auto-reload after 8 seconds if no interaction (most users want the update)
-    setTimeout(function(){
-      if(document.getElementById('ekm-upd-bar'))doReload();
-    },8000);
+    // No auto-reload. Earlier behavior auto-reloaded after 8s which felt like
+    // the page was "spamming" new-version prompts. Users decide when to reload.
   }
   function doReload(){
-    // Bypass HTTP cache by reloading with a unique fragment trick
     window.location.reload();
   }
   function check(){
+    if(_isMuted())return;
     fetch('/version.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
       if(d&&d.version&&d.version!==current){
         showUpdateBanner();
