@@ -6110,6 +6110,14 @@ async function renderAdmin(t){
         :'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No tenants yet.</div>');
   }
 
+  if(t==='tp'){
+    // ── STAGE 5: Tenant Profile verification queue ──
+    // Renders the queue of tenant profiles + landlord refs needing admin
+    // review. Delegates to renderTenantProfileAdmin() to keep this function
+    // navigable (renderAdmin is already 200+ lines).
+    await renderTenantProfileAdmin(el);
+  }
+
   if(t==='ld')rLeads();
   if(t==='rp')rReports();
 }
@@ -6216,6 +6224,344 @@ async function dlL(id){
   if(!confirm('Permanently delete listing #'+id+'?'))return;
   var ok=await deleteListing(id);
   if(ok){_clr('l');_clr('i');toast('Listing deleted.','e');await renderAdmin(curAT);}
+}
+
+// ══ TENANT PROFILE ADMIN (Stage 5) ══
+// Admin queue for verifying tenant profiles. Lists tenants with at least one
+// `pending` document or unverified landlord reference at the top, then everyone
+// else. Admin can verify/reject each document and each landlord reference
+// independently, write tenant-facing notes (which the tenant sees on their
+// profile page) plus private admin-only notes, and export everything as CSV.
+//
+// Document files live in the private `tenant-docs` storage bucket — only admin
+// has read access (per RLS in the migration). Brokers NEVER see the files.
+// We generate short-lived signed URLs (60s) when admin clicks "Open file".
+//
+// Verification level (Bronze/Silver/Gold/Platinum) is recomputed automatically
+// by the DB trigger every time we update doc_verifications or insert/update
+// a landlord ref — we just write the change and re-render.
+async function renderTenantProfileAdmin(el){
+  if(!el)return;
+  el.innerHTML='<div class="mk-spinner"><span class="mk-spinner-text">Loading tenant profiles…</span></div>';
+
+  // Fetch profiles + refs + tenant user info in three queries.
+  var {data:profs,error:pErr}=await sb.from('tenant_profiles').select('*').order('updated_at',{ascending:false});
+  if(pErr){el.innerHTML='<div class="al ale">Error loading profiles: '+esc(pErr.message)+'</div>';return;}
+  profs=profs||[];
+
+  var userIds=profs.map(function(p){return p.user_id;});
+  var userMap={};
+  if(userIds.length){
+    var {data:users}=await sb.from('users').select('id,name,email,phone').in('id',userIds);
+    (users||[]).forEach(function(u){userMap[u.id]=u;});
+  }
+
+  var {data:refs}=await sb.from('tenant_landlord_refs').select('*').order('id',{ascending:true});
+  refs=refs||[];
+  var refsByUser={};
+  refs.forEach(function(r){
+    if(!refsByUser[r.user_id])refsByUser[r.user_id]=[];
+    refsByUser[r.user_id].push(r);
+  });
+
+  // Filter state — kept in a global so it survives re-renders triggered by
+  // verify/reject actions.
+  if(typeof window._tpaFilter==='undefined')window._tpaFilter={status:'pending',q:''};
+  var filter=window._tpaFilter;
+
+  // Compute "pending" status per profile (any doc 'pending' OR any unverified ref).
+  function _hasPending(p){
+    var dv=p.doc_verifications||{};
+    if(Object.keys(dv).some(function(k){return dv[k]==='pending';}))return true;
+    var rs=refsByUser[p.user_id]||[];
+    if(rs.some(function(r){return !r.verified;}))return true;
+    return false;
+  }
+
+  // Apply filter
+  var filtered=profs.filter(function(p){
+    if(filter.status==='pending'&&!_hasPending(p))return false;
+    if(filter.status==='verified'&&p.verification_level==='none')return false;
+    if(filter.q){
+      var u=userMap[p.user_id]||{};
+      var hay=((u.name||'')+' '+(u.email||'')+' '+(p.employer_name||'')).toLowerCase();
+      if(hay.indexOf(filter.q.toLowerCase())<0)return false;
+    }
+    return true;
+  });
+
+  var pendingCount=profs.filter(_hasPending).length;
+  var totalCount=profs.length;
+
+  // ── Header + filters + export ──
+  var header=''+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">'+
+      '<div>'+
+        '<h2 style="font-family:Playfair Display,serif;font-size:18px;margin-bottom:2px;">'+
+          '<svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:#9b59b6;"><use href="#i-shield-check"/></svg> Tenant Profile Verification'+
+        '</h2>'+
+        '<p style="font-size:12px;color:var(--mu);">'+pendingCount+' awaiting review &middot; '+totalCount+' total</p>'+
+      '</div>'+
+      '<button class="leads-export-btn" onclick="exportTenantProfilesCSV()"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-mail"/></svg> Export CSV</button>'+
+    '</div>';
+  var filterBar=''+
+    '<div class="leads-toolbar">'+
+      '<div class="filt-group"><label>Filter</label><select onchange="window._tpaFilter.status=this.value;renderAdmin(\'tp\')">'+
+        '<option value="pending"'+(filter.status==='pending'?' selected':'')+'>Awaiting review</option>'+
+        '<option value="verified"'+(filter.status==='verified'?' selected':'')+'>Verified profiles</option>'+
+        '<option value="all"'+(filter.status==='all'?' selected':'')+'>All profiles</option>'+
+      '</select></div>'+
+      '<div class="filt-group"><label>Search</label><input type="text" placeholder="Name, email, employer…" value="'+esc(filter.q)+'" oninput="clearTimeout(window._tpaSearchT);window._tpaSearchT=setTimeout(function(){window._tpaFilter.q=event.target.value;renderAdmin(\'tp\');},250)" style="width:220px;"/></div>'+
+    '</div>';
+
+  if(!filtered.length){
+    el.innerHTML=header+filterBar+'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No profiles match this filter.</div>';
+    return;
+  }
+
+  // ── Render each profile card ──
+  var cards=await Promise.all(filtered.map(function(p){return _renderTpAdminCard(p,userMap[p.user_id]||{},refsByUser[p.user_id]||[]);}));
+  el.innerHTML=header+filterBar+'<div style="display:flex;flex-direction:column;gap:14px;">'+cards.join('')+'</div>';
+}
+
+// Render a single tenant profile card. Returns HTML string (sync — signed URLs
+// are generated on-demand when admin clicks the file button).
+async function _renderTpAdminCard(p,user,refs){
+  var dv=p.doc_verifications||{};
+  var levelColors={none:'#999',bronze:'#cd7f32',silver:'#999',gold:'#daa520',platinum:'#9b59b6'};
+  var levelLabels={none:'Not Verified',bronze:'Bronze',silver:'Silver',gold:'Gold',platinum:'Platinum'};
+  var lvl=p.verification_level||'none';
+  var verifBadge='<span style="display:inline-flex;align-items:center;gap:6px;background:'+(levelColors[lvl]||'#999')+';color:#fff;padding:3px 10px;border-radius:14px;font-size:11px;font-weight:700;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-check"/></svg>'+(levelLabels[lvl]||'Not Verified')+'</span>';
+
+  // Per-document row helpers
+  function _docRow(slot,label,urlCol){
+    var url=p[urlCol];
+    var state=dv[slot]||(url?'pending':null);
+    if(!url)return '';
+    var stateBadge=state==='verified'
+      ?'<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✓ Verified</span>'
+      :state==='rejected'
+      ?'<span style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✗ Rejected</span>'
+      :'<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">⏳ Pending</span>';
+    var actions='';
+    if(state!=='verified')actions+='<button class="btn btn-sm" style="background:#28a745;color:#fff;border:0;padding:4px 10px;font-size:11px;" onclick="adminTpVerifyDoc(\''+p.user_id+'\',\''+slot+'\')">Verify</button> ';
+    if(state!=='rejected')actions+='<button class="btn btn-sm" style="background:#d9534f;color:#fff;border:0;padding:4px 10px;font-size:11px;" onclick="adminTpRejectDoc(\''+p.user_id+'\',\''+slot+'\')">Reject</button>';
+    return ''+
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:8px 0;border-bottom:1px solid var(--sa);">'+
+        '<div style="flex:1;min-width:0;">'+
+          '<strong style="font-size:12.5px;">'+esc(label)+'</strong> '+stateBadge+
+          '<div style="font-size:11px;color:var(--mu);margin-top:2px;"><button class="btn btn-o btn-sm" style="font-size:11px;padding:3px 9px;" onclick="adminTpOpenDoc(\''+esc(url)+'\')">Open file</button></div>'+
+        '</div>'+
+        '<div>'+actions+'</div>'+
+      '</div>';
+  }
+
+  // Per-landlord-ref row helpers
+  function _refRow(r){
+    var stateBadge=r.verified
+      ?'<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✓ Verified ('+esc(r.verification_outcome||'')+')</span>'
+      :'<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">⏳ Awaiting verification</span>';
+    var actions='';
+    if(!r.verified){
+      actions+=
+        '<button class="btn btn-sm" style="background:#28a745;color:#fff;border:0;padding:4px 10px;font-size:11px;" onclick="adminTpVerifyRef('+r.id+',\'positive\')">✓ Positive</button> '+
+        '<button class="btn btn-sm" style="background:#daa520;color:#fff;border:0;padding:4px 10px;font-size:11px;" onclick="adminTpVerifyRef('+r.id+',\'mixed\')">~ Mixed</button> '+
+        '<button class="btn btn-sm" style="background:#d9534f;color:#fff;border:0;padding:4px 10px;font-size:11px;" onclick="adminTpVerifyRef('+r.id+',\'negative\')">✗ Negative</button> '+
+        '<button class="btn btn-sm" style="background:#6c757d;color:#fff;border:0;padding:4px 10px;font-size:11px;" onclick="adminTpVerifyRef('+r.id+',\'unreachable\')">? Unreachable</button>';
+    }
+    var rentLabel=r.rent_amount?' &middot; ₹'+r.rent_amount.toLocaleString('en-IN')+'/mo':'';
+    var dateLabel=r.tenancy_start||r.tenancy_end?' &middot; '+esc(r.tenancy_start||'?')+' to '+esc(r.tenancy_end||'?'):'';
+    return ''+
+      '<div style="background:var(--cr);border-radius:8px;padding:10px;margin-top:8px;">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">'+
+          '<div style="flex:1;min-width:0;">'+
+            '<strong>'+esc(r.landlord_name)+'</strong> '+stateBadge+'<br/>'+
+            '<span style="font-size:12px;"><a href="tel:'+esc(r.landlord_phone)+'" style="color:var(--t);">'+esc(r.landlord_phone)+'</a>'+rentLabel+dateLabel+'</span>'+
+            (r.property_addr?'<div style="font-size:11px;color:var(--mu);margin-top:2px;">'+esc(r.property_addr)+'</div>':'')+
+            (r.admin_notes?'<div style="font-size:11px;color:var(--mu);margin-top:4px;font-style:italic;">Note: '+esc(r.admin_notes)+'</div>':'')+
+          '</div>'+
+          '<div>'+actions+'</div>'+
+        '</div>'+
+      '</div>';
+  }
+
+  // Lifestyle (admin-only) summary
+  var lifestyleStr=[
+    p.religion?'Religion: '+p.religion:'',
+    p.dietary_preference?'Diet: '+p.dietary_preference:'',
+    p.alcohol_pref?'Alcohol: '+p.alcohol_pref:''
+  ].filter(Boolean).join(' &middot; ');
+
+  // Basic + employment summary
+  var summary='';
+  if(p.num_occupants||p.marital_status)summary+='<div><strong>Household:</strong> '+(p.num_occupants?p.num_occupants+' occupants':'')+(p.marital_status?' &middot; '+p.marital_status:'')+(p.has_pets?' &middot; pets':'')+(p.smokes?' &middot; smokes':'')+'</div>';
+  if(p.employer_name)summary+='<div><strong>Employer:</strong> '+esc(p.employer_name)+(p.role_title?' &middot; '+esc(p.role_title):'')+'</div>';
+  if(p.monthly_income)summary+='<div><strong>Income:</strong> ₹'+p.monthly_income.toLocaleString('en-IN')+'/mo</div>';
+  if(p.pan_number)summary+='<div><strong>PAN:</strong> <code style="font-family:monospace;background:var(--cr);padding:1px 4px;border-radius:3px;">'+esc(p.pan_number)+'</code></div>';
+
+  var docsHtml=
+    _docRow('pan_doc','PAN Card','pan_doc_url')+
+    _docRow('employment_letter','Employment Letter','employment_letter_url')+
+    _docRow('salary_slip_1','Salary Slip 1','salary_slip_1_url')+
+    _docRow('salary_slip_2','Salary Slip 2','salary_slip_2_url')+
+    _docRow('salary_slip_3','Salary Slip 3','salary_slip_3_url')+
+    _docRow('itr_y1','ITR (Latest FY)','itr_y1_url')+
+    _docRow('itr_y2','ITR (Previous FY)','itr_y2_url');
+
+  var refsHtml=refs.length?refs.map(_refRow).join(''):'<p style="font-size:12px;color:var(--mu);font-style:italic;margin-top:8px;">No references on file.</p>';
+
+  var notesArea=''+
+    '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--sa);display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
+      '<div>'+
+        '<label class="flbl" style="font-size:11px;">Tenant-facing note (visible to tenant)</label>'+
+        '<textarea id="tpa_tn_'+p.user_id+'" class="fi" rows="2" style="font-size:12px;" placeholder="e.g. Re-upload clearer scan of PAN">'+esc(p.tenant_facing_notes||'')+'</textarea>'+
+      '</div>'+
+      '<div>'+
+        '<label class="flbl" style="font-size:11px;">Admin private note (admin-only)</label>'+
+        '<textarea id="tpa_an_'+p.user_id+'" class="fi" rows="2" style="font-size:12px;" placeholder="Internal notes — never shown to tenant or broker">'+esc(p.verification_notes||'')+'</textarea>'+
+      '</div>'+
+    '</div>'+
+    '<div style="text-align:right;margin-top:8px;">'+
+      '<button class="btn btn-bl btn-sm" onclick="adminTpSaveNotes(\''+p.user_id+'\')">Save notes</button>'+
+    '</div>';
+
+  return ''+
+    '<div style="background:var(--wh);border-radius:12px;padding:18px 20px;border:1px solid var(--sa);">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px;">'+
+        '<div>'+
+          '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
+            '<strong style="font-size:15px;">'+esc(user.name||'(unnamed)')+'</strong>'+
+            verifBadge+
+          '</div>'+
+          '<div style="font-size:12px;color:var(--mu);margin-top:2px;">'+esc(user.email||'')+(user.phone?' &middot; '+esc(user.phone):'')+'</div>'+
+        '</div>'+
+        '<div style="font-size:11px;color:var(--mu);">Updated '+(p.updated_at?new Date(p.updated_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'')+'</div>'+
+      '</div>'+
+      (summary?'<div style="font-size:13px;line-height:1.6;background:var(--cr);padding:10px;border-radius:8px;margin-bottom:10px;">'+summary+'</div>':'')+
+      (lifestyleStr?'<div style="font-size:12px;background:#fef9e7;border:1px solid #f0d080;color:#856404;padding:8px 10px;border-radius:8px;margin-bottom:10px;"><strong>Lifestyle (admin-only):</strong> '+esc(lifestyleStr)+'</div>':'')+
+      (p.self_intro?'<div style="font-size:13px;background:var(--cr);padding:10px;border-radius:8px;margin-bottom:10px;line-height:1.5;"><strong>About them:</strong> '+esc(p.self_intro)+'</div>':'')+
+      '<details'+(_hasPendingDocs(p)?' open':'')+'><summary style="cursor:pointer;font-size:13px;font-weight:700;padding:6px 0;">Documents</summary>'+
+        (docsHtml||'<p style="font-size:12px;color:var(--mu);font-style:italic;margin-top:8px;">No documents uploaded.</p>')+
+      '</details>'+
+      '<details'+(refs.some(function(r){return !r.verified;})?' open':'')+' style="margin-top:8px;"><summary style="cursor:pointer;font-size:13px;font-weight:700;padding:6px 0;">Landlord References</summary>'+
+        refsHtml+
+      '</details>'+
+      notesArea+
+    '</div>';
+}
+
+function _hasPendingDocs(p){
+  var dv=p.doc_verifications||{};
+  return Object.keys(dv).some(function(k){return dv[k]==='pending';});
+}
+
+// ── Admin actions ──
+
+// Open a private storage file. Generates a 60-second signed URL and opens
+// in a new tab so admin can review without leaving the queue.
+async function adminTpOpenDoc(path){
+  if(!path){toast('No file path','e');return;}
+  var {data,error}=await sb.storage.from('tenant-docs').createSignedUrl(path,60);
+  if(error){toast('Could not open file: '+error.message,'e');return;}
+  if(data&&data.signedUrl){
+    window.open(data.signedUrl,'_blank','noopener');
+  }
+}
+
+async function adminTpVerifyDoc(userId,slot){
+  // Read current doc_verifications, set this slot to 'verified', write back.
+  // The DB trigger recomputes verification_level automatically.
+  var {data:cur}=await sb.from('tenant_profiles').select('doc_verifications').eq('user_id',userId).single();
+  var dv=(cur&&cur.doc_verifications)||{};
+  dv[slot]='verified';
+  var {error}=await sb.from('tenant_profiles').update({
+    doc_verifications:dv,
+    verified_by:cu.id,
+    verified_at:new Date().toISOString()
+  }).eq('user_id',userId);
+  if(error){toast('Verify failed: '+error.message,'e');return;}
+  toast('Document verified ✓');
+  await renderAdmin('tp');
+}
+
+async function adminTpRejectDoc(userId,slot){
+  var reason=prompt('Reason for rejection? (will be shared with tenant)','');
+  if(reason===null)return;
+  var {data:cur}=await sb.from('tenant_profiles').select('doc_verifications,tenant_facing_notes').eq('user_id',userId).single();
+  var dv=(cur&&cur.doc_verifications)||{};
+  dv[slot]='rejected';
+  // Append the reason to tenant-facing notes if provided
+  var tn=cur&&cur.tenant_facing_notes||'';
+  if(reason&&reason.trim()){
+    var slotLabel={pan_doc:'PAN',employment_letter:'Employment letter',salary_slip_1:'Salary slip 1',salary_slip_2:'Salary slip 2',salary_slip_3:'Salary slip 3',itr_y1:'ITR (latest)',itr_y2:'ITR (previous)'}[slot]||slot;
+    tn=(tn?tn+'\n':'')+'['+new Date().toISOString().split('T')[0]+'] '+slotLabel+': '+reason.trim();
+  }
+  var {error}=await sb.from('tenant_profiles').update({
+    doc_verifications:dv,
+    tenant_facing_notes:tn,
+    verified_by:cu.id,
+    verified_at:new Date().toISOString()
+  }).eq('user_id',userId);
+  if(error){toast('Reject failed: '+error.message,'e');return;}
+  toast('Document rejected. Tenant will see your note.');
+  await renderAdmin('tp');
+}
+
+async function adminTpVerifyRef(refId,outcome){
+  var notes=prompt('Optional notes from your conversation with the landlord?','');
+  if(notes===null)return;
+  var {error}=await sb.from('tenant_landlord_refs').update({
+    verified:true,
+    verified_at:new Date().toISOString(),
+    verified_by:cu.id,
+    verification_outcome:outcome,
+    admin_notes:notes||null
+  }).eq('id',refId);
+  if(error){toast('Failed: '+error.message,'e');return;}
+  toast('Reference marked '+outcome);
+  await renderAdmin('tp');
+}
+
+async function adminTpSaveNotes(userId){
+  var tnEl=document.getElementById('tpa_tn_'+userId);
+  var anEl=document.getElementById('tpa_an_'+userId);
+  if(!tnEl||!anEl)return;
+  var {error}=await sb.from('tenant_profiles').update({
+    tenant_facing_notes:tnEl.value||null,
+    verification_notes:anEl.value||null
+  }).eq('user_id',userId);
+  if(error){toast('Save failed: '+error.message,'e');return;}
+  toast('Notes saved.');
+}
+
+// ── CSV Export ──
+// Calls the SECURITY DEFINER RPC admin_export_tenant_profiles which returns
+// every column. Audit-logged on the SQL side.
+async function exportTenantProfilesCSV(){
+  toast('Preparing export…');
+  var {data,error}=await sb.rpc('admin_export_tenant_profiles');
+  if(error){toast('Export failed: '+error.message,'e');return;}
+  if(!data||!data.length){toast('No tenant profiles to export.','e');return;}
+  // Build CSV
+  var keys=Object.keys(data[0]);
+  var rows=[keys.join(',')];
+  data.forEach(function(r){
+    rows.push(keys.map(function(k){
+      var v=r[k];
+      if(v==null)return '';
+      var s=String(v);
+      // Escape quotes + wrap if contains comma, quote, or newline
+      if(/[",\n]/.test(s))s='"'+s.replace(/"/g,'""')+'"';
+      return s;
+    }).join(','));
+  });
+  var blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='tenant-profiles-'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  toast('Exported '+data.length+' profiles.');
 }
 
 // ══ REPORTS ══

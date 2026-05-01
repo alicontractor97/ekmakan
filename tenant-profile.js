@@ -166,6 +166,15 @@
     var pctMap = {none: 0, bronze: 25, silver: 50, gold: 75, platinum: 100};
     var pct = pctMap[level] || 0;
 
+    // Admin notes from review (e.g. "Re-upload clearer scan of PAN").
+    // Surface prominently so the tenant knows what to fix.
+    var adminNotes = _profile && _profile.tenant_facing_notes;
+    var notesHTML = adminNotes ? ''+
+      '<div style="background:#fff3cd;border:1px solid #f0d080;border-radius:8px;padding:10px 12px;margin-top:12px;font-size:13px;line-height:1.5;color:#856404;">'+
+        '<strong><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-flag"/></svg> Note from our review team:</strong><br/>'+
+        '<span style="white-space:pre-wrap;">'+_esc(adminNotes)+'</span>'+
+      '</div>' : '';
+
     return ''+
       '<div style="background:var(--wh);border-radius:14px;padding:22px 24px;margin-bottom:20px;border:1px solid var(--sa);">'+
         '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">'+
@@ -181,6 +190,7 @@
                             '<p style="font-size:12px;color:var(--g);font-weight:700;margin-top:8px;">'+_esc(t.nextHelp)+'</p>')+
           '</div>'+
         '</div>'+
+        notesHTML +
       '</div>';
   }
 
