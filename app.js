@@ -4689,17 +4689,26 @@ async function renderListerLeads(){
       actions+='<button class="lead-act-btn" onclick="viewTenantProfile('+access.id+')" style="background:transparent;color:#a07820;border-color:#daa520;" title="View shared tenant profile">'
         +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg>'
         +'View Profile</button>';
-      // ── Stage 6: full-share buttons (state-aware) ──
-      // The button shows when there's an active redacted access row, because
-      // the request RPC requires it as a prerequisite.
-      // We render TWO things if both apply:
-      //   • View Documents — if there's an approved (non-revoked) share at all
-      //   • A second button for the latest-state — to request more, or reflect
-      //     the latest pending/denied/revoked status.
+    }
+    // ── Stage 6: full-share buttons (state-aware) ──
+    // Render whenever we have either:
+    //   • An access row (Stage 4 path — tenant inquired with profile), or
+    //   • A logged-in tenant on the inquiry (Stage 6F — tenant inquired without
+    //     profile; the SQL hotfix `makan-tenant-full-share-4-no-profile-fix.sql`
+    //     allows requesting docs based on listing ownership).
+    // We render TWO things if both apply:
+    //   • View Documents — if there's an approved (non-revoked) share at all
+    //   • A second button for the latest-state — to request more, or reflect
+    //     the latest pending/denied/revoked status.
+    var canDocFlow=access||i.uid;
+    if(canDocFlow){
       var fsApproved=fullShareApprovedByInquiry[i.id];
       var fsLatest=fullShareLatestByInquiry[i.id];
-      // 1. If approved share exists (and isn't the same as latest's pending
-      // sibling), always offer the View Documents button.
+      // The request modal accepts an accessId for the redacted profile fetch;
+      // pass 0 (falsy) when there's no access row so the modal skips that fetch
+      // and goes straight to the slot picker.
+      var accessIdArg=access?access.id:0;
+      // 1. If approved share exists, always offer the View Documents button.
       if(fsApproved){
         actions+='<button class="lead-act-btn" onclick="openFullShareViewer('+fsApproved.id+')" style="background:transparent;color:#1f7a3f;border-color:#28a745;" title="View / download shared documents">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg>'
@@ -4708,7 +4717,7 @@ async function renderListerLeads(){
       // 2. Action button reflects the latest-status request, OR Request
       // Documents if no request yet.
       if(!fsLatest){
-        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:transparent;color:#1a5a8a;border-color:#7ab8e0;" title="Request full document access">'
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+accessIdArg+','+i.id+')" style="background:transparent;color:#1a5a8a;border-color:#7ab8e0;" title="Request full document access">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Request Documents</button>';
       } else if(fsLatest.status==='pending'){
@@ -4718,15 +4727,15 @@ async function renderListerLeads(){
       } else if(fsLatest.status==='approved'){
         // The latest request is approved — but we already rendered View
         // Documents above, so offer Request More to ask for additional docs.
-        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:transparent;color:#1a5a8a;border-color:#7ab8e0;" title="Request additional documents">'
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+accessIdArg+','+i.id+')" style="background:transparent;color:#1a5a8a;border-color:#7ab8e0;" title="Request additional documents">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Request more</button>';
       } else if(fsLatest.status==='denied'){
-        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:transparent;color:#9c2a2a;border-color:#d9534f;" title="Tenant declined the previous request — try again">'
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+accessIdArg+','+i.id+')" style="background:transparent;color:#9c2a2a;border-color:#d9534f;" title="Tenant declined the previous request — try again">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Request again</button>';
       } else if(fsLatest.status==='revoked'){
-        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:transparent;color:#9c2a2a;border-color:#d9534f;" title="Tenant revoked previous access — request again">'
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+accessIdArg+','+i.id+')" style="background:transparent;color:#9c2a2a;border-color:#d9534f;" title="Tenant revoked previous access — request again">'
           +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
           +'Re-request</button>';
       }
@@ -4904,20 +4913,31 @@ async function openFullShareRequestModal(accessId,inquiryId){
   var modal=document.createElement('div');
   modal.id='fullShareRequestM';
   modal.className='mo open';
-  modal.innerHTML='<div class="mb" style="max-width:560px;"><div style="padding:40px;text-align:center;color:var(--mu);"><div class="mk-spinner"><span class="mk-spinner-text">Loading tenant profile…</span></div></div></div>';
+  modal.innerHTML='<div class="mb" style="max-width:560px;"><div style="padding:40px;text-align:center;color:var(--mu);"><div class="mk-spinner"><span class="mk-spinner-text">Loading…</span></div></div></div>';
   document.body.appendChild(modal);
 
-  // Fetch the redacted profile to know which docs the tenant has uploaded.
-  // This call also increments the broker's view_count (reasonable — they're
-  // engaging with the profile to decide what to ask for).
-  var rpc;
-  try{rpc=await sb.rpc('get_redacted_tenant_profile',{p_access_id:accessId});}
-  catch(e){closeFullShareRequest();toast('Could not load profile: '+(e&&e.message||'unknown'),'e');return;}
-  if(rpc.error){closeFullShareRequest();toast('Could not load profile: '+rpc.error.message,'e');return;}
-  var prof=rpc.data||{};
-  if(prof.error==='no_profile'){closeFullShareRequest();toast('Tenant has not filled their profile yet.','e');return;}
+  var avail={};
+  var hasProfile=false;
+  if(accessId){
+    // Tenant has shared their redacted profile (Stage 4 path) — fetch it so
+    // we can show which docs are uploaded vs missing. This call also
+    // increments the broker's view_count.
+    var rpc;
+    try{rpc=await sb.rpc('get_redacted_tenant_profile',{p_access_id:accessId});}
+    catch(e){closeFullShareRequest();toast('Could not load profile: '+(e&&e.message||'unknown'),'e');return;}
+    if(rpc.error){closeFullShareRequest();toast('Could not load profile: '+rpc.error.message,'e');return;}
+    var prof=rpc.data||{};
+    if(prof.error!=='no_profile'){
+      avail=prof.doc_availability||{};
+      hasProfile=true;
+    }
+  }
+  // Else: no access row yet (Stage 6F path — tenant inquired without
+  // creating a profile). We skip the profile fetch entirely. The broker
+  // can still request docs; the SQL fallback authorizes via listing
+  // ownership. The tenant will be prompted to upload during the approval
+  // flow (existing inline-upload UI in the approve modal handles that).
 
-  var avail=prof.doc_availability||{};
   // Also fetch existing approved docs for this inquiry, so we can label them
   // as "Already shared" in the request modal.
   var alreadyShared={};
@@ -4934,6 +4954,8 @@ async function openFullShareRequestModal(accessId,inquiryId){
   // We render ALL 7 slots, not just uploaded ones — that way broker can
   // request something the tenant hasn't uploaded yet and the tenant can
   // upload at approval time. Each slot is annotated with its current state.
+  // When hasProfile is false, every slot just says "Tenant will upload" — we
+  // genuinely don't know what they have.
   var checkboxRows=_DOC_SLOT_ORDER.map(function(s){
     var lbl=_DOC_SLOT_LABELS[s].label;
     var state=avail[s]||{uploaded:false,verified:false};
@@ -4942,6 +4964,9 @@ async function openFullShareRequestModal(accessId,inquiryId){
     if(alreadyShared[s]){
       stateBadge='<span style="background:#d4edda;color:#155724;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">✓ Already shared</span>';
       disabled='disabled';
+    } else if(!hasProfile){
+      // No access row yet — tenant hasn't shared profile state with us
+      stateBadge='<span style="background:#eee;color:#666;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">Tenant will upload</span>';
     } else if(state.verified){
       stateBadge='<span style="background:#d4edda;color:#155724;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">Uploaded · verified</span>';
     } else if(state.uploaded){
@@ -4965,6 +4990,7 @@ async function openFullShareRequestModal(accessId,inquiryId){
     '</div>'+
     '<div class="al ali" style="margin-bottom:12px;font-size:12px;line-height:1.5;">'+
       '<strong>How this works:</strong> Pick the documents you actually need. The tenant will see your request, choose which to share (they may share fewer than you ask for), and approve or deny. If they haven\'t uploaded a document yet, they can upload it during approval.'+
+      (hasProfile?'':' <em style="display:block;margin-top:6px;">This tenant hasn\'t set up a tenant profile yet. They\'ll be guided to upload the documents you need when they approve.</em>')+
     '</div>'+
     '<p style="font-size:12px;color:var(--mu);margin-bottom:6px;">Pick which documents to request:</p>'+
     '<div id="fsqDocList">'+checkboxRows+'</div>'+
@@ -6421,7 +6447,7 @@ async function renderAdmin(t){
           }).join('');
     el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;"><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;">Brokers & Owners ('+all.length+')</h2>'+_adminExportBtn('ls')+'</div>'
       +(all.length
-        ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow:hidden;">'
+        ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow-x:auto;-webkit-overflow-scrolling:touch;">'
           +'<table class="tbl"><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Agency</th><th>RERA</th><th>Joined</th><th>Listings</th><th>Trust</th></tr></thead><tbody>'
           +rowsHtml
           +'</tbody></table></div></div>'
@@ -6452,7 +6478,7 @@ async function renderAdmin(t){
           }).join('');
     el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;"><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;"><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;color:#c58600;"><use href="#i-sparkle"/></svg> Builders ('+bld.length+')</h2>'+_adminExportBtn('bd')+'</div>'
       +(bld.length
-        ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow:hidden;">'
+        ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow-x:auto;-webkit-overflow-scrolling:touch;">'
           +'<table class="tbl"><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Phone</th><th>Joined</th><th>Projects</th><th>Trust</th></tr></thead><tbody>'
           +rowsHtml
           +'</tbody></table></div></div>'
@@ -6474,7 +6500,7 @@ async function renderAdmin(t){
           }).join('');
     el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;"><h2 style="font-family:\'Playfair Display\',serif;font-size:18px;margin:0;">Tenants ('+ten.length+')</h2>'+_adminExportBtn('tn')+'</div>'
       +(ten.length
-        ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow:hidden;">'
+        ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow-x:auto;-webkit-overflow-scrolling:touch;">'
           +'<table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Inquiries</th></tr></thead><tbody>'
           +rowsHtml
           +'</tbody></table></div></div>'
@@ -6527,7 +6553,7 @@ async function showUserInquiries(uid,name){
     +'<h2 style="font-family:\'Playfair Display\',serif;font-size:18px;">'+name+'\'s Inquiries ('+inqs.length+')</h2>'
     +'</div>'
     +(inqs.length
-      ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow:hidden;">'
+      ?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow-x:auto;-webkit-overflow-scrolling:touch;">'
         +'<table class="tbl"><thead><tr><th>#</th><th>Listing</th><th>Type</th><th>City</th><th>Message</th><th>Date</th><th>Action</th></tr></thead><tbody>'
         +inqs.map(function(i,n){
           return '<tr><td>'+(n+1)+'</td>'
@@ -7164,7 +7190,7 @@ async function flLeads(){
   if(ft)inqs=inqs.filter(function(i){return i.lf===ft;});
   var el=document.getElementById('lTbl');if(!el)return;
   var ls=await gL();
-  el.innerHTML=inqs.length?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow:hidden;"><table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Email</th><th>Listing</th><th>Type</th><th>City</th><th>Message</th><th>Date</th></tr></thead><tbody>'+inqs.map(function(i,n){return '<tr><td>'+(n+1)+'</td><td><strong>'+esc(i.name)+'</strong></td><td>'+esc(i.phone)+'</td><td>'+esc(i.email||'—')+'</td><td style="font-size:12px;">'+esc(i.listingTitle)+'</td><td><span class="pill '+(i.lf==='buy'?'pill-y':'pill-b')+'">'+esc(i.lf||'rent')+'</span></td><td>'+esc(i.listingCity||'—')+'</td><td style="max-width:140px;font-size:12px;color:var(--mu);">'+esc(i.message||'—')+'</td><td style="white-space:nowrap;">'+i.sentAt+'</td></tr>';}).join('')+'</tbody></table></div></div><p style="font-size:12px;color:var(--mu);margin-top:8px;">'+inqs.length+' lead(s)</p>':'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No leads for selected filters.</div>';
+  el.innerHTML=inqs.length?'<div style="overflow-x:auto;"><div style="background:var(--wh);border-radius:12px;border:1px solid var(--sa);overflow-x:auto;-webkit-overflow-scrolling:touch;"><table class="tbl"><thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Email</th><th>Listing</th><th>Type</th><th>City</th><th>Message</th><th>Date</th></tr></thead><tbody>'+inqs.map(function(i,n){return '<tr><td>'+(n+1)+'</td><td><strong>'+esc(i.name)+'</strong></td><td>'+esc(i.phone)+'</td><td>'+esc(i.email||'—')+'</td><td style="font-size:12px;">'+esc(i.listingTitle)+'</td><td><span class="pill '+(i.lf==='buy'?'pill-y':'pill-b')+'">'+esc(i.lf||'rent')+'</span></td><td>'+esc(i.listingCity||'—')+'</td><td style="max-width:140px;font-size:12px;color:var(--mu);">'+esc(i.message||'—')+'</td><td style="white-space:nowrap;">'+i.sentAt+'</td></tr>';}).join('')+'</tbody></table></div></div><p style="font-size:12px;color:var(--mu);margin-top:8px;">'+inqs.length+' lead(s)</p>':'<div style="background:var(--wh);border-radius:12px;padding:28px;text-align:center;color:var(--mu);border:1px solid var(--sa);">No leads for selected filters.</div>';
 }
 async function expCSV(mode){
   var inqs=await gInq();var ls=await gL();
