@@ -3106,12 +3106,19 @@ function renderNotifList(){
       case 'listing_rejected':iconHref='#i-x';       iconBg='#ffe8e8'; iconColor='var(--red)'; break;
       case 'listing_deleted': iconHref='#i-trash';   iconBg='#ffe8e8'; iconColor='var(--red)'; break;
       case 'report':          iconHref='#i-flag';    iconBg='#fff3e0'; iconColor='#c55a00'; break;
+      // Tenant-profile notifications (Phase 1.5)
+      case 'tp_shared':       iconHref='#i-shield-check'; iconBg='#f3e8d4'; iconColor='#7c5a1a'; break;
+      case 'tp_revoked':      iconHref='#i-lock';    iconBg='#ffe8e8'; iconColor='var(--red)'; break;
+      case 'tp_viewed':       iconHref='#i-shield-check'; iconBg='#e8f4ff'; iconColor='#1a7ab8'; break;
+      case 'tp_level_up':     iconHref='#i-sparkle'; iconBg='#f4ebff'; iconColor='#9b59b6'; break;
+      case 'tp_admin_note':   iconHref='#i-flag';    iconBg='#fff3cd'; iconColor='#856404'; break;
       default:                iconHref='#i-bell';    iconBg='var(--tl)'; iconColor='var(--t)';
     }
     var rowBg=n.read?'#fff':'rgba(18,90,81,.05)';
     var titleWeight=n.read?'500':'700';
     var ago=_timeAgo(n.created_at);
-    var clickAttrs=n.link_id?'onclick="handleNotifClick('+n.id+','+n.link_id+')" style="cursor:pointer;background:'+rowBg+';"':'onclick="markNotifRead('+n.id+')" style="cursor:pointer;background:'+rowBg+';"';
+    // Pass the type through so handleNotifClick knows where to route
+    var clickAttrs='onclick="handleNotifClick('+n.id+','+(n.link_id||'null')+',\''+esc(n.type||'')+'\')" style="cursor:pointer;background:'+rowBg+';"';
     return '<div '+clickAttrs+' class="notif-row" data-id="'+n.id+'">'
       +'<div class="notif-ic" style="background:'+iconBg+';color:'+iconColor+';"><svg class="icn icn-sm" aria-hidden="true"><use href="'+iconHref+'"/></svg></div>'
       +'<div style="flex:1;min-width:0;">'
@@ -3137,10 +3144,39 @@ async function markNotifRead(id){
 }
 
 // Click notification — mark as read and navigate
-async function handleNotifClick(notifId,linkId){
+async function handleNotifClick(notifId,linkId,notifType){
   await markNotifRead(notifId);
   closeNotifPanel();
-  if(linkId)openListing(linkId);
+  // Route by notification type. Existing types (inquiry, listing_*) used
+  // link_id as a listing_id and openListing was always correct. Tenant-profile
+  // types use link_id differently (access_id) so we route them to the right
+  // dashboard section.
+  switch(notifType){
+    case 'tp_shared':
+    case 'tp_viewed':
+    case 'tp_level_up':
+    case 'tp_admin_note':
+      // Send tenant to their dashboard. The Profile Access section + the
+      // Tenant Profile section are both there. We use the existing /dashboard
+      // route which loads tenant-profile.js.
+      if(window.location.pathname!=='/dashboard'){
+        window.location.href='/dashboard';
+      }
+      return;
+    case 'tp_revoked':
+      // Send broker to their leads tab so they can see which inquiry lost
+      // access. The badge on that lead row will be gone (since access is now
+      // revoked) and View Profile button won't appear.
+      if(window.location.pathname!=='/lister'){
+        window.location.href='/lister';
+      } else if(typeof setListerTab==='function'){
+        setListerTab('leads');
+      }
+      return;
+    default:
+      // Existing behavior: link_id is a listing_id, open the listing.
+      if(linkId)openListing(linkId);
+  }
 }
 
 function closeNotifPanel(){
