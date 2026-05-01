@@ -655,10 +655,285 @@
   // Expose so the dashboard bootstrap can call it.
   window.renderProfileAccess=renderProfileAccess;
 
+  // ── Document Requests panel (Stage 6C) ──
+  // Shows tenant the broker-initiated requests for full document access.
+  // Tenant approves with their own subset selection or denies. Approved rows
+  // show view/download counts + a Revoke button.
+  //
+  // Slot keys must match the SQL function whitelist exactly. Keep this in
+  // sync with the broker-side _DOC_SLOT_LABELS in app.js.
+  var _DOC_LABELS={
+    pan_doc:'PAN Card',
+    employment_letter:'Employment / Offer Letter',
+    salary_slip_1:'Latest Salary Slip',
+    salary_slip_2:'Salary Slip — 2 months ago',
+    salary_slip_3:'Salary Slip — 3 months ago',
+    itr_y1:'ITR — Latest FY',
+    itr_y2:'ITR — Previous FY'
+  };
+
+  async function renderDocRequests(){
+    var host=document.getElementById('docRequestsSection');
+    if(!host)return;
+    if(!cu){host.innerHTML='';return;}
+
+    var {data:rows,error}=await sb.from('tenant_full_share_requests')
+      .select('id,broker_user_id,inquiry_id,listing_id,requested_docs,approved_docs,request_message,denial_reason,status,requested_at,responded_at,revoked_at,view_count,download_count,last_viewed_at,last_downloaded_at')
+      .eq('tenant_user_id',cu.id)
+      .order('requested_at',{ascending:false});
+    if(error){
+      host.innerHTML='<p style="font-size:13px;color:var(--mu);">Could not load document requests: '+_esc(error.message)+'</p>';
+      return;
+    }
+    rows=rows||[];
+    if(!rows.length){host.innerHTML='';return;}
+
+    // Look up brokers + listings (same shape as renderProfileAccess)
+    var brokerIds=[];rows.forEach(function(r){if(r.broker_user_id&&brokerIds.indexOf(r.broker_user_id)<0)brokerIds.push(r.broker_user_id);});
+    var brokerMap={};
+    if(brokerIds.length){
+      var {data:brokers}=await sb.from('users').select('id,name,role,agency').in('id',brokerIds);
+      (brokers||[]).forEach(function(b){brokerMap[b.id]=b;});
+    }
+    var listingMap={};
+    try{
+      if(typeof gL==='function'){
+        var allL=await gL();
+        (allL||[]).forEach(function(l){listingMap[l.id]=l;});
+      }
+    }catch(e){}
+
+    var pending=rows.filter(function(r){return r.status==='pending';});
+    var approved=rows.filter(function(r){return r.status==='approved';});
+    var resolved=rows.filter(function(r){return r.status==='denied'||r.status==='revoked';});
+
+    function _docList(slots){
+      if(!slots||!slots.length)return '<em style="color:var(--mu);">none</em>';
+      return slots.map(function(s){return _esc(_DOC_LABELS[s]||s);}).join(', ');
+    }
+
+    function _brokerLine(r){
+      var b=brokerMap[r.broker_user_id]||{};
+      var l=listingMap[r.listing_id]||{};
+      var brokerName=b.name||'(broker)';
+      var listingTitle=l.title||'(listing)';
+      var roleLabel=b.role==='broker'?'Broker':b.role==='owner'?'Owner':b.role==='builder'?'Builder':'Lister';
+      return '<strong>'+_esc(brokerName)+'</strong> <span style="font-size:11px;color:var(--mu);">('+_esc(roleLabel)+(b.agency?' · '+_esc(b.agency):'')+')</span>'+
+             '<div style="font-size:12px;color:var(--mu);margin-top:2px;">For: <a href="/listing?id='+r.listing_id+'" style="color:var(--t);">'+_esc(listingTitle)+'</a></div>';
+    }
+
+    function _pendingRow(r){
+      var requestedAt=r.requested_at?new Date(r.requested_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+      return '<div style="border:2px solid #daa520;border-radius:8px;padding:14px;margin-top:10px;background:#fffaeb;">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">'+
+          '<div style="flex:1;min-width:0;">'+
+            _brokerLine(r)+
+            '<div style="font-size:11px;color:var(--mu);margin-top:6px;">Requested on '+_esc(requestedAt)+'</div>'+
+          '</div>'+
+          '<span style="background:#daa520;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;">⏳ Awaiting your response</span>'+
+        '</div>'+
+        '<div style="margin-top:10px;font-size:13px;background:var(--wh);padding:10px;border-radius:6px;">'+
+          '<strong>Documents requested:</strong> '+_docList(r.requested_docs)+
+          (r.request_message?'<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--sa);font-style:italic;">"'+_esc(r.request_message)+'"</div>':'')+
+        '</div>'+
+        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
+          '<button class="btn btn-bl btn-sm" onclick="window._tp_openApproveModal('+r.id+')" style="flex:1;">Review &amp; Approve</button>'+
+          '<button class="btn btn-o btn-sm" onclick="window._tp_denyRequest('+r.id+')">Deny</button>'+
+        '</div>'+
+      '</div>';
+    }
+
+    function _approvedRow(r){
+      var respondedAt=r.responded_at?new Date(r.responded_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+      var lastView=r.last_viewed_at?new Date(r.last_viewed_at).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'never';
+      return '<div style="border:1px solid #28a745;border-radius:8px;padding:12px;margin-top:10px;background:#f4fbf6;">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">'+
+          '<div style="flex:1;min-width:0;">'+
+            _brokerLine(r)+
+            '<div style="font-size:11px;color:var(--mu);margin-top:4px;">'+
+              'Approved '+_esc(respondedAt)+' &middot; '+
+              (r.view_count||0)+' views &middot; '+
+              (r.download_count||0)+' downloads &middot; '+
+              'last viewed '+_esc(lastView)+
+            '</div>'+
+            '<div style="font-size:12px;margin-top:6px;"><strong>Sharing:</strong> '+_docList(r.approved_docs)+'</div>'+
+          '</div>'+
+          '<div style="text-align:right;">'+
+            '<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✓ Active</span><br/>'+
+            '<button class="btn btn-o btn-sm" style="margin-top:6px;font-size:11px;padding:4px 10px;" onclick="window._tp_revokeFullShare('+r.id+')">Revoke</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }
+
+    function _resolvedRow(r){
+      var when=r.status==='denied'?r.responded_at:r.revoked_at;
+      var whenFmt=when?new Date(when).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+      var label=r.status==='denied'?'Denied':'Revoked';
+      var color=r.status==='denied'?'#7c1a1a':'#856404';
+      var bg=r.status==='denied'?'#f8d7da':'#fff3cd';
+      return '<div style="border:1px solid var(--sa);border-radius:8px;padding:10px;margin-top:8px;background:#fafafa;">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;">'+
+          '<div style="flex:1;min-width:0;font-size:12.5px;">'+
+            _brokerLine(r)+
+            '<div style="font-size:11px;color:var(--mu);margin-top:2px;">'+_esc(label)+' '+_esc(whenFmt)+'</div>'+
+          '</div>'+
+          '<span style="background:'+bg+';color:'+color+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">'+_esc(label)+'</span>'+
+        '</div>'+
+      '</div>';
+    }
+
+    var html='<h2 style="font-family:Playfair Display,serif;font-size:22px;margin:30px 0 6px;">Document Requests</h2>'+
+             '<p style="font-size:13px;color:var(--mu);margin-bottom:14px;line-height:1.5;">'+
+               'Brokers may request your full documents (PAN scan, salary slips, ITRs) when conversations get serious. You decide which to share. You can revoke approved access anytime, though brokers who already downloaded files may have local copies.'+
+             '</p>';
+    if(pending.length){
+      html+='<h3 style="font-family:DM Sans,sans-serif;font-size:14px;font-weight:700;color:#856404;margin-top:14px;">Pending requests ('+pending.length+')</h3>';
+      html+=pending.map(_pendingRow).join('');
+    }
+    if(approved.length){
+      html+='<h3 style="font-family:DM Sans,sans-serif;font-size:14px;font-weight:700;color:#155724;margin-top:18px;">Active shares ('+approved.length+')</h3>';
+      html+=approved.map(_approvedRow).join('');
+    }
+    if(resolved.length){
+      html+='<details style="margin-top:18px;"><summary style="cursor:pointer;font-family:DM Sans,sans-serif;font-size:14px;font-weight:700;color:var(--mu);">History ('+resolved.length+')</summary><div>';
+      html+=resolved.map(_resolvedRow).join('');
+      html+='</div></details>';
+    }
+    host.innerHTML=html;
+  }
+
+  // ── Approve modal ──
+  // Pre-checks all requested docs. Tenant may uncheck any to withhold.
+  // Submit calls respond_full_share with the checked subset.
+  window._tp_openApproveModal=async function(requestId){
+    // Fetch the request fresh so we have the requested_docs list
+    var {data:rows,error}=await sb.from('tenant_full_share_requests')
+      .select('id,broker_user_id,listing_id,requested_docs,request_message,status')
+      .eq('id',requestId)
+      .limit(1);
+    if(error||!rows||!rows.length){_say('Could not load request.','e');return;}
+    var r=rows[0];
+    if(r.status!=='pending'){_say('This request is no longer pending.','e');await renderDocRequests();return;}
+
+    // Lookup broker name for the modal header
+    var {data:brokers}=await sb.from('users').select('id,name').eq('id',r.broker_user_id).limit(1);
+    var brokerName=(brokers&&brokers[0]&&brokers[0].name)||'broker';
+
+    var existing=document.getElementById('tpApproveM');if(existing)existing.remove();
+    var modal=document.createElement('div');
+    modal.id='tpApproveM';
+    modal.className='mo open';
+
+    // Render pre-checked checkboxes — tenant can uncheck to withhold
+    var checkboxes=(r.requested_docs||[]).map(function(s){
+      var lbl=_DOC_LABELS[s]||s;
+      return '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--sa);border-radius:8px;margin-top:8px;cursor:pointer;">'+
+        '<input type="checkbox" id="tpa_'+s+'" value="'+s+'" checked style="width:18px;height:18px;"/>'+
+        '<span style="flex:1;font-size:13px;">'+_esc(lbl)+'</span>'+
+      '</label>';
+    }).join('');
+
+    modal.innerHTML='<div class="mb" style="max-width:560px;max-height:90vh;overflow-y:auto;">'+
+      '<div class="mh">'+
+        '<div>'+
+          '<h2 style="font-family:Playfair Display,serif;font-size:20px;">Review request from '+_esc(brokerName)+'</h2>'+
+          '<p style="font-size:12px;color:var(--mu);margin-top:2px;">Choose which documents to share. You control everything.</p>'+
+        '</div>'+
+        '<button class="mc" onclick="window._tp_closeApproveModal()" aria-label="Close"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button>'+
+      '</div>'+
+      (r.request_message?'<div style="background:var(--cr);padding:10px;border-radius:8px;margin-bottom:14px;font-size:13px;font-style:italic;">"'+_esc(r.request_message)+'"</div>':'')+
+      '<div class="al ali" style="margin-bottom:12px;font-size:12px;line-height:1.5;">'+
+        '<strong>What approving means:</strong> The broker will see the actual files, your full PAN, exact monthly income, and employer details. Religion, dietary preference, and landlord phone numbers are <strong>still never shared</strong>. You can revoke anytime, but downloaded files may already be on the broker\'s device.'+
+      '</div>'+
+      '<p style="font-size:12px;color:var(--mu);margin-bottom:6px;">Documents to share (uncheck any you don\'t want to share):</p>'+
+      '<div>'+(checkboxes||'<em style="color:var(--mu);">No documents in this request.</em>')+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:14px;">'+
+        '<button class="btn btn-bl" onclick="window._tp_submitApprove('+requestId+')" style="flex:1;">Approve &amp; share selected</button>'+
+        '<button class="btn btn-o" onclick="window._tp_closeApproveModal()">Cancel</button>'+
+      '</div>'+
+    '</div>';
+    modal.onclick=function(e){if(e.target===modal)window._tp_closeApproveModal();};
+    document.body.appendChild(modal);
+    // Stash the requested_docs for the submit handler to iterate over
+    window._tp_currentRequestSlots=r.requested_docs||[];
+  };
+
+  window._tp_closeApproveModal=function(){
+    var m=document.getElementById('tpApproveM');
+    if(m)m.remove();
+    delete window._tp_currentRequestSlots;
+  };
+
+  window._tp_submitApprove=async function(requestId){
+    var slots=window._tp_currentRequestSlots||[];
+    var approved=slots.filter(function(s){
+      var cb=document.getElementById('tpa_'+s);
+      return cb&&cb.checked;
+    });
+    if(!approved.length){_say('Select at least one document to share, or use Deny instead.','e');return;}
+    var btn=document.querySelector('#tpApproveM button.btn-bl');
+    if(btn){btn.disabled=true;btn.textContent='Approving…';}
+    try{
+      var {error}=await sb.rpc('respond_full_share',{
+        p_request_id:requestId,
+        p_action:'approve',
+        p_approved_docs:approved,
+        p_denial_reason:null
+      });
+      if(error){
+        _say('Approve failed: '+error.message,'e');
+        if(btn){btn.disabled=false;btn.textContent='Approve & share selected';}
+        return;
+      }
+      _say('Documents shared. The broker has been notified.','s');
+      window._tp_closeApproveModal();
+      await renderDocRequests();
+    }catch(e){
+      _say('Approve failed: '+(e&&e.message||'unknown'),'e');
+      if(btn){btn.disabled=false;btn.textContent='Approve & share selected';}
+    }
+  };
+
+  window._tp_denyRequest=async function(requestId){
+    var reason=prompt('Optional reason for declining? (the broker will see this)','');
+    if(reason===null)return;
+    if(!confirm('Deny this document request?'))return;
+    try{
+      var {error}=await sb.rpc('respond_full_share',{
+        p_request_id:requestId,
+        p_action:'deny',
+        p_approved_docs:null,
+        p_denial_reason:reason||null
+      });
+      if(error){_say('Deny failed: '+error.message,'e');return;}
+      _say('Request denied.','s');
+      await renderDocRequests();
+    }catch(e){_say('Deny failed: '+(e&&e.message||'unknown'),'e');}
+  };
+
+  window._tp_revokeFullShare=async function(requestId){
+    var reason=prompt('Optional reason for revoking?','');
+    if(reason===null)return;
+    if(!confirm('Revoke document access?\n\nThe broker will no longer be able to view your files. However, if they already downloaded any documents, those copies remain on their device — revocation only stops future access.'))return;
+    try{
+      var {error}=await sb.rpc('revoke_full_share',{
+        p_request_id:requestId,
+        p_reason:reason||null
+      });
+      if(error){_say('Revoke failed: '+error.message,'e');return;}
+      _say('Access revoked.','s');
+      await renderDocRequests();
+    }catch(e){_say('Revoke failed: '+(e&&e.message||'unknown'),'e');}
+  };
+
+  window.renderDocRequests=renderDocRequests;
+
   // Public init: called from dashboard.html bootstrap.
   window.initTenantProfile = async function(){
     await loadProfile();
     render();
     await renderProfileAccess();
+    await renderDocRequests();
   };
 })();

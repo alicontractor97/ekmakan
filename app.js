@@ -3112,6 +3112,12 @@ function renderNotifList(){
       case 'tp_viewed':       iconHref='#i-shield-check'; iconBg='#e8f4ff'; iconColor='#1a7ab8'; break;
       case 'tp_level_up':     iconHref='#i-sparkle'; iconBg='#f4ebff'; iconColor='#9b59b6'; break;
       case 'tp_admin_note':   iconHref='#i-flag';    iconBg='#fff3cd'; iconColor='#856404'; break;
+      // Full-document share notifications (Stage 6)
+      case 'tp_full_request':   iconHref='#i-mail';         iconBg='#fffaeb'; iconColor='#daa520'; break;
+      case 'tp_full_approved':  iconHref='#i-shield-check'; iconBg='#d4edda'; iconColor='#155724'; break;
+      case 'tp_full_denied':    iconHref='#i-x';            iconBg='#f8d7da'; iconColor='#7c1a1a'; break;
+      case 'tp_full_revoked':   iconHref='#i-lock';         iconBg='#f8d7da'; iconColor='#7c1a1a'; break;
+      case 'tp_full_downloaded':iconHref='#i-shield-check'; iconBg='#fff3cd'; iconColor='#856404'; break;
       default:                iconHref='#i-bell';    iconBg='var(--tl)'; iconColor='var(--t)';
     }
     var rowBg=n.read?'#fff':'rgba(18,90,81,.05)';
@@ -3156,6 +3162,8 @@ async function handleNotifClick(notifId,linkId,notifType){
     case 'tp_viewed':
     case 'tp_level_up':
     case 'tp_admin_note':
+    case 'tp_full_request':       // tenant: review pending request on /dashboard
+    case 'tp_full_downloaded':    // tenant: see downloads on /dashboard
       // Send tenant to their dashboard. The Profile Access section + the
       // Tenant Profile section are both there. We use the existing /dashboard
       // route which loads tenant-profile.js.
@@ -3164,6 +3172,9 @@ async function handleNotifClick(notifId,linkId,notifType){
       }
       return;
     case 'tp_revoked':
+    case 'tp_full_approved':      // broker: tenant approved → /lister Leads
+    case 'tp_full_denied':        // broker: tenant denied → /lister Leads
+    case 'tp_full_revoked':       // broker: tenant revoked → /lister Leads
       // Send broker to their leads tab so they can see which inquiry lost
       // access. The badge on that lead row will be gone (since access is now
       // revoked) and View Profile button won't appear.
