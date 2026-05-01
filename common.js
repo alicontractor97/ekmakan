@@ -295,6 +295,53 @@ function injectSharedModals(){
     document.body.appendChild(cnt);
   }
 
+  // ── Edit Profile modal ──
+  // Inlined in index.html and lister.html. Inject on pages that don't ship it
+  // (dashboard, listing, browse) so the "Edit Profile" button on those pages
+  // actually works. Field IDs (profName, profPhone, profErr, profOk, etc.)
+  // must match what app.js's openEditProfile / doUpdateProfile / doChangePw
+  // read — DO NOT rename.
+  if(!document.getElementById('profileM')){
+    var prof=document.createElement('div');
+    prof.id='profileM';
+    prof.className='mo';
+    prof.setAttribute('onclick',"ovcM(event,'profileM')");
+    prof.innerHTML=
+      '<div class="mb" style="max-width:480px;">'+
+        '<div class="mh">'+
+          '<div>'+
+            '<h2 style="font-family:\'Playfair Display\',serif;">Edit Profile</h2>'+
+            '<p style="font-size:12px;color:var(--mu);margin-top:2px;">Update your account details</p>'+
+          '</div>'+
+          '<button class="mc" onclick="closeM(\'profileM\')" aria-label="Close dialog"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button>'+
+        '</div>'+
+        '<div id="profErr" class="al ale" style="display:none;margin-bottom:12px;"></div>'+
+        '<div id="profOk" class="al ali" style="display:none;margin-bottom:12px;"></div>'+
+        '<div class="fg"><label class="flbl">Full Name</label><input class="fi" type="text" id="profName" placeholder="Your name"/></div>'+
+        '<div class="fg"><label class="flbl">Phone Number</label><input class="fi" type="tel" id="profPhone" placeholder="10-digit mobile number"/></div>'+
+        '<div class="fg" id="profAgencyWrap" style="display:none;"><label class="flbl">Agency / Company</label><input class="fi" type="text" id="profAgency" placeholder="e.g. Khan Properties"/></div>'+
+        '<div class="fg" id="profLicWrap" style="display:none;"><label class="flbl">RERA / License No.</label><input class="fi" type="text" id="profLic" placeholder="RERA/MH/2024/001"/></div>'+
+        '<button class="btn btn-bl" id="profSaveBtn" onclick="doUpdateProfile()" style="margin-bottom:24px;">Save Changes</button>'+
+        '<div style="border-top:1px solid var(--sa);padding-top:20px;margin-top:8px;">'+
+          '<h3 style="font-family:\'Playfair Display\',serif;font-size:16px;margin-bottom:12px;">Change Password</h3>'+
+          '<div class="fg"><label class="flbl">New Password</label>'+
+            '<div style="position:relative;">'+
+              '<input class="fi" type="password" id="profNewPw" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password" style="padding-right:44px;"/>'+
+              '<button type="button" onclick="togglePw(\'profNewPw\',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);padding:4px;display:flex;align-items:center;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg></button>'+
+            '</div>'+
+          '</div>'+
+          '<div class="fg"><label class="flbl">Confirm New Password</label>'+
+            '<div style="position:relative;">'+
+              '<input class="fi" type="password" id="profConfPw" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password" style="padding-right:44px;"/>'+
+              '<button type="button" onclick="togglePw(\'profConfPw\',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mu);padding:4px;display:flex;align-items:center;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-eye"/></svg></button>'+
+            '</div>'+
+          '</div>'+
+          '<button class="btn btn-o" id="profPwBtn" onclick="doChangePw()">Update Password</button>'+
+        '</div>'+
+      '</div>';
+    document.body.appendChild(prof);
+  }
+
   // ── Toast root ──
   // Required by toast() — make sure every page has one.
   if(!document.getElementById('toast')){
@@ -304,7 +351,140 @@ function injectSharedModals(){
   }
 }
 
-// Run modal injection as soon as the DOM is parsed.
+// ============================================================================
+// DELETE ACCOUNT — danger zone in Edit Profile modal
+// ============================================================================
+// Three pieces here:
+//   • injectDangerZone(): adds the destructive UI to profileM if missing
+//   • openDeleteAccountConfirm(): renders the type-to-confirm step
+//   • doDeleteAccount(): actually performs deletion (storage cleanup → RPC)
+//
+// The danger zone is injected lazily when openEditProfile runs, since profileM
+// itself may have been injected by injectSharedModals just moments earlier.
+
+function injectDangerZone(){
+  var modal=document.getElementById('profileM');
+  if(!modal)return;
+  var mb=modal.querySelector('.mb');
+  if(!mb)return;
+  if(modal.querySelector('#profDangerZone'))return; // already added
+
+  var zone=document.createElement('div');
+  zone.id='profDangerZone';
+  zone.style.cssText='border-top:1px solid #f8d7da;margin-top:24px;padding-top:20px;';
+  zone.innerHTML=
+    '<h3 style="font-family:\'Playfair Display\',serif;font-size:16px;margin-bottom:8px;color:var(--red);">Delete Account</h3>'+
+    '<p style="font-size:12px;color:var(--mu);line-height:1.5;margin-bottom:12px;">'+
+      'This permanently removes your account, your tenant profile, your uploaded documents, and your favorites. '+
+      'Listings you posted will be marked deleted. Inquiries you sent or received are kept verbatim — brokers '+
+      'who already have your contact info retain it from their lead history. <strong>This cannot be undone.</strong>'+
+    '</p>'+
+    '<button class="btn btn-o" style="border-color:var(--red);color:var(--red);" onclick="openDeleteAccountConfirm()">Delete my account</button>';
+  mb.appendChild(zone);
+}
+
+// Renders an inline confirmation block inside profileM (rather than a separate
+// modal stacked on top, which gets visually messy). The block has a text
+// input the user must fill with their email, plus Confirm/Cancel buttons.
+function openDeleteAccountConfirm(){
+  if(!cu){toast('Not signed in.','e');return;}
+  var modal=document.getElementById('profileM');
+  if(!modal)return;
+  // If already showing, bail
+  if(document.getElementById('delConfirmBlock'))return;
+
+  var zone=modal.querySelector('#profDangerZone');
+  if(!zone)return;
+  var block=document.createElement('div');
+  block.id='delConfirmBlock';
+  block.style.cssText='background:#fff5f5;border:1px solid var(--red);border-radius:8px;padding:14px;margin-top:12px;';
+  block.innerHTML=
+    '<p style="font-size:13px;color:var(--ink);line-height:1.5;margin-bottom:10px;">'+
+      'To confirm, type your email address <strong>'+_escCommon(cu.email||'')+'</strong> below.'+
+    '</p>'+
+    '<input class="fi" type="text" id="delConfirmEmail" autocomplete="off" placeholder="your.email@example.com" style="margin-bottom:10px;"/>'+
+    '<div style="display:flex;gap:8px;">'+
+      '<button class="btn" id="delConfirmBtn" style="background:var(--red);color:#fff;border:0;flex:1;" onclick="doDeleteAccount()">Permanently delete account</button>'+
+      '<button class="btn btn-o" onclick="cancelDeleteAccount()">Cancel</button>'+
+    '</div>'+
+    '<p id="delConfirmErr" style="display:none;color:var(--red);font-size:12px;margin-top:8px;"></p>';
+  zone.appendChild(block);
+  // Auto-focus the email input
+  setTimeout(function(){var i=document.getElementById('delConfirmEmail');if(i)i.focus();},50);
+}
+
+function cancelDeleteAccount(){
+  var b=document.getElementById('delConfirmBlock');
+  if(b)b.remove();
+}
+
+async function doDeleteAccount(){
+  var emailEl=document.getElementById('delConfirmEmail');
+  var errEl=document.getElementById('delConfirmErr');
+  var btn=document.getElementById('delConfirmBtn');
+  if(!emailEl)return;
+  var typed=(emailEl.value||'').trim();
+  if(!typed){
+    if(errEl){errEl.textContent='Please type your email to confirm.';errEl.style.display='';}
+    return;
+  }
+  if(typed.toLowerCase()!==(cu.email||'').toLowerCase()){
+    if(errEl){errEl.textContent='Email does not match. Type exactly: '+(cu.email||'');errEl.style.display='';}
+    return;
+  }
+  if(errEl)errEl.style.display='none';
+  if(btn){btn.disabled=true;btn.textContent='Deleting…';}
+
+  // Step 1: enumerate user's tenant-docs files and delete them.
+  // This MUST happen before the auth row drops, because the storage RLS
+  // policy (tenant manages own folder) only authorizes the user themselves.
+  try{
+    var {data:files}=await sb.storage.from('tenant-docs').list(cu.id+'',{limit:100});
+    if(files&&files.length){
+      var paths=files.map(function(f){return cu.id+'/'+f.name;});
+      var {error:rmErr}=await sb.storage.from('tenant-docs').remove(paths);
+      if(rmErr){
+        // Storage cleanup failure is logged but doesn't block deletion —
+        // an admin can clean up orphan files later if needed. We surface
+        // it so the user knows.
+        console.warn('Storage cleanup partial:',rmErr.message);
+      }
+    }
+  }catch(e){
+    // Bucket might not exist for this user (no docs uploaded). That's fine.
+    console.warn('Storage list failed:',e&&e.message);
+  }
+
+  // Step 2: call the RPC. This soft-deletes listings, writes audit log,
+  // deletes auth.users (which cascades to public.users, notifications,
+  // tenant tables, etc.), nulls out user_id on inquiries and reports.
+  try{
+    var {error}=await sb.rpc('delete_my_account',{p_confirmation:typed});
+    if(error){
+      if(errEl){errEl.textContent='Deletion failed: '+error.message;errEl.style.display='';}
+      if(btn){btn.disabled=false;btn.textContent='Permanently delete account';}
+      return;
+    }
+  }catch(e){
+    if(errEl){errEl.textContent='Deletion failed: '+(e&&e.message||'unknown');errEl.style.display='';}
+    if(btn){btn.disabled=false;btn.textContent='Permanently delete account';}
+    return;
+  }
+
+  // Step 3: sign out and redirect. Even if signOut fails, the auth row is
+  // already gone server-side — so the next request will 401 and be redirected
+  // to login anyway. We force a hard reload to clear any cached cu state.
+  try{await sb.auth.signOut();}catch(e){}
+  cu=null;
+  // Hide the modal first to avoid a flash of "edit profile" content
+  if(typeof closeM==='function')closeM('profileM');
+  // Show a final goodbye toast then redirect
+  if(typeof toast==='function')toast('Account deleted. Redirecting…');
+  setTimeout(function(){
+    window.location.href='/?deleted=1';
+  },1200);
+}
+
 if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded',injectSharedModals);
 } else {

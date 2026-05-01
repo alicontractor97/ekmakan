@@ -846,6 +846,11 @@ function openEditProfile(){
   var pw2=document.getElementById('profConfPw');if(pw2)pw2.value='';
   var err=document.getElementById('profErr');if(err)err.style.display='none';
   var ok=document.getElementById('profOk');if(ok)ok.style.display='none';
+  // Inject danger zone (delete account UI) — idempotent; only added once per
+  // page lifecycle. Defined in common.js. Also clear any stale confirmation
+  // block from a previous open.
+  if(typeof injectDangerZone==='function')injectDangerZone();
+  if(typeof cancelDeleteAccount==='function')cancelDeleteAccount();
   openM('profileM');
 }
 
@@ -7909,6 +7914,11 @@ acInit('lLo','ac-lLo','lLo',{mode:'locality',cityRef:'lCy'});     // Listing for
   } else if(qs.get('editListing')){
     var editId=Number(qs.get('editListing'));
     if(editId>0&&typeof editListing==='function')editListing(editId);
+    openedSomething=true;
+  } else if(qs.get('deleted')==='1'){
+    // Posted by the self-delete flow after redirect from any page. Just
+    // confirm to the user that their account has been removed.
+    if(typeof toast==='function')toast('Your account has been deleted.');
     openedSomething=true;
   }
   if(openedSomething&&window.history&&window.history.replaceState){
