@@ -4551,6 +4551,22 @@ async function renderListerLeads(){
       accRows.forEach(function(a){accessByInquiry[a.inquiry_id]=a;});
     }
   }catch(e){console.warn('Tenant profile access fetch failed:',e&&e.message);}
+  // ── Stage 6: fetch full-share requests for THIS broker ──
+  // We pick the latest request per inquiry. If the broker requested twice
+  // (denial → re-request), we want the most recent state shown.
+  var fullShareByInquiry={};
+  try{
+    var {data:fsRows,error:fsErr}=await sb.from('tenant_full_share_requests')
+      .select('id,inquiry_id,status,requested_docs,approved_docs,denial_reason,requested_at,responded_at,view_count,download_count,last_viewed_at,last_downloaded_at')
+      .eq('broker_user_id',cu.id)
+      .order('requested_at',{ascending:false});
+    if(!fsErr&&fsRows){
+      // Latest request wins (rows already sorted desc)
+      fsRows.forEach(function(r){
+        if(!fullShareByInquiry[r.inquiry_id])fullShareByInquiry[r.inquiry_id]=r;
+      });
+    }
+  }catch(e){console.warn('Full-share request fetch failed:',e&&e.message);}
   // Apply filters
   var f=_leadFilters;
   var filtered=myInq.filter(function(i){
@@ -4648,6 +4664,32 @@ async function renderListerLeads(){
       actions+='<button class="lead-act-btn" onclick="viewTenantProfile('+access.id+')" style="background:#f3e8d4;color:#7c5a1a;border-color:#daa520;" title="View shared tenant profile">'
         +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg>'
         +'View Profile</button>';
+      // ── Stage 6: full-share button (state-aware) ──
+      // The button only shows when there's an active redacted access row,
+      // because the request RPC requires it as a prerequisite.
+      var fs=fullShareByInquiry[i.id];
+      if(!fs){
+        // No request yet — show "Request Full Documents"
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#e8f4ff;color:#1a5a8a;border-color:#7ab8e0;" title="Request full document access">'
+          +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
+          +'Request Documents</button>';
+      } else if(fs.status==='pending'){
+        actions+='<span class="lead-act-btn" style="background:#fff3cd;color:#856404;border-color:#daa520;cursor:default;" title="Tenant has not responded yet">'
+          +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-clock"/></svg>'
+          +'Awaiting tenant</span>';
+      } else if(fs.status==='approved'){
+        actions+='<button class="lead-act-btn" onclick="openFullShareViewer('+fs.id+')" style="background:#d4edda;color:#155724;border-color:#28a745;" title="View / download shared documents">'
+          +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg>'
+          +'View Documents</button>';
+      } else if(fs.status==='denied'){
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#fde2e2;color:#7c1a1a;border-color:#d9534f;" title="Tenant declined the previous request — try again">'
+          +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
+          +'Request again</button>';
+      } else if(fs.status==='revoked'){
+        actions+='<button class="lead-act-btn" onclick="openFullShareRequestModal('+access.id+','+i.id+')" style="background:#fde2e2;color:#7c1a1a;border-color:#d9534f;" title="Tenant revoked previous access — request again">'
+          +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-mail"/></svg>'
+          +'Re-request</button>';
+      }
     }
     if(waLink){
       actions+='<a class="lead-act-btn lead-act-wa" href="'+waLink+'" target="_blank" rel="noopener" title="Message via WhatsApp">'
@@ -4794,6 +4836,242 @@ async function viewTenantProfile(accessId){
 function closeTenantProfileView(){
   var m=document.getElementById('tenantViewM');
   if(m)m.remove();
+}
+
+// ══ STAGE 6: BROKER FULL-DOCUMENT REQUEST FLOW ══
+// Three pieces here:
+//   • openFullShareRequestModal — broker picks which docs to request
+//   • openFullShareViewer       — once tenant approved, broker opens docs
+//   • adminFullShareDownload    — broker downloads a specific doc (audited)
+//
+// Document slot keys must match the SQL function's whitelist exactly:
+//   pan_doc, employment_letter, salary_slip_1/2/3, itr_y1, itr_y2
+
+var _DOC_SLOT_LABELS={
+  pan_doc:           {label:'PAN Card',                short:'PAN'},
+  employment_letter: {label:'Employment / Offer Letter',short:'Employment letter'},
+  salary_slip_1:     {label:'Latest Salary Slip',       short:'Salary slip 1'},
+  salary_slip_2:     {label:'Salary Slip — 2 months ago',short:'Salary slip 2'},
+  salary_slip_3:     {label:'Salary Slip — 3 months ago',short:'Salary slip 3'},
+  itr_y1:            {label:'ITR — Latest FY',          short:'ITR latest'},
+  itr_y2:            {label:'ITR — Previous FY',        short:'ITR previous'}
+};
+var _DOC_SLOT_ORDER=['pan_doc','employment_letter','salary_slip_1','salary_slip_2','salary_slip_3','itr_y1','itr_y2'];
+
+async function openFullShareRequestModal(accessId,inquiryId){
+  // Open a loading state immediately so the broker sees something
+  var existing=document.getElementById('fullShareRequestM');if(existing)existing.remove();
+  var modal=document.createElement('div');
+  modal.id='fullShareRequestM';
+  modal.className='mo open';
+  modal.innerHTML='<div class="mb" style="max-width:560px;"><div style="padding:40px;text-align:center;color:var(--mu);"><div class="mk-spinner"><span class="mk-spinner-text">Loading tenant profile…</span></div></div></div>';
+  document.body.appendChild(modal);
+
+  // Fetch the redacted profile to know which docs the tenant has uploaded.
+  // This call also increments the broker's view_count (reasonable — they're
+  // engaging with the profile to decide what to ask for).
+  var rpc;
+  try{rpc=await sb.rpc('get_redacted_tenant_profile',{p_access_id:accessId});}
+  catch(e){closeFullShareRequest();toast('Could not load profile: '+(e&&e.message||'unknown'),'e');return;}
+  if(rpc.error){closeFullShareRequest();toast('Could not load profile: '+rpc.error.message,'e');return;}
+  var prof=rpc.data||{};
+  if(prof.error==='no_profile'){closeFullShareRequest();toast('Tenant has not filled their profile yet.','e');return;}
+
+  var avail=prof.doc_availability||{};
+  // Build checkbox rows only for docs the tenant has actually uploaded.
+  var availableSlots=_DOC_SLOT_ORDER.filter(function(s){return avail[s]&&avail[s].uploaded;});
+  if(!availableSlots.length){
+    closeFullShareRequest();
+    toast('Tenant has not uploaded any documents to request.','e');
+    return;
+  }
+  var checkboxRows=availableSlots.map(function(s){
+    var lbl=_DOC_SLOT_LABELS[s].label;
+    var verifiedBadge=avail[s].verified
+      ? '<span style="background:#d4edda;color:#155724;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">✓ Verified</span>'
+      : '<span style="background:#fff3cd;color:#856404;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">⏳ Pending</span>';
+    return '<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--sa);border-radius:8px;margin-top:8px;cursor:pointer;">'+
+      '<input type="checkbox" id="fsq_'+s+'" value="'+s+'" style="width:18px;height:18px;"/>'+
+      '<span style="flex:1;font-size:13px;">'+esc(lbl)+verifiedBadge+'</span>'+
+    '</label>';
+  }).join('');
+
+  modal.innerHTML='<div class="mb" style="max-width:560px;max-height:90vh;overflow-y:auto;">'+
+    '<div class="mh">'+
+      '<div>'+
+        '<h2 style="font-family:Playfair Display,serif;font-size:20px;">Request Full Documents</h2>'+
+        '<p style="font-size:12px;color:var(--mu);margin-top:2px;">The tenant must approve before you can view files.</p>'+
+      '</div>'+
+      '<button class="mc" onclick="closeFullShareRequest()" aria-label="Close"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button>'+
+    '</div>'+
+    '<div class="al ali" style="margin-bottom:12px;font-size:12px;line-height:1.5;">'+
+      '<strong>How this works:</strong> Pick the documents you actually need. The tenant will see your request, choose which to share (they may share fewer than you ask for), and approve or deny. You will be notified of their decision.'+
+    '</div>'+
+    '<p style="font-size:12px;color:var(--mu);margin-bottom:6px;">Documents the tenant has uploaded:</p>'+
+    '<div id="fsqDocList">'+checkboxRows+'</div>'+
+    '<div class="fg" style="margin-top:14px;">'+
+      '<label class="flbl">Optional message to tenant</label>'+
+      '<textarea class="fi" id="fsqMsg" rows="3" maxlength="300" placeholder="e.g. Need these for the lease application — happy to discuss any concerns."></textarea>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;margin-top:14px;">'+
+      '<button class="btn btn-bl" onclick="submitFullShareRequest('+inquiryId+')" style="flex:1;">Send Request</button>'+
+      '<button class="btn btn-o" onclick="closeFullShareRequest()">Cancel</button>'+
+    '</div>'+
+  '</div>';
+
+  // Click outside closes
+  modal.onclick=function(e){if(e.target===modal)closeFullShareRequest();};
+}
+
+function closeFullShareRequest(){
+  var m=document.getElementById('fullShareRequestM');
+  if(m)m.remove();
+}
+
+async function submitFullShareRequest(inquiryId){
+  var requested=_DOC_SLOT_ORDER.filter(function(s){
+    var cb=document.getElementById('fsq_'+s);
+    return cb&&cb.checked;
+  });
+  if(!requested.length){toast('Select at least one document to request.','e');return;}
+  var msgEl=document.getElementById('fsqMsg');
+  var msg=msgEl?(msgEl.value||'').trim():'';
+  // Disable button to prevent double-submit
+  var btn=document.querySelector('#fullShareRequestM button.btn-bl');
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  try{
+    var {data,error}=await sb.rpc('request_full_share',{
+      p_inquiry_id:inquiryId,
+      p_requested_docs:requested,
+      p_message:msg||null
+    });
+    if(error){
+      toast('Request failed: '+error.message,'e');
+      if(btn){btn.disabled=false;btn.textContent='Send Request';}
+      return;
+    }
+    toast('Request sent — tenant will be notified.');
+    closeFullShareRequest();
+    // Refresh the leads tab so the button state updates
+    if(typeof renderListerLeads==='function')await renderListerLeads();
+  }catch(e){
+    toast('Request failed: '+(e&&e.message||'unknown'),'e');
+    if(btn){btn.disabled=false;btn.textContent='Send Request';}
+  }
+}
+
+// ── Broker doc viewer (Stage 6D — implemented now since it's small) ──
+// Opens a modal listing all approved docs as clickable links. Each click calls
+// get_full_share_doc_url, then sb.storage.createSignedUrl to get a 60s URL,
+// then opens it. Download button calls mark_full_share_download first.
+async function openFullShareViewer(requestId){
+  var existing=document.getElementById('fullShareViewerM');if(existing)existing.remove();
+  var modal=document.createElement('div');
+  modal.id='fullShareViewerM';
+  modal.className='mo open';
+  modal.innerHTML='<div class="mb" style="max-width:600px;"><div style="padding:40px;text-align:center;color:var(--mu);"><div class="mk-spinner"><span class="mk-spinner-text">Loading shared documents…</span></div></div></div>';
+  document.body.appendChild(modal);
+
+  // Fetch the request row to know which docs were approved + the consent snapshot
+  var {data:reqRows,error}=await sb.from('tenant_full_share_requests')
+    .select('id,tenant_user_id,inquiry_id,listing_id,approved_docs,consent_snapshot,view_count,download_count,last_viewed_at,last_downloaded_at,responded_at,status')
+    .eq('id',requestId)
+    .limit(1);
+  if(error||!reqRows||!reqRows.length){
+    closeFullShareViewer();
+    toast('Could not load request: '+(error&&error.message||'not found'),'e');
+    return;
+  }
+  var req=reqRows[0];
+  if(req.status!=='approved'){
+    closeFullShareViewer();
+    toast('This request is no longer active.','e');
+    return;
+  }
+  var snap=req.consent_snapshot||{};
+  // Build the elevated profile fields panel — exact income, full PAN, employer details
+  var elevatedFields=''+
+    '<div style="background:var(--cr);padding:12px;border-radius:8px;margin-bottom:14px;font-size:13px;line-height:1.7;">'+
+      '<strong>Tenant details (full):</strong><br/>'+
+      (snap.pan_number?'PAN: <code style="font-family:monospace;background:var(--wh);padding:1px 5px;border-radius:3px;">'+esc(snap.pan_number)+'</code><br/>':'')+
+      (snap.monthly_income?'Monthly income: <strong>₹'+Number(snap.monthly_income).toLocaleString('en-IN')+'</strong><br/>':'')+
+      (snap.employer_name?'Employer: '+esc(snap.employer_name):'')+
+      (snap.employer_address?' &middot; '+esc(snap.employer_address):'')+(snap.employer_name?'<br/>':'')+
+      (snap.role_title?'Role: '+esc(snap.role_title):'')+
+      (snap.employment_type?' ('+esc(snap.employment_type)+')':'')+(snap.role_title?'<br/>':'')+
+      (snap.joined_date?'Joined: '+esc(snap.joined_date):'')+
+    '</div>';
+
+  var docs=(req.approved_docs||[]);
+  var docRows=docs.map(function(s){
+    var lbl=_DOC_SLOT_LABELS[s]?_DOC_SLOT_LABELS[s].label:s;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border:1px solid var(--sa);border-radius:8px;margin-top:8px;flex-wrap:wrap;gap:8px;">'+
+      '<strong style="font-size:13px;">'+esc(lbl)+'</strong>'+
+      '<div style="display:flex;gap:6px;">'+
+        '<button class="btn btn-o btn-sm" onclick="fullShareDocAction('+requestId+',\''+s+'\',\'view\')" style="font-size:11px;">View</button>'+
+        '<button class="btn btn-bl btn-sm" onclick="fullShareDocAction('+requestId+',\''+s+'\',\'download\')" style="font-size:11px;">Download</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  var meta='Tenant approved on '+(req.responded_at?new Date(req.responded_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'?')+
+           ' &middot; viewed '+(req.view_count||0)+' &middot; downloaded '+(req.download_count||0);
+
+  modal.innerHTML='<div class="mb" style="max-width:600px;max-height:90vh;overflow-y:auto;">'+
+    '<div class="mh">'+
+      '<div>'+
+        '<h2 style="font-family:Playfair Display,serif;font-size:20px;">Tenant Documents</h2>'+
+        '<p style="font-size:11px;color:var(--mu);margin-top:2px;">'+meta+'</p>'+
+      '</div>'+
+      '<button class="mc" onclick="closeFullShareViewer()" aria-label="Close"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button>'+
+    '</div>'+
+    elevatedFields+
+    '<div>'+(docRows||'<p style="font-size:13px;color:var(--mu);">No documents in this share.</p>')+'</div>'+
+    '<div class="al ali" style="margin-top:14px;font-size:12px;line-height:1.5;">'+
+      '<strong><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-shield-check"/></svg> Private:</strong> Each view and download is logged. The tenant can revoke access at any time. Once revoked, you will not be able to view these files even if they are still in your browser tabs.'+
+    '</div>'+
+  '</div>';
+
+  modal.onclick=function(e){if(e.target===modal)closeFullShareViewer();};
+}
+
+function closeFullShareViewer(){
+  var m=document.getElementById('fullShareViewerM');
+  if(m)m.remove();
+}
+
+// Handles both 'view' (open in new tab, audit logged in DB) and 'download'
+// (mark_full_share_download first, then open). The signed URL is short-lived.
+async function fullShareDocAction(requestId,docSlot,mode){
+  // Get the path via the SECURITY DEFINER RPC. This also increments view_count.
+  var {data,error}=await sb.rpc('get_full_share_doc_url',{
+    p_request_id:requestId,
+    p_doc_slot:docSlot
+  });
+  if(error){
+    toast('Could not access document: '+error.message,'e');
+    if(error.code==='42501'||(error.message||'').indexOf('Access denied')>=0){
+      // Likely revoked — refresh the leads list
+      closeFullShareViewer();
+      if(typeof renderListerLeads==='function')await renderListerLeads();
+    }
+    return;
+  }
+  var path=data&&data.path;
+  if(!path){toast('No file path returned.','e');return;}
+  // For downloads, also call mark_full_share_download BEFORE generating the URL
+  // so the audit log captures intent even if the user cancels the actual download.
+  if(mode==='download'){
+    try{await sb.rpc('mark_full_share_download',{p_request_id:requestId,p_doc_slot:docSlot});}
+    catch(e){console.warn('Download tracking failed:',e&&e.message);}
+  }
+  // Generate the signed URL — 60 second window, plenty for the browser to load
+  var {data:signed,error:sErr}=await sb.storage.from('tenant-docs').createSignedUrl(path,60);
+  if(sErr||!signed||!signed.signedUrl){
+    toast('Could not generate file URL: '+((sErr&&sErr.message)||'unknown'),'e');
+    return;
+  }
+  window.open(signed.signedUrl,'_blank','noopener');
 }
 
 // CSV export of currently-filtered leads
