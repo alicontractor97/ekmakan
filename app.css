@@ -15,6 +15,55 @@
 }
 body{font-family:'DM Sans',sans-serif;background:var(--cr);color:var(--ink);}
 
+/* ──────────────────────────────────────────────────────────────────────────
+   MOBILE FIXES — hardened against horizontal overflow
+   The dashboard, lister, and admin pages were originally given inline
+   padding:40px 60px which is hostile to mobile viewports (an iPhone SE has
+   only 375px wide, leaving 255px of usable content — many widgets need
+   more than that). These rules taper the padding responsively. Use
+   !important to override the inline styles without rewriting every page.
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 720px){
+  main[style*="padding:40px 60px"],
+  main[style*="padding: 40px 60px"],
+  .page[style*="padding:40px 60px"],
+  .page[style*="padding: 40px 60px"]{
+    padding:24px 16px !important;
+  }
+  /* Inquiry rows: stack action button below content on narrow screens */
+  .li{padding:11px 12px;}
+  .li > .li-ac{flex-basis:100%;justify-content:flex-end;}
+  /* Lead row buttons: prevent any single button from forcing horizontal overflow */
+  .lead-act-btn{max-width:100%;white-space:normal;}
+  /* Stats cards row: tighter gap on mobile */
+  .g4{gap:10px;}
+  /* Force any element claiming a width >100vw to shrink */
+  body{overflow-x:hidden;}
+}
+/* Tablet: still want some spacing but less than desktop's 60px */
+@media (max-width: 980px) and (min-width: 721px){
+  main[style*="padding:40px 60px"],
+  main[style*="padding: 40px 60px"],
+  .page[style*="padding:40px 60px"],
+  .page[style*="padding: 40px 60px"]{
+    padding:32px 28px !important;
+  }
+}
+/* Tenant profile section — internal grids and forms can also overflow */
+@media (max-width: 720px){
+  #tenantProfileSection details > div,
+  #tenantProfileSection input,
+  #tenantProfileSection select,
+  #tenantProfileSection textarea{max-width:100%;box-sizing:border-box;}
+  #tenantProfileSection .fi{width:100%;}
+}
+/* Document Requests + Profile Access cards on mobile: make sure broker info
+   block can wrap before the status badge does. */
+@media (max-width: 480px){
+  #profileAccessSection > div,
+  #docRequestsSection > div{font-size:13px;}
+}
+
 /* NAV */
 nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:var(--td);position:sticky;top:0;z-index:500;gap:12px;flex-wrap:wrap;box-shadow:0 2px 16px rgba(0,0,0,.22);min-height:64px;}
 .logo{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;color:#fff;cursor:pointer;letter-spacing:-.8px;padding:12px 0;line-height:1;}

@@ -989,11 +989,148 @@
 
   window.renderDocRequests=renderDocRequests;
 
+  // ── Discoverability (banner + welcome modal) ──
+  // Goals:
+  //   • Users who haven't started their tenant profile should see a banner
+  //     at the top of /dashboard nudging them to set it up.
+  //   • First-time users who just landed on /dashboard should get a one-shot
+  //     welcome modal explaining the feature and offering "Now / Later".
+  //   • Banner is dismissable; dismissal persists for ~7 days (sessionStorage).
+  //   • Welcome modal is one-time per session (sessionStorage flag) and only
+  //     fires for role==='user' with no profile row yet.
+
+  function _isUserRole(){
+    return cu&&cu.role==='user';
+  }
+  // Profile is "started" if it exists at all. Even a Bronze tier means they've
+  // engaged with the feature, so we stop nudging.
+  function _profileIsStarted(){
+    return _profile&&(_profile.verification_level||'none')!=='none';
+  }
+
+  function _scrollToProfile(){
+    var sec=document.getElementById('tenantProfileSection');
+    if(sec&&sec.scrollIntoView){
+      sec.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  }
+
+  function renderProfilePrompt(){
+    var host=document.getElementById('tenantProfilePrompt');
+    if(!host)return;
+    // Don't show the banner to brokers/owners/builders or to users who've started.
+    if(!_isUserRole()||_profileIsStarted()){host.innerHTML='';return;}
+    // Honor 7-day dismissal
+    try{
+      var dismissed=sessionStorage.getItem('tp_banner_dismissed_until');
+      if(dismissed&&Date.now()<Number(dismissed)){host.innerHTML='';return;}
+    }catch(e){}
+
+    host.innerHTML=
+      '<div id="tpBanner" style="background:linear-gradient(135deg,var(--tl),#e0f0ee);border:1px solid var(--t);border-radius:12px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">'+
+        '<div style="flex-shrink:0;width:44px;height:44px;border-radius:50%;background:var(--t);color:#fff;display:flex;align-items:center;justify-content:center;">'+
+          '<svg class="icn icn-lg" aria-hidden="true"><use href="#i-shield-check"/></svg>'+
+        '</div>'+
+        '<div style="flex:1;min-width:200px;">'+
+          '<strong style="font-family:Playfair Display,serif;font-size:16px;color:var(--td);display:block;margin-bottom:2px;">Set up your tenant profile</strong>'+
+          '<span style="font-size:13px;color:var(--ink);line-height:1.4;">Brokers respond faster to verified tenants. Add your basic info, employment, and ID — takes about 5 minutes. You stay in control of what\'s shared.</span>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+          '<button class="btn btn-bl btn-sm" onclick="window._tp_startSetup()" style="white-space:nowrap;">Set up now</button>'+
+          '<button class="btn btn-o btn-sm" onclick="window._tp_dismissBanner()" style="white-space:nowrap;">Later</button>'+
+        '</div>'+
+      '</div>';
+  }
+
+  window._tp_startSetup=function(){
+    // Open the basic-info section (it's already open by default if no profile,
+    // but make sure it is) and scroll to it
+    var sec=document.getElementById('tpSecBasic');
+    if(sec)sec.setAttribute('open','');
+    _scrollToProfile();
+  };
+
+  window._tp_dismissBanner=function(){
+    try{
+      // Hide for 7 days (in session storage so it resets on browser quit)
+      sessionStorage.setItem('tp_banner_dismissed_until',String(Date.now()+7*24*60*60*1000));
+    }catch(e){}
+    var b=document.getElementById('tpBanner');
+    if(b)b.remove();
+  };
+
+  // ── Welcome modal (first-time on /dashboard) ──
+  function _shouldShowWelcome(){
+    if(!_isUserRole())return false;
+    if(_profile)return false; // already started
+    try{
+      if(sessionStorage.getItem('tp_welcome_shown')==='1')return false;
+    }catch(e){}
+    return true;
+  }
+
+  function showTenantWelcome(){
+    if(!_shouldShowWelcome())return;
+    try{sessionStorage.setItem('tp_welcome_shown','1');}catch(e){}
+
+    var existing=document.getElementById('tpWelcomeM');if(existing)existing.remove();
+    var modal=document.createElement('div');
+    modal.id='tpWelcomeM';
+    modal.className='mo open';
+    modal.innerHTML=
+      '<div class="mb" style="max-width:520px;">'+
+        '<div class="mh">'+
+          '<div>'+
+            '<h2 style="font-family:Playfair Display,serif;font-size:22px;">Welcome to Ek Makān</h2>'+
+            '<p style="font-size:12px;color:var(--mu);margin-top:2px;">Let\'s get you ready to find a home.</p>'+
+          '</div>'+
+          '<button class="mc" onclick="window._tp_closeWelcome()" aria-label="Close"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button>'+
+        '</div>'+
+        '<div style="background:linear-gradient(135deg,var(--tl),#e0f0ee);border-radius:10px;padding:18px;margin-bottom:14px;">'+
+          '<div style="display:flex;gap:12px;align-items:flex-start;">'+
+            '<div style="flex-shrink:0;width:40px;height:40px;border-radius:50%;background:var(--t);color:#fff;display:flex;align-items:center;justify-content:center;">'+
+              '<svg class="icn" aria-hidden="true"><use href="#i-shield-check"/></svg>'+
+            '</div>'+
+            '<div>'+
+              '<strong style="font-family:Playfair Display,serif;font-size:16px;color:var(--td);display:block;margin-bottom:4px;">Your tenant profile (optional)</strong>'+
+              '<p style="font-size:13px;color:var(--ink);line-height:1.5;">Brokers screen serious applicants faster when they can see your basics and verified employment. You upload once, you control who sees what, and you can revoke anytime. <strong>Religion, dietary preference, and alcohol preference are never shown to brokers.</strong></p>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+        '<ul style="list-style:none;padding:0;margin:14px 0;font-size:13px;color:var(--ink);line-height:1.7;">'+
+          '<li style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--gr);flex-shrink:0;">✓</span> Basic info (occupants, marital status, pets) — under 1 minute</li>'+
+          '<li style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--gr);flex-shrink:0;">✓</span> Employment + monthly income — about 1 minute</li>'+
+          '<li style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--gr);flex-shrink:0;">✓</span> Upload PAN and salary slips for verification — about 3 minutes</li>'+
+        '</ul>'+
+        '<p style="font-size:12px;color:var(--mu);line-height:1.5;margin-bottom:14px;">All optional. Skip anything you\'re not ready to share. You can always come back to this from your dashboard.</p>'+
+        '<div style="display:flex;gap:8px;">'+
+          '<button class="btn btn-bl" onclick="window._tp_welcomeStart()" style="flex:1;">Set up now (~5 min)</button>'+
+          '<button class="btn btn-o" onclick="window._tp_closeWelcome()">I\'ll do it later</button>'+
+        '</div>'+
+      '</div>';
+    modal.onclick=function(e){if(e.target===modal)window._tp_closeWelcome();};
+    document.body.appendChild(modal);
+  }
+
+  window._tp_closeWelcome=function(){
+    var m=document.getElementById('tpWelcomeM');
+    if(m)m.remove();
+  };
+
+  window._tp_welcomeStart=function(){
+    window._tp_closeWelcome();
+    setTimeout(_scrollToProfile,80);
+  };
+
   // Public init: called from dashboard.html bootstrap.
   window.initTenantProfile = async function(){
     await loadProfile();
     render();
+    renderProfilePrompt();
     await renderProfileAccess();
     await renderDocRequests();
+    // Welcome modal — runs after everything else is rendered so the modal
+    // appears over a settled dashboard rather than mid-load.
+    setTimeout(showTenantWelcome,300);
   };
 })();
