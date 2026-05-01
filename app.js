@@ -5127,36 +5127,90 @@ function closeFullShareViewer(){
 
 // Handles both 'view' (open in new tab, audit logged in DB) and 'download'
 // (mark_full_share_download first, then open). The signed URL is short-lived.
-async function fullShareDocAction(requestId,docSlot,mode){
-  // Get the path via the SECURITY DEFINER RPC. This also increments view_count.
-  var {data,error}=await sb.rpc('get_full_share_doc_url',{
-    p_request_id:requestId,
-    p_doc_slot:docSlot
-  });
-  if(error){
-    toast('Could not access document: '+error.message,'e');
-    if(error.code==='42501'||(error.message||'').indexOf('Access denied')>=0){
-      // Likely revoked — refresh the leads list
-      closeFullShareViewer();
-      if(typeof renderListerLeads==='function')await renderListerLeads();
+//
+// iOS SAFARI WORKAROUND: window.open() and direct navigation must happen
+// synchronously inside the click handler — any async work before opening kills
+// the user-gesture context and the call is silently blocked. So for "view" we
+// open a blank tab IMMEDIATELY (synchronously) and update its URL once the
+// signed URL is ready. For "download" we use an anchor with the `download`
+// attribute, which is reliably triggerable from async code on all browsers
+// because it doesn't navigate — it just initiates a file save.
+function fullShareDocAction(requestId,docSlot,mode){
+  // Open the new tab SYNCHRONOUSLY for 'view' so iOS doesn't block the popup
+  // when we do the async work below. The "about:blank" placeholder shows a
+  // brief loading state to the user; we'll set the real URL after the fetch.
+  var viewWin=null;
+  if(mode==='view'){
+    viewWin=window.open('about:blank','_blank');
+    // If the popup was blocked anyway (some iOS configurations) we'll fall
+    // back to navigating the current tab below.
+  }
+
+  // Now do the async work
+  (async function(){
+    var {data,error}=await sb.rpc('get_full_share_doc_url',{
+      p_request_id:requestId,
+      p_doc_slot:docSlot
+    });
+    if(error){
+      if(viewWin)try{viewWin.close();}catch(e){}
+      toast('Could not access document: '+error.message,'e');
+      if(error.code==='42501'||(error.message||'').indexOf('Access denied')>=0){
+        closeFullShareViewer();
+        if(typeof renderListerLeads==='function')await renderListerLeads();
+      }
+      return;
     }
-    return;
-  }
-  var path=data&&data.path;
-  if(!path){toast('No file path returned.','e');return;}
-  // For downloads, also call mark_full_share_download BEFORE generating the URL
-  // so the audit log captures intent even if the user cancels the actual download.
-  if(mode==='download'){
-    try{await sb.rpc('mark_full_share_download',{p_request_id:requestId,p_doc_slot:docSlot});}
-    catch(e){console.warn('Download tracking failed:',e&&e.message);}
-  }
-  // Generate the signed URL — 60 second window, plenty for the browser to load
-  var {data:signed,error:sErr}=await sb.storage.from('tenant-docs').createSignedUrl(path,60);
-  if(sErr||!signed||!signed.signedUrl){
-    toast('Could not generate file URL: '+((sErr&&sErr.message)||'unknown'),'e');
-    return;
-  }
-  window.open(signed.signedUrl,'_blank','noopener');
+    var path=data&&data.path;
+    if(!path){
+      if(viewWin)try{viewWin.close();}catch(e){}
+      toast('No file path returned.','e');
+      return;
+    }
+    if(mode==='download'){
+      try{await sb.rpc('mark_full_share_download',{p_request_id:requestId,p_doc_slot:docSlot});}
+      catch(e){console.warn('Download tracking failed:',e&&e.message);}
+    }
+    var {data:signed,error:sErr}=await sb.storage.from('tenant-docs').createSignedUrl(path,60);
+    if(sErr||!signed||!signed.signedUrl){
+      if(viewWin)try{viewWin.close();}catch(e){}
+      toast('Could not generate file URL: '+((sErr&&sErr.message)||'unknown'),'e');
+      return;
+    }
+
+    if(mode==='view'){
+      if(viewWin&&!viewWin.closed){
+        // Successful: redirect the placeholder tab to the real URL
+        viewWin.location.href=signed.signedUrl;
+      } else {
+        // Popup was blocked — fall back to current-tab navigation. This
+        // means the user leaves the broker portal momentarily, but their
+        // history back button returns them. Better than silent failure.
+        window.location.href=signed.signedUrl;
+      }
+      return;
+    }
+
+    // Download mode: use a hidden anchor with the `download` attribute.
+    // This works reliably across browsers including iOS Safari because it
+    // doesn't open a new window — it triggers the browser's download flow.
+    // We extract a friendly filename from the path so the saved file isn't
+    // named after the slot key alone.
+    var filename=(path.split('/').pop()||(docSlot+'.pdf'));
+    var a=document.createElement('a');
+    a.href=signed.signedUrl;
+    a.download=filename;
+    a.rel='noopener';
+    // For browsers that ignore `download` on cross-origin URLs (Supabase
+    // signed URLs are cross-origin from the app), opening in a new tab is
+    // the next best — they get a preview from which they can save.
+    a.target='_blank';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){
+      if(a.parentNode)a.parentNode.removeChild(a);
+    },200);
+  })();
 }
 
 // CSV export of currently-filtered leads
@@ -6964,14 +7018,29 @@ function _hasPendingDocs(p){
 // ── Admin actions ──
 
 // Open a private storage file. Generates a 60-second signed URL and opens
-// in a new tab so admin can review without leaving the queue.
-async function adminTpOpenDoc(path){
+// in a new tab so admin can review without leaving the queue. Uses the same
+// "open synchronously, set URL after async fetch" pattern as
+// fullShareDocAction to work around iOS Safari blocking programmatic
+// window.open() calls that happen after async work.
+function adminTpOpenDoc(path){
   if(!path){toast('No file path','e');return;}
-  var {data,error}=await sb.storage.from('tenant-docs').createSignedUrl(path,60);
-  if(error){toast('Could not open file: '+error.message,'e');return;}
-  if(data&&data.signedUrl){
-    window.open(data.signedUrl,'_blank','noopener');
-  }
+  // Open the placeholder tab synchronously so iOS Safari accepts the popup.
+  var win=window.open('about:blank','_blank');
+  (async function(){
+    var {data,error}=await sb.storage.from('tenant-docs').createSignedUrl(path,60);
+    if(error){
+      if(win)try{win.close();}catch(e){}
+      toast('Could not open file: '+error.message,'e');
+      return;
+    }
+    if(data&&data.signedUrl){
+      if(win&&!win.closed){
+        win.location.href=data.signedUrl;
+      } else {
+        window.location.href=data.signedUrl;
+      }
+    }
+  })();
 }
 
 async function adminTpVerifyDoc(userId,slot){
