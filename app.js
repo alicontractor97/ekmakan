@@ -6632,6 +6632,35 @@ async function renderTenantProfileAdmin(el){
     refsByUser[r.user_id].push(r);
   });
 
+  // ── Stage 6F: fetch full-share requests for compliance view ──
+  // Admin RLS allows reading all rows. We bucket by tenant_user_id and look
+  // up brokers + listings in one round-trip each.
+  var {data:fsRows}=await sb.from('tenant_full_share_requests')
+    .select('*')
+    .order('requested_at',{ascending:false});
+  fsRows=fsRows||[];
+  var fsByUser={};
+  var fsBrokerIds={};
+  var fsListingIds={};
+  fsRows.forEach(function(r){
+    if(!fsByUser[r.tenant_user_id])fsByUser[r.tenant_user_id]=[];
+    fsByUser[r.tenant_user_id].push(r);
+    if(r.broker_user_id)fsBrokerIds[r.broker_user_id]=true;
+    if(r.listing_id)fsListingIds[r.listing_id]=true;
+  });
+  var fsBrokerMap={};
+  var fsBrokerIdList=Object.keys(fsBrokerIds);
+  if(fsBrokerIdList.length){
+    var {data:brokers}=await sb.from('users').select('id,name,role,agency').in('id',fsBrokerIdList);
+    (brokers||[]).forEach(function(b){fsBrokerMap[b.id]=b;});
+  }
+  var fsListingMap={};
+  var fsListingIdList=Object.keys(fsListingIds);
+  if(fsListingIdList.length){
+    var {data:listings}=await sb.from('listings').select('id,title,city').in('id',fsListingIdList);
+    (listings||[]).forEach(function(l){fsListingMap[l.id]=l;});
+  }
+
   // Filter state — kept in a global so it survives re-renders triggered by
   // verify/reject actions.
   if(typeof window._tpaFilter==='undefined')window._tpaFilter={status:'pending',q:''};
@@ -6688,13 +6717,25 @@ async function renderTenantProfileAdmin(el){
   }
 
   // ── Render each profile card ──
-  var cards=await Promise.all(filtered.map(function(p){return _renderTpAdminCard(p,userMap[p.user_id]||{},refsByUser[p.user_id]||[]);}));
+  var cards=await Promise.all(filtered.map(function(p){
+    return _renderTpAdminCard(
+      p,
+      userMap[p.user_id]||{},
+      refsByUser[p.user_id]||[],
+      fsByUser[p.user_id]||[],
+      fsBrokerMap,
+      fsListingMap
+    );
+  }));
   el.innerHTML=header+filterBar+'<div style="display:flex;flex-direction:column;gap:14px;">'+cards.join('')+'</div>';
 }
 
 // Render a single tenant profile card. Returns HTML string (sync — signed URLs
 // are generated on-demand when admin clicks the file button).
-async function _renderTpAdminCard(p,user,refs){
+async function _renderTpAdminCard(p,user,refs,fullShares,brokerMap,listingMap){
+  fullShares=fullShares||[];
+  brokerMap=brokerMap||{};
+  listingMap=listingMap||{};
   var dv=p.doc_verifications||{};
   var levelColors={none:'#999',bronze:'#cd7f32',silver:'#999',gold:'#daa520',platinum:'#9b59b6'};
   var levelLabels={none:'Not Verified',bronze:'Bronze',silver:'Silver',gold:'Gold',platinum:'Platinum'};
@@ -6778,6 +6819,69 @@ async function _renderTpAdminCard(p,user,refs){
 
   var refsHtml=refs.length?refs.map(_refRow).join(''):'<p style="font-size:12px;color:var(--mu);font-style:italic;margin-top:8px;">No references on file.</p>';
 
+  // ── Stage 6F: Document Sharing section (admin compliance view) ──
+  // Lists every full-share request from any broker for this tenant. Read-only.
+  // Auto-opens if there's any active approval — most likely to be relevant.
+  var DOC_LABELS_FS={
+    pan_doc:'PAN', employment_letter:'Emp. letter',
+    salary_slip_1:'Salary slip 1', salary_slip_2:'Salary slip 2', salary_slip_3:'Salary slip 3',
+    itr_y1:'ITR latest', itr_y2:'ITR previous'
+  };
+  function _fsRow(fs){
+    var b=brokerMap[fs.broker_user_id]||{};
+    var l=listingMap[fs.listing_id]||{};
+    var statusBadge;
+    if(fs.status==='approved'){
+      statusBadge='<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✓ Approved</span>';
+    } else if(fs.status==='pending'){
+      statusBadge='<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">⏳ Pending</span>';
+    } else if(fs.status==='denied'){
+      statusBadge='<span style="background:#f8d7da;color:#7c1a1a;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✗ Denied</span>';
+    } else if(fs.status==='revoked'){
+      statusBadge='<span style="background:#fde2e2;color:#7c1a1a;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">↺ Revoked</span>';
+    } else {
+      statusBadge='<span style="background:#eee;color:#666;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">'+esc(fs.status||'')+'</span>';
+    }
+    var requested=(fs.requested_docs||[]).map(function(s){return DOC_LABELS_FS[s]||s;}).join(', ');
+    var approved=(fs.approved_docs||[]).map(function(s){return DOC_LABELS_FS[s]||s;}).join(', ');
+    var requestedDate=fs.requested_at?new Date(fs.requested_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+    var respondedDate=fs.responded_at?new Date(fs.responded_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+    var revokedDate=fs.revoked_at?new Date(fs.revoked_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+    return '<div style="border:1px solid var(--sa);border-radius:8px;padding:10px;margin-top:8px;background:'+(fs.status==='approved'?'#f4fbf6':'var(--wh)')+';">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">'+
+        '<div style="flex:1;min-width:0;">'+
+          '<strong style="font-size:13px;">'+esc(b.name||'(broker)')+'</strong> '+
+          '<span style="font-size:11px;color:var(--mu);">('+esc(b.role||'broker')+(b.agency?' · '+esc(b.agency):'')+')</span>'+
+          '<div style="font-size:12px;color:var(--mu);margin-top:2px;">For: '+esc(l.title||'(listing)')+(l.city?' · '+esc(l.city):'')+'</div>'+
+        '</div>'+
+        statusBadge+
+      '</div>'+
+      '<div style="font-size:12px;margin-top:6px;line-height:1.5;">'+
+        '<strong>Requested:</strong> '+(requested||'<em>none</em>')+
+        (fs.status==='approved'||fs.status==='revoked'
+          ? '<br/><strong>Approved:</strong> '+(approved||'<em>none</em>')
+          :'')+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--mu);margin-top:4px;">'+
+        'Requested '+esc(requestedDate)+
+        (respondedDate?' · responded '+esc(respondedDate):'')+
+        (revokedDate?' · revoked '+esc(revokedDate):'')+
+        (fs.status==='approved'?' · '+(fs.view_count||0)+' views, '+(fs.download_count||0)+' downloads':'')+
+      '</div>'+
+      (fs.denial_reason?'<div style="font-size:11px;color:#7c1a1a;margin-top:4px;font-style:italic;">Denial reason: '+esc(fs.denial_reason)+'</div>':'')+
+      (fs.revoked_reason?'<div style="font-size:11px;color:#7c1a1a;margin-top:4px;font-style:italic;">Revoke reason: '+esc(fs.revoked_reason)+'</div>':'')+
+      (fs.request_message?'<div style="font-size:11px;color:var(--mu);margin-top:4px;font-style:italic;">"'+esc(fs.request_message)+'"</div>':'')+
+    '</div>';
+  }
+  var fsActive=fullShares.filter(function(f){return f.status==='approved';}).length;
+  var fsPending=fullShares.filter(function(f){return f.status==='pending';}).length;
+  var fsHtml=fullShares.length
+    ? fullShares.map(_fsRow).join('')
+    : '<p style="font-size:12px;color:var(--mu);font-style:italic;margin-top:8px;">No document share requests.</p>';
+  var fsSummaryBadge=fullShares.length
+    ? ' <span style="font-size:11px;color:var(--mu);font-weight:400;">('+fullShares.length+' total'+(fsActive?', '+fsActive+' active':'')+(fsPending?', '+fsPending+' pending':'')+')</span>'
+    : '';
+
   var notesArea=''+
     '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--sa);display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
       '<div>'+
@@ -6813,6 +6917,9 @@ async function _renderTpAdminCard(p,user,refs){
       '</details>'+
       '<details'+(refs.some(function(r){return !r.verified;})?' open':'')+' style="margin-top:8px;"><summary style="cursor:pointer;font-size:13px;font-weight:700;padding:6px 0;">Landlord References</summary>'+
         refsHtml+
+      '</details>'+
+      '<details'+(fsActive>0||fsPending>0?' open':'')+' style="margin-top:8px;"><summary style="cursor:pointer;font-size:13px;font-weight:700;padding:6px 0;">Document Sharing'+fsSummaryBadge+'</summary>'+
+        fsHtml+
       '</details>'+
       notesArea+
     '</div>';
@@ -6910,7 +7017,31 @@ async function exportTenantProfilesCSV(){
   var {data,error}=await sb.rpc('admin_export_tenant_profiles');
   if(error){toast('Export failed: '+error.message,'e');return;}
   if(!data||!data.length){toast('No tenant profiles to export.','e');return;}
-  // Build CSV
+  // Fetch full-share aggregates client-side and merge into each row.
+  // Admin RLS allows SELECTing all rows, so this works for any tenant.
+  var fsCounts={};
+  try{
+    var {data:fsRows}=await sb.from('tenant_full_share_requests')
+      .select('tenant_user_id,status');
+    (fsRows||[]).forEach(function(r){
+      if(!fsCounts[r.tenant_user_id])fsCounts[r.tenant_user_id]={total:0,active:0,pending:0,denied:0,revoked:0};
+      fsCounts[r.tenant_user_id].total++;
+      if(r.status==='approved')fsCounts[r.tenant_user_id].active++;
+      else if(r.status==='pending')fsCounts[r.tenant_user_id].pending++;
+      else if(r.status==='denied')fsCounts[r.tenant_user_id].denied++;
+      else if(r.status==='revoked')fsCounts[r.tenant_user_id].revoked++;
+    });
+  }catch(e){console.warn('Full-share aggregate fetch failed:',e&&e.message);}
+  // Add the aggregate columns to each row
+  data.forEach(function(r){
+    var c=fsCounts[r.tenant_user_id]||{total:0,active:0,pending:0,denied:0,revoked:0};
+    r.full_share_total=c.total;
+    r.full_share_active=c.active;
+    r.full_share_pending=c.pending;
+    r.full_share_denied=c.denied;
+    r.full_share_revoked=c.revoked;
+  });
+  // Build CSV — keys are read dynamically so the new columns flow through
   var keys=Object.keys(data[0]);
   var rows=[keys.join(',')];
   data.forEach(function(r){
