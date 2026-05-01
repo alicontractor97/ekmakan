@@ -531,9 +531,124 @@
       renderLifestyle();
   }
 
+  // ── Profile Access panel (Stage 4) ──
+  // Shows the tenant every active access row + lets them revoke.
+  // Each row shows: which listing, which broker, when granted, view count,
+  // last viewed. Revoke calls the revoke_profile_access RPC which sets
+  // revoked_at; the broker's RPC view-attempts then return 'Access denied'.
+  async function renderProfileAccess(){
+    var host=document.getElementById('profileAccessSection');
+    if(!host)return;
+    if(!cu){host.innerHTML='';return;}
+
+    // Fetch all access rows for this tenant (active + revoked).
+    var {data:rows,error}=await sb.from('tenant_profile_access')
+      .select('id,inquiry_id,broker_user_id,listing_id,granted_at,revoked_at,view_count,last_viewed_at')
+      .eq('tenant_user_id',cu.id)
+      .order('granted_at',{ascending:false});
+    if(error){
+      host.innerHTML='<p style="font-size:13px;color:var(--mu);">Could not load profile access list: '+_esc(error.message)+'</p>';
+      return;
+    }
+    rows=rows||[];
+    if(!rows.length){
+      host.innerHTML='';
+      return;
+    }
+    // Look up broker names + listing titles. We do bulk SELECTs to avoid an
+    // N+1 storm — listings already cached, brokers we fetch in one query.
+    var brokerIds=[];rows.forEach(function(r){if(r.broker_user_id&&brokerIds.indexOf(r.broker_user_id)<0)brokerIds.push(r.broker_user_id);});
+    var brokerMap={};
+    if(brokerIds.length){
+      var {data:brokers}=await sb.from('users').select('id,name,role,agency').in('id',brokerIds);
+      (brokers||[]).forEach(function(b){brokerMap[b.id]=b;});
+    }
+    // Listings: prefer the cached gL() if available
+    var listingMap={};
+    try{
+      if(typeof gL==='function'){
+        var allL=await gL();
+        (allL||[]).forEach(function(l){listingMap[l.id]=l;});
+      }
+    }catch(e){}
+
+    var active=rows.filter(function(r){return !r.revoked_at;});
+    var revoked=rows.filter(function(r){return r.revoked_at;});
+
+    function rowHTML(r,isRevoked){
+      var b=brokerMap[r.broker_user_id]||{};
+      var l=listingMap[r.listing_id]||{};
+      var brokerName=b.name||'(broker)';
+      var brokerLabel=b.role==='broker'?'Broker':b.role==='owner'?'Owner':b.role==='builder'?'Builder':'Lister';
+      var listingTitle=l.title||'(listing)';
+      var grantedFmt=r.granted_at?new Date(r.granted_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+      var lastViewedFmt=r.last_viewed_at?new Date(r.last_viewed_at).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'never';
+      var statusBadge=isRevoked
+        ?'<span style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✗ Revoked '+(r.revoked_at?new Date(r.revoked_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}):'')+'</span>'
+        :'<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✓ Active</span>';
+      var revokeBtn=isRevoked?'':'<button class="btn btn-o btn-sm" style="margin-top:6px;font-size:11px;padding:4px 10px;" onclick="window._tp_revoke('+r.id+')">Revoke Access</button>';
+      return ''+
+        '<div style="border:1px solid var(--sa);border-radius:8px;padding:12px;margin-top:10px;background:'+(isRevoked?'#fafafa':'var(--wh)')+';">'+
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">'+
+            '<div style="flex:1;min-width:0;">'+
+              '<strong>'+_esc(brokerName)+'</strong> <span style="font-size:11px;color:var(--mu);">('+_esc(brokerLabel)+(b.agency?' · '+_esc(b.agency):'')+')</span>'+
+              '<div style="font-size:12px;color:var(--mu);margin-top:2px;">Property: <a href="/listing?id='+r.listing_id+'" style="color:var(--t);">'+_esc(listingTitle)+'</a></div>'+
+              '<div style="font-size:11px;color:var(--mu);margin-top:4px;">Shared on '+_esc(grantedFmt)+' &middot; viewed '+(r.view_count||0)+' times &middot; last '+_esc(lastViewedFmt)+'</div>'+
+            '</div>'+
+            '<div style="text-align:right;">'+statusBadge+'<br/>'+revokeBtn+'</div>'+
+          '</div>'+
+        '</div>';
+    }
+
+    var html=''+
+      '<h2 style="font-family:Playfair Display,serif;font-size:22px;margin:30px 0 6px;">Profile Access</h2>'+
+      '<p style="font-size:13px;color:var(--mu);margin-bottom:14px;line-height:1.5;">'+
+        'Brokers and listers who have access to your tenant profile via inquiries you sent. You can revoke access at any time — once revoked, they can no longer see your shared profile.'+
+      '</p>';
+    if(active.length){
+      html+='<h3 style="font-family:DM Sans,sans-serif;font-size:14px;font-weight:700;color:var(--ink);margin-top:18px;">Active access ('+active.length+')</h3>';
+      html+=active.map(function(r){return rowHTML(r,false);}).join('');
+    }
+    if(revoked.length){
+      html+='<details style="margin-top:18px;"><summary style="cursor:pointer;font-family:DM Sans,sans-serif;font-size:14px;font-weight:700;color:var(--mu);">Previously revoked ('+revoked.length+')</summary><div>';
+      html+=revoked.map(function(r){return rowHTML(r,true);}).join('');
+      html+='</div></details>';
+    }
+    host.innerHTML=html;
+  }
+
+  window._tp_revoke=async function(accessId){
+    var reason=prompt('Optional: reason for revoking? (leave blank if you prefer)','');
+    if(reason===null)return; // user cancelled the prompt
+    var ok=confirm('Revoke access for this broker? They will no longer be able to view your shared profile via this inquiry.');
+    if(!ok)return;
+    try{
+      var {data,error}=await sb.rpc('revoke_profile_access',{
+        p_access_id:accessId,
+        p_reason:reason||null
+      });
+      if(error){
+        _say('Revoke failed: '+error.message,'e');
+        return;
+      }
+      if(data===false){
+        _say('Could not revoke (already revoked or not your row).','e');
+      } else {
+        _say('Access revoked.','s');
+      }
+      await renderProfileAccess();
+    }catch(e){
+      _say('Revoke failed: '+(e&&e.message||'unknown'),'e');
+    }
+  };
+
+  // Expose so the dashboard bootstrap can call it.
+  window.renderProfileAccess=renderProfileAccess;
+
   // Public init: called from dashboard.html bootstrap.
   window.initTenantProfile = async function(){
     await loadProfile();
     render();
+    await renderProfileAccess();
   };
 })();

@@ -4500,6 +4500,21 @@ async function renderListerLeads(){
   var myLIds=myL.map(function(l){return l.id;});
   var allInq=await gInq();
   var myInq=allInq.filter(function(i){return myLIds.indexOf(i.listingId)>=0;});
+  // ── Stage 4: fetch tenant profile access rows for THIS broker ──
+  // The tenant_profile_access table has an RLS policy that lets brokers read
+  // their own non-revoked access rows. We build a lookup inquiry_id → access
+  // metadata so we can show the "View Profile" button + verification badge
+  // on each lead row.
+  var accessByInquiry={};
+  try{
+    var {data:accRows,error:accErr}=await sb.from('tenant_profile_access')
+      .select('id,inquiry_id,consent_snapshot,view_count,last_viewed_at')
+      .eq('broker_user_id',cu.id)
+      .is('revoked_at',null);
+    if(!accErr&&accRows){
+      accRows.forEach(function(a){accessByInquiry[a.inquiry_id]=a;});
+    }
+  }catch(e){console.warn('Tenant profile access fetch failed:',e&&e.message);}
   // Apply filters
   var f=_leadFilters;
   var filtered=myInq.filter(function(i){
@@ -4579,7 +4594,25 @@ async function renderListerLeads(){
     var waNum=phoneDigits.length===10?'91'+phoneDigits:phoneDigits;
     var waMsg=encodeURIComponent('Hi '+(i.name||'')+', thanks for your interest in '+(lstTitle||'my property')+' on Ek Makān. Happy to share more details and arrange a visit. — '+(cu.name||cu.email));
     var waLink=phoneDigits.length>=10?'https://wa.me/'+waNum+'?text='+waMsg:'';
+    // Tenant profile access (Stage 4): if this inquiry has a non-revoked
+    // access row for this broker, render the verification badge + a button.
+    var access=accessByInquiry[i.id];
+    var verifBadge='';
+    if(access){
+      var snap=access.consent_snapshot||{};
+      var lvl=snap.verification_level||'none';
+      var colors={bronze:'#cd7f32',silver:'#999',gold:'#daa520',platinum:'#9b59b6'};
+      var labels={bronze:'Bronze',silver:'Silver',gold:'Gold',platinum:'Platinum'};
+      if(colors[lvl]){
+        verifBadge='<span style="display:inline-block;background:'+colors[lvl]+';color:#fff;padding:1px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-left:6px;vertical-align:1px;">✓ '+labels[lvl]+'</span>';
+      }
+    }
     var actions='<div class="lead-actions">';
+    if(access){
+      actions+='<button class="lead-act-btn" onclick="viewTenantProfile('+access.id+')" style="background:#f3e8d4;color:#7c5a1a;border-color:#daa520;" title="View shared tenant profile">'
+        +'<svg class="icn icn-sm" aria-hidden="true"><use href="#i-shield-check"/></svg>'
+        +'View Profile</button>';
+    }
     if(waLink){
       actions+='<a class="lead-act-btn lead-act-wa" href="'+waLink+'" target="_blank" rel="noopener" title="Message via WhatsApp">'
         +'<svg class="icn" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413"/></svg>'
@@ -4596,7 +4629,7 @@ async function renderListerLeads(){
     actions+='</div>';
     return '<tr>'
       +'<td style="white-space:nowrap;color:var(--mu);font-size:11.5px;">'+dateDisp+'</td>'
-      +'<td><div class="lead-name">'+esc(i.name||'(no name)')+'</div>'
+      +'<td><div class="lead-name">'+esc(i.name||'(no name)')+verifBadge+'</div>'
         +(phoneRaw?'<div class="lead-meta"><a href="tel:'+esc(phoneRaw)+'" style="color:var(--mu);text-decoration:none;">'+esc(phoneRaw)+'</a></div>':'')
         +(i.email?'<div class="lead-meta">'+esc(i.email)+'</div>':'')
       +'</td>'
@@ -4629,6 +4662,103 @@ async function renderListerLeads(){
 
 function updateLeadFilter(key,val){_leadFilters[key]=val;renderListerLeads();}
 function clearLeadFilters(){_leadFilters={from:'',to:'',propId:'',type:'',budgetMin:0,budgetMax:0};renderListerLeads();}
+
+// ── STAGE 4: View shared tenant profile (broker-side) ──
+// Called from the Leads tab "View Profile" button. Calls the SECURITY DEFINER
+// RPC get_redacted_tenant_profile, which:
+//   1. Verifies the caller is the broker named in the access row + not revoked
+//   2. Returns the redacted JSON (no religion / diet / exact income / full PAN
+//      / document files / landlord phones — only safe fields and bands)
+//   3. Increments view_count + writes an audit log entry
+//
+// Brokers have NO direct SELECT permission on tenant_profiles — this RPC is
+// the only path. If the tenant has revoked, the RPC raises an exception which
+// we surface to the broker as "Access has been revoked".
+async function viewTenantProfile(accessId){
+  // Show a quick loading modal so the broker knows something's happening
+  var existingModal=document.getElementById('tenantViewM');
+  if(existingModal)existingModal.remove();
+  var loader=document.createElement('div');
+  loader.id='tenantViewM';
+  loader.className='mo open';
+  loader.style.cssText='';
+  loader.innerHTML='<div class="mb" style="max-width:560px;"><div style="padding:40px;text-align:center;color:var(--mu);"><div class="mk-spinner"><span class="mk-spinner-text">Loading tenant profile…</span></div></div></div>';
+  document.body.appendChild(loader);
+
+  var rpc;
+  try{
+    rpc=await sb.rpc('get_redacted_tenant_profile',{p_access_id:accessId});
+  }catch(e){
+    loader.remove();
+    toast('Could not load profile: '+(e&&e.message||'unknown error'),'e');
+    return;
+  }
+  if(rpc.error){
+    loader.remove();
+    var msg=rpc.error.message||'';
+    // The RPC raises 42501 (insufficient_privilege) when access has been
+    // revoked or when the caller isn't the broker. Surface a clean message.
+    if(msg.indexOf('Access denied')>=0||rpc.error.code==='42501'){
+      toast('Access to this tenant\'s profile has been revoked.','e');
+    } else {
+      toast('Could not load profile: '+msg,'e');
+    }
+    return;
+  }
+  var p=rpc.data||{};
+  if(p.error==='no_profile'){
+    loader.remove();
+    toast('This tenant has not filled their profile yet.','e');
+    return;
+  }
+  // Render — same shape as the consent modal preview but framed for the broker.
+  var colors={none:'#999',bronze:'#cd7f32',silver:'#999',gold:'#daa520',platinum:'#9b59b6'};
+  var labels={none:'Not Verified',bronze:'Bronze',silver:'Silver',gold:'Gold',platinum:'Platinum'};
+  var lvl=p.verification_level||'none';
+  var verifBadge='<span style="display:inline-flex;align-items:center;gap:6px;background:'+(colors[lvl]||'#999')+';color:#fff;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:700;"><svg class="icn icn-sm" aria-hidden="true"><use href="#i-check"/></svg>'+(labels[lvl]||'Not Verified')+'</span>';
+  function row(label,value){
+    if(value==null||value==='')return '';
+    if(value===true)value='Yes';
+    if(value===false)value='No';
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--sa);"><span style="color:var(--mu);font-size:13px;">'+esc(String(label))+'</span><span style="font-weight:600;font-size:13px;">'+esc(String(value))+'</span></div>';
+  }
+  var maritalLabels={single:'Single',married:'Married',divorced:'Divorced',widowed:'Widowed',prefer_not:'Prefer not to say'};
+  var empTypeLabels={full_time:'Full-time',part_time:'Part-time',contract:'Contract',self_employed:'Self-employed',student:'Student',unemployed:'Unemployed'};
+  var basicRows=row('Occupants',p.num_occupants)+row('Relationship',p.occupants_relationship)+row('Marital status',maritalLabels[p.marital_status]||p.marital_status)+row('Has pets',p.has_pets)+(p.has_pets&&p.pet_details?row('Pet details',p.pet_details):'')+row('Smokes',p.smokes);
+  var empRows=row('Employer',p.employer_name)+row('Role',p.role_title)+row('Employment type',empTypeLabels[p.employment_type]||p.employment_type)+row('Monthly income (band)',p.monthly_income_band)+row('Joined on',p.joined_date);
+  var idRows=row('PAN (masked)',p.pan_masked)+row('PAN verified',p.pan_verified);
+  var docs=p.docs||{};
+  var docRows=row('Employment letter verified',docs.employment_letter_verified)+row('Salary slips verified',docs.salary_slips_verified)+row('ITR verified',docs.itr_verified);
+  var refs=p.landlord_refs||{};
+  var refRows='';
+  if(refs.total>0){
+    refRows=row('Total references',refs.total)+row('Verified',refs.verified);
+    if(refs.positive)refRows+=row('Positive outcomes',refs.positive);
+    if(refs.mixed)refRows+=row('Mixed outcomes',refs.mixed);
+    if(refs.negative)refRows+=row('Negative outcomes',refs.negative);
+  }
+  var introRow=p.self_intro?'<div style="margin-top:10px;font-size:13px;background:var(--cr);padding:10px;border-radius:8px;"><strong>About them:</strong><br/>'+esc(p.self_intro)+'</div>':'';
+  var freshness=p.profile_updated_at?'<p style="font-size:11px;color:var(--mu);margin-top:14px;">Profile last updated '+new Date(p.profile_updated_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+(p.admin_verified_at?' · admin reviewed '+new Date(p.admin_verified_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'')+'</p>':'';
+
+  loader.innerHTML='<div class="mb" style="max-width:560px;max-height:90vh;overflow-y:auto;">'
+    +'<div class="mh"><div><h2 style="font-family:Playfair Display,serif;font-size:20px;">Tenant Profile</h2><p style="font-size:12px;color:var(--mu);margin-top:2px;">Shared via inquiry &middot; Redacted view</p></div><button class="mc" onclick="closeTenantProfileView()" aria-label="Close"><svg class="icn" aria-hidden="true"><use href="#i-close"/></svg></button></div>'
+    +'<div style="background:var(--cr);padding:14px;border-radius:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;"><strong style="font-size:13px;">Verification:</strong>'+verifBadge+'</div>'
+    +(basicRows?'<details open style="margin-bottom:10px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;">Basic Information</summary><div>'+basicRows+'</div></details>':'')
+    +(empRows?'<details open style="margin-bottom:10px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;">Employment</summary><div>'+empRows+'</div></details>':'')
+    +(idRows?'<details style="margin-bottom:10px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;">Identity</summary><div>'+idRows+'</div></details>':'')
+    +(docRows?'<details style="margin-bottom:10px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;">Documents</summary><div>'+docRows+'</div></details>':'')
+    +(refRows?'<details style="margin-bottom:10px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;">Landlord References</summary><div>'+refRows+'</div></details>':'')
+    +introRow
+    +'<div class="al ali" style="margin-top:14px;font-size:12px;line-height:1.5;"><strong><svg class="icn icn-sm" aria-hidden="true" style="vertical-align:-3px;"><use href="#i-shield-check"/></svg> Privacy:</strong> Income shown as a band (exact figure hidden). PAN masked. Document files and landlord phone numbers are admin-only — you see only verification status. Religion, diet, and alcohol preference are <strong>never</strong> shared. The tenant can revoke your access at any time.</div>'
+    +'<div style="text-align:right;margin-top:14px;"><button class="btn btn-bl btn-sm" onclick="closeTenantProfileView()">Close</button></div>'
+    +'</div>';
+  loader.onclick=function(e){if(e.target===loader)closeTenantProfileView();};
+}
+
+function closeTenantProfileView(){
+  var m=document.getElementById('tenantViewM');
+  if(m)m.remove();
+}
 
 // CSV export of currently-filtered leads
 async function exportFilteredLeadsCSV(){
